@@ -212,6 +212,22 @@ final class AppleTVPairingModelTests: XCTestCase {
         XCTAssertTrue(model.canSubmitPIN)
     }
 
+    func testForgetPairingRemovesStoredCredential() async {
+        let store = StubAppleTVCredentialStore(credentials: [.fixture])
+        let model = AppleTVPairingModel(
+            discovery: StubAppleTVDiscovery(candidates: []),
+            pairing: StubAppleTVPairing(),
+            credentialStore: store
+        )
+
+        let wasRemoved = await model.forgetPairing()
+
+        XCTAssertTrue(wasRemoved)
+        XCTAssertEqual(model.phase, .idle)
+        let credentials = await store.loadAll()
+        XCTAssertTrue(credentials.isEmpty)
+    }
+
     private func candidate(
         name: String,
         service: AppleTVBonjourService
@@ -242,7 +258,8 @@ final class AppleTVControlModelTests: XCTestCase {
         let model = AppleTVControlModel(
             discovery: StubAppleTVDiscovery(candidates: [candidate]),
             credentialStore: StubAppleTVCredentialStore(credentials: [.fixture]),
-            controller: controller
+            controller: controller,
+            logger: NoOpAuraLogger()
         )
 
         await model.connect()
@@ -269,24 +286,27 @@ final class AppleTVControlModelTests: XCTestCase {
         let model = AppleTVControlModel(
             discovery: StubAppleTVDiscovery(candidates: [.fixture]),
             credentialStore: StubAppleTVCredentialStore(credentials: [.fixture]),
-            controller: controller
+            controller: controller,
+            logger: NoOpAuraLogger()
         )
 
         await model.connect()
 
         let wasConfirmed = await model.send(.home)
         XCTAssertFalse(wasConfirmed)
-        XCTAssertEqual(
-            model.phase,
-            .failed(message: "Apple TV rejected the navigation command.")
-        )
+        guard case .failed(let failure) = model.phase else {
+            return XCTFail("Expected a typed command failure")
+        }
+        XCTAssertEqual(failure.reason, .commandRejected)
+        XCTAssertEqual(failure.recoveryAction, .reconnect)
     }
 
     func testConnectFailsClosedWhenCredentialCannotBeMatchedUniquely() async {
         let model = AppleTVControlModel(
             discovery: StubAppleTVDiscovery(candidates: []),
             credentialStore: StubAppleTVCredentialStore(credentials: [.fixture]),
-            controller: StubAppleTVController()
+            controller: StubAppleTVController(),
+            logger: NoOpAuraLogger()
         )
 
         await model.connect()
@@ -294,6 +314,72 @@ final class AppleTVControlModelTests: XCTestCase {
         guard case .failed = model.phase else {
             return XCTFail("Expected a failed control state")
         }
+    }
+
+    func testReconnectPerformsOneFreshConnectionAttempt() async {
+        let controller = StubAppleTVController(
+            connectErrors: [.connectionFailed, nil]
+        )
+        let model = AppleTVControlModel(
+            discovery: StubAppleTVDiscovery(candidates: [.fixture]),
+            credentialStore: StubAppleTVCredentialStore(credentials: [.fixture]),
+            controller: controller,
+            logger: NoOpAuraLogger()
+        )
+
+        let connectedInitially = await model.connect()
+        XCTAssertFalse(connectedInitially)
+        guard case .failed(let failure) = model.phase else {
+            return XCTFail("Expected the initial connection to fail")
+        }
+        XCTAssertEqual(failure.reason, .deviceUnavailable)
+
+        await model.recover()
+
+        XCTAssertEqual(model.phase, .ready)
+        let connectAttempts = await controller.connectAttemptCountValue()
+        XCTAssertEqual(connectAttempts, 2)
+        let disconnects = await controller.disconnectCountValue()
+        XCTAssertEqual(disconnects, 1)
+    }
+
+    func testRecoveryNeverResendsCommandWithUnknownOutcome() async {
+        let controller = StubAppleTVController(sendError: .connectionFailed)
+        let model = AppleTVControlModel(
+            discovery: StubAppleTVDiscovery(candidates: [.fixture]),
+            credentialStore: StubAppleTVCredentialStore(credentials: [.fixture]),
+            controller: controller,
+            logger: NoOpAuraLogger()
+        )
+
+        _ = await model.connect()
+        let wasConfirmed = await model.send(.right)
+        XCTAssertFalse(wasConfirmed)
+        guard case .failed(let failure) = model.phase else {
+            return XCTFail("Expected an unknown command outcome")
+        }
+        XCTAssertEqual(failure.reason, .commandOutcomeUnknown)
+
+        await model.recover()
+
+        XCTAssertEqual(model.phase, .ready)
+        let commandAttempts = await controller.commandsValue()
+        XCTAssertEqual(commandAttempts, [.right])
+    }
+
+    func testCancellationReturnsToIdleWithoutRecoveryError() async {
+        let controller = StubAppleTVController(connectErrors: [.cancelled])
+        let model = AppleTVControlModel(
+            discovery: StubAppleTVDiscovery(candidates: [.fixture]),
+            credentialStore: StubAppleTVCredentialStore(credentials: [.fixture]),
+            controller: controller,
+            logger: NoOpAuraLogger()
+        )
+
+        let wasConnected = await model.connect()
+
+        XCTAssertFalse(wasConnected)
+        XCTAssertEqual(model.phase, .idle)
     }
 }
 
@@ -335,7 +421,9 @@ private actor StubAppleTVCredentialStore: AppleTVCredentialStoring {
 
     func loadAll() -> [AppleTVPairingCredentials] { credentials }
 
-    func remove(_ credentials: AppleTVPairingCredentials) {}
+    func remove(_ credentials: AppleTVPairingCredentials) {
+        self.credentials.removeAll { $0 == credentials }
+    }
 
     func savedCountValue() -> Int {
         savedCount
@@ -345,25 +433,43 @@ private actor StubAppleTVCredentialStore: AppleTVCredentialStoring {
 private actor StubAppleTVController: AppleTVControlling {
     private var commands: [AppleTVRemoteCommand] = []
     private let sendError: AppleTVControlError?
+    private var connectErrors: [AppleTVControlError?]
+    private var connectAttemptCount = 0
+    private var disconnectCount = 0
 
-    init(sendError: AppleTVControlError? = nil) {
+    init(
+        sendError: AppleTVControlError? = nil,
+        connectErrors: [AppleTVControlError?] = []
+    ) {
         self.sendError = sendError
+        self.connectErrors = connectErrors
     }
 
     func connect(
         endpoint: AppleTVBonjourEndpoint,
         credentials: AppleTVPairingCredentials
-    ) {}
+    ) throws {
+        connectAttemptCount += 1
+        if !connectErrors.isEmpty, let error = connectErrors.removeFirst() {
+            throw error
+        }
+    }
 
     func send(_ command: AppleTVRemoteCommand) throws -> AppleTVCommandOutcome {
-        if let sendError { throw sendError }
         commands.append(command)
+        if let sendError { throw sendError }
         return .confirmed
     }
 
-    func disconnect() {}
+    func disconnect() {
+        disconnectCount += 1
+    }
 
     func commandsValue() -> [AppleTVRemoteCommand] { commands }
+
+    func connectAttemptCountValue() -> Int { connectAttemptCount }
+
+    func disconnectCountValue() -> Int { disconnectCount }
 }
 
 private extension AppleTVPairingCredentials {
