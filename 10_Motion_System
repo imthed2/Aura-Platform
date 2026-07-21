@@ -1,0 +1,648 @@
+# Aura
+## Motion System
+Version: 1.0
+Status: Draft
+Owner: Daniel Hagen
+Project: Aura Platform
+Document ID: AURA-10
+
+Dependencies
+
+• AURA-03 Aura Design Language
+• AURA-04 Design Tokens
+• AURA-08 Component Library
+• AURA-09 Interaction Guidelines
+
+---
+
+# Purpose
+
+Motion is communication.
+
+Animations exist to explain change, reinforce hierarchy and provide confidence.
+
+Motion must never exist solely because it looks impressive.
+
+Every animation answers one question:
+
+"What changed?"
+
+---
+
+# Motion Philosophy
+
+Aura should feel alive.
+
+Not animated.
+
+Users should rarely notice individual animations.
+
+Instead they should notice that everything feels smooth.
+
+The interface should feel closer to liquid than machinery.
+
+---
+
+# Motion Principles
+
+Immediate
+
+Natural
+
+Purposeful
+
+Consistent
+
+Subtle
+
+Interruptible
+
+Accessible
+
+---
+
+# Motion Categories
+
+Micro Motion
+
+Component Motion
+
+Navigation Motion
+
+State Motion
+
+Scene Motion
+
+Environmental Motion
+
+---
+
+==================================================
+Micro Motion
+==================================================
+
+Examples
+
+Button press
+
+Toggle
+
+Slider
+
+Selection
+
+Icon updates
+
+Duration
+
+100–180ms
+
+Purpose
+
+Immediate tactile response.
+
+---
+
+==================================================
+Component Motion
+==================================================
+
+Examples
+
+Cards
+
+Lists
+
+Banners
+
+Sheets
+
+Context Menus
+
+Duration
+
+180–300ms
+
+Purpose
+
+Explain layout changes.
+
+---
+
+==================================================
+Navigation Motion
+==================================================
+
+Push Navigation
+
+Horizontal slide
+
+Sheet
+
+Vertical spring
+
+Dismiss
+
+Reverse animation
+
+Fade
+
+Reserved for lightweight overlays
+
+---
+
+==================================================
+State Motion
+==================================================
+
+Offline
+
+↓
+
+Connecting
+
+↓
+
+Online
+
+Never change state instantly.
+
+Always communicate progress.
+
+---
+
+==================================================
+Scene Motion
+==================================================
+
+Scene activation should feel cinematic.
+
+Example
+
+Movie Night
+
+↓
+
+Hero Card expands
+
+↓
+
+Progress Ring appears
+
+↓
+
+Lights dim
+
+↓
+
+TV powers on
+
+↓
+
+Scene confirmed
+
+The user should understand that Aura is orchestrating multiple devices.
+
+---
+
+==================================================
+Environmental Motion
+==================================================
+
+The dashboard should never feel frozen.
+
+Examples
+
+Clock updates
+
+Light breathing effects
+
+Live status indicators
+
+Media progress
+
+Subtle gradients
+
+These animations should remain extremely subtle.
+
+---
+
+# Animation Timing
+
+Instant
+
+100ms
+
+Fast
+
+180ms
+
+Standard
+
+280ms
+
+Slow
+
+400ms
+
+Hero
+
+600ms
+
+Maximum
+
+800ms
+
+No animation may exceed 800ms unless explicitly justified.
+
+---
+
+# Animation Curves
+
+Interactive
+
+Spring
+
+Navigation
+
+Ease In Out
+
+Dismiss
+
+Ease Out
+
+Arrival
+
+Ease In
+
+Celebration
+
+Soft Spring
+
+Consistency is mandatory.
+
+---
+
+# Interruptibility
+
+Users remain in control.
+
+Every animation must be interruptible.
+
+Example
+
+While opening a Room
+
+↓
+
+User taps Back
+
+↓
+
+Animation reverses immediately.
+
+Never force users to wait.
+
+---
+
+# Progressive Motion
+
+Complex operations should reveal progress naturally.
+
+Instead of
+
+Loading...
+
+Use
+
+Device discovered
+
+↓
+
+Authenticating
+
+↓
+
+Reading capabilities
+
+↓
+
+Ready
+
+Motion should explain each stage.
+
+---
+
+# Card Motion
+
+Idle
+
+Static
+
+Hover (Future)
+
+Soft elevation
+
+Pressed
+
+Scale to 97%
+
+Expanded
+
+Smooth height transition
+
+Collapsed
+
+Reverse transition
+
+---
+
+# Hero Card Motion
+
+The Hero Card is Aura's signature element.
+
+It may
+
+Expand
+
+Collapse
+
+Morph
+
+Crossfade content
+
+Change contextual actions
+
+Never jump abruptly.
+
+---
+
+# Lists
+
+Rows should animate independently.
+
+Insertion
+
+Fade + Slide
+
+Removal
+
+Collapse
+
+Reordering
+
+Lift + Move
+
+---
+
+# Device State Motion
+
+Online
+
+Soft fade
+
+Offline
+
+Gentle desaturation
+
+Busy
+
+Breathing pulse
+
+Updating
+
+Circular progress
+
+Error
+
+Single subtle shake
+
+Never repeated shaking.
+
+---
+
+# Navigation Motion
+
+Tab switching
+
+Crossfade + Content Slide
+
+Room transition
+
+Horizontal push
+
+Settings
+
+Standard push
+
+Diagnostics
+
+Modal sheet
+
+---
+
+# Sheet Motion
+
+Present
+
+Spring upward
+
+Dismiss
+
+Drag or swipe
+
+Interactive dismissal
+
+Supported
+
+Background blur increases naturally.
+
+---
+
+# Banner Motion
+
+Appear
+
+Slide from top
+
+Disappear
+
+Fade upward
+
+Maximum display
+
+3 seconds
+
+---
+
+# Toast Motion
+
+Appear
+
+Fade + Scale
+
+Disappear
+
+Fade
+
+Never stack more than two toasts.
+
+---
+
+# Loading Motion
+
+Preferred
+
+Skeleton shimmer
+
+Animated placeholders
+
+Progress indicators
+
+Avoid
+
+Infinite spinners
+
+Blank screens
+
+---
+
+# Scene Timeline Animation
+
+Movie Night
+
+User taps
+
+↓
+
+Hero Card expands
+
+↓
+
+Scene Progress appears
+
+↓
+
+Lights animate
+
+↓
+
+TV turns on
+
+↓
+
+Apple TV wakes
+
+↓
+
+Progress reaches 100%
+
+↓
+
+Success state
+
+Total duration
+
+Depends on device responses.
+
+Never fake completion.
+
+---
+
+# Motion Hierarchy
+
+Priority
+
+1
+
+User input
+
+2
+
+Navigation
+
+3
+
+State changes
+
+4
+
+Environmental animation
+
+Background animations pause while higher-priority animations occur.
+
+---
+
+# Accessibility
+
+When Reduce Motion is enabled
+
+Replace movement with
+
+Opacity
+
+Scale
+
+Crossfade
+
+Never remove feedback entirely.
+
+---
+
+# Performance
+
+Target
+
+120 FPS on ProMotion devices
+
+Minimum
+
+60 FPS
+
+Dropped frames should be considered bugs.
+
+---
+
+# Developer Rules
+
+Never hardcode durations.
+
+Never hardcode curves.
+
+Use AuraAnimation tokens.
+
+Avoid nested animations.
+
+Avoid simultaneous competing animations.
+
+Always test on real hardware.
+
+---
+
+# Motion Checklist
+
+Does the animation explain something?
+
+Does it reinforce hierarchy?
+
+Can it be interrupted?
+
+Does it feel native?
+
+Would it still feel elegant after years of use?
+
+If any answer is "No"
+
+Remove or redesign the animation.
+
+---
+
+# Golden Rule
+
+The best animation is the one users remember as a feeling,
+
+not as an animation.
+
+---
+
+End of Document
