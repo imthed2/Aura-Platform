@@ -229,7 +229,7 @@ final class AppleTVPairingModelTests: XCTestCase {
 
 @MainActor
 final class AppleTVControlModelTests: XCTestCase {
-    func testVerifiedSessionConfirmsUpCommand() async {
+    func testVerifiedSessionConfirmsEveryRemoteCommand() async {
         let candidate = AppleTVDiscoveryCandidate(
             displayName: "Apple TV",
             endpoints: [AppleTVBonjourEndpoint(
@@ -248,10 +248,38 @@ final class AppleTVControlModelTests: XCTestCase {
         await model.connect()
         XCTAssertEqual(model.phase, .ready)
 
-        await model.sendUp()
-        XCTAssertEqual(model.phase, .confirmed)
-        let lastCommand = await controller.lastCommandValue()
-        XCTAssertEqual(lastCommand, .up)
+        for command in AppleTVRemoteCommand.allCases {
+            let wasConfirmed = await model.send(command)
+            XCTAssertTrue(wasConfirmed)
+            XCTAssertEqual(model.phase, .confirmed(command: command))
+        }
+        let commands = await controller.commandsValue()
+        XCTAssertEqual(commands, AppleTVRemoteCommand.allCases)
+    }
+
+    func testRemoteCommandsHaveUniqueAccessibilityMetadata() {
+        let commands = AppleTVRemoteCommand.allCases
+
+        XCTAssertEqual(Set(commands.map(\.accessibilityIdentifier)).count, commands.count)
+        XCTAssertTrue(commands.allSatisfy { !$0.accessibilityLabel.isEmpty })
+    }
+
+    func testRejectedCommandIsNotReportedAsConfirmed() async {
+        let controller = StubAppleTVController(sendError: .commandRejected)
+        let model = AppleTVControlModel(
+            discovery: StubAppleTVDiscovery(candidates: [.fixture]),
+            credentialStore: StubAppleTVCredentialStore(credentials: [.fixture]),
+            controller: controller
+        )
+
+        await model.connect()
+
+        let wasConfirmed = await model.send(.home)
+        XCTAssertFalse(wasConfirmed)
+        XCTAssertEqual(
+            model.phase,
+            .failed(message: "Apple TV rejected the navigation command.")
+        )
     }
 
     func testConnectFailsClosedWhenCredentialCannotBeMatchedUniquely() async {
@@ -315,21 +343,27 @@ private actor StubAppleTVCredentialStore: AppleTVCredentialStoring {
 }
 
 private actor StubAppleTVController: AppleTVControlling {
-    private var lastCommand: AppleTVRemoteCommand?
+    private var commands: [AppleTVRemoteCommand] = []
+    private let sendError: AppleTVControlError?
+
+    init(sendError: AppleTVControlError? = nil) {
+        self.sendError = sendError
+    }
 
     func connect(
         endpoint: AppleTVBonjourEndpoint,
         credentials: AppleTVPairingCredentials
     ) {}
 
-    func send(_ command: AppleTVRemoteCommand) -> AppleTVCommandOutcome {
-        lastCommand = command
+    func send(_ command: AppleTVRemoteCommand) throws -> AppleTVCommandOutcome {
+        if let sendError { throw sendError }
+        commands.append(command)
         return .confirmed
     }
 
     func disconnect() {}
 
-    func lastCommandValue() -> AppleTVRemoteCommand? { lastCommand }
+    func commandsValue() -> [AppleTVRemoteCommand] { commands }
 }
 
 private extension AppleTVPairingCredentials {
@@ -338,5 +372,16 @@ private extension AppleTVPairingCredentials {
         controllerPrivateKey: Data(repeating: 2, count: 32),
         accessoryIdentifier: Data("accessory".utf8),
         controllerIdentifier: Data("controller".utf8)
+    )
+}
+
+private extension AppleTVDiscoveryCandidate {
+    static let fixture = AppleTVDiscoveryCandidate(
+        displayName: "Apple TV",
+        endpoints: [AppleTVBonjourEndpoint(
+            serviceName: "Apple TV",
+            serviceType: .companion,
+            domain: "local."
+        )]
     )
 }

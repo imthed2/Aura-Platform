@@ -5,8 +5,8 @@ enum AppleTVControlPhase: Equatable {
     case idle
     case connecting
     case ready
-    case sending
-    case confirmed
+    case sending(command: AppleTVRemoteCommand)
+    case confirmed(command: AppleTVRemoteCommand)
     case failed(message: String)
 }
 
@@ -58,20 +58,24 @@ final class AppleTVControlModel {
         }
     }
 
-    func sendUp() async {
-        guard phase == .ready || phase == .confirmed else { return }
-        phase = .sending
+    @discardableResult
+    func send(_ command: AppleTVRemoteCommand) async -> Bool {
+        guard canSendCommand else { return false }
+        phase = .sending(command: command)
         do {
-            let outcome = try await controller.send(.up)
+            let outcome = try await controller.send(command)
             guard outcome == .confirmed else {
                 phase = .failed(message: "The Apple TV command outcome is unknown.")
-                return
+                return false
             }
-            phase = .confirmed
+            phase = .confirmed(command: command)
+            return true
         } catch is CancellationError {
             phase = .ready
+            return false
         } catch {
             phase = .failed(message: controlMessage(for: error))
+            return false
         }
     }
 
@@ -82,6 +86,15 @@ final class AppleTVControlModel {
 
     private var isFailure: Bool {
         if case .failed = phase { true } else { false }
+    }
+
+    private var canSendCommand: Bool {
+        switch phase {
+        case .ready, .confirmed:
+            true
+        default:
+            false
+        }
     }
 
     private func controlMessage(for error: Error) -> String {

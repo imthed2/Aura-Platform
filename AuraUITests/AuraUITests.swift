@@ -10,6 +10,9 @@ final class AuraUITests: XCTestCase {
         let app = XCUIApplication()
         app.launch()
 
+        let homeTab = app.tabBars.buttons["Home"]
+        XCTAssertTrue(homeTab.waitForExistence(timeout: 5))
+        homeTab.tap()
         XCTAssertTrue(app.staticTexts["aura.home.title"].waitForExistence(timeout: 5))
     }
 }

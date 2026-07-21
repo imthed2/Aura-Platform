@@ -70,7 +70,8 @@ Public open-source implementations may be used as protocol research sources. Any
 ## Verification evidence
 
 - Companion Pair Verify completed against the owner's Apple TV 4K (first generation) on 2026-07-21 using credentials restored from the simulator Keychain.
-- An authenticated Companion navigation command was confirmed only after matching encrypted responses for both its button-down and button-up messages.
+- The Up, Down, Left, Right, Select, Back, Home and Play/Pause controls completed against real hardware on 2026-07-21. Each was confirmed only after matching encrypted responses for both its button-down and button-up messages.
+- These results verify Companion protocol acknowledgement. The corresponding visual effects in the tvOS interface were not independently observed by the implementation agent.
 - Aura creates a fresh authenticated session immediately before a non-idempotent command and does not automatically retry after dispatch, avoiding duplicate input when acknowledgement is uncertain.
 - The exact tvOS version and recovery behavior after a tvOS restart remain unverified.
 
