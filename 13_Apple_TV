@@ -1,7 +1,7 @@
 # Aura
 ## Apple TV Integration
-Version: 1.2
-Status: Product-required; implementation blocked pending compliant control route
+Version: 1.3
+Status: Experimental personal implementation approved by ADR-009
 Owner: Daniel Hagen
 Project: Aura Platform
 Document ID: AURA-13
@@ -28,19 +28,19 @@ Instead, Aura complements the Apple TV experience.
 
 # Current Public API Gate
 
-`ADR/ADR-007-apple-tv-public-capability-scope.md` records the public capability assessment and the product decision to retain direct Apple TV control in Version 1.
+`ADR/ADR-007-apple-tv-public-capability-scope.md` records the public capability assessment. `ADR/ADR-009-personal-apple-tv-protocol-experiment.md` authorizes a narrowly scoped undocumented LAN protocol implementation for the owner's private TestFlight or direct-Xcode build.
 
 The remainder of this document records the desired product experience. It is not evidence that Apple provides a public API for those capabilities.
 
-The current assessment found no public iPhone API for a third-party app to pair with and directly control Apple TV system navigation, power, playback, Now Playing state or applications. Aura must not implement those capabilities through private or reverse-engineered protocols.
+The current assessment found no public iPhone API for a third-party app to pair with and directly control Apple TV system navigation, power, playback, Now Playing state or applications.
 
-The proposal to omit direct Apple TV control was rejected. Apple TV remains a Version 1 requirement, but implementation is blocked until a public, App Store-compatible route is verified or a separate ADR explicitly changes Aura's distribution and protocol-risk constraints.
+The proposal to omit direct Apple TV control was rejected. Apple TV remains a Version 1 requirement. ADR-009 explicitly accepts an experimental reverse-engineered network protocol for single-owner distribution while continuing to prohibit Apple private framework calls.
 
-While blocked:
+During the experiment:
 
-• No production Apple TV plugin may be implemented
-• No Apple TV pairing credential may be created or stored
-• No direct Apple TV command may execute in a production Aura Scene
+• Protocol code must remain isolated inside the Apple TV integration boundary
+• Pairing credentials must be stored only in Keychain
+• Direct commands may ship only after real-hardware verification
 • Unsupported controls must remain absent from production UI
 • Mock Apple TV data is preview-only and does not prove capability support
 
@@ -486,7 +486,7 @@ Simulator Testing
 
 # Acceptance Criteria
 
-These criteria remain the required product outcome, but they cannot pass until a compliant implementation route is verified and approved. Private or reverse-engineered behavior cannot satisfy them under the current repository rules.
+These criteria remain the required product outcome. Under ADR-009, experimental network-protocol behavior may satisfy them only after real-hardware verification; mock or simulator behavior is insufficient.
 
 Apple TV is discovered automatically.
 

@@ -88,7 +88,7 @@ No endpoint should be implemented from assumptions based on another Philips mode
 
 The Apple TV integration document currently describes desired capabilities, not a guaranteed public Apple API surface.
 
-`ADR/ADR-007-apple-tv-public-capability-scope.md` records the first-party capability assessment. The product owner rejected its proposal to omit direct Apple TV control: the capability remains required for Version 1. Because the reviewed public APIs do not provide third-party system-level discovery, pairing, navigation, power, arbitrary playback state or application detection, the Apple TV module is a release blocker pending a compliant implementation route.
+`ADR/ADR-007-apple-tv-public-capability-scope.md` records the first-party capability assessment. The product owner rejected its proposal to omit direct Apple TV control: the capability remains required for Version 1. `ADR/ADR-009-personal-apple-tv-protocol-experiment.md` now accepts an isolated undocumented LAN protocol implementation for single-owner TestFlight or direct-Xcode distribution, while Apple private framework calls remain prohibited.
 
 Before implementation, divide features into:
 

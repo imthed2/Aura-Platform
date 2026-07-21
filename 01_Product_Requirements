@@ -278,7 +278,7 @@ Now Playing
 
 Scope Gate
 
-Direct Apple TV control remains a Version 1 product requirement. `ADR/ADR-007-apple-tv-public-capability-scope.md` records that the proposal to omit it was rejected. Implementation is blocked until a public, App Store-compatible control route is verified or a separate ADR explicitly changes Aura's distribution and protocol-risk constraints.
+Direct Apple TV control remains a Version 1 product requirement. `ADR/ADR-007-apple-tv-public-capability-scope.md` records that the proposal to omit it was rejected. `ADR/ADR-009-personal-apple-tv-protocol-experiment.md` authorizes an experimental undocumented LAN implementation for the owner's private TestFlight or direct-Xcode build.
 
 Required
 

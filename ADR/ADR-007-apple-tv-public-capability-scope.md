@@ -1,6 +1,6 @@
 # ADR-007: Apple TV public capability scope
 
-- Status: Rejected — product requires direct Apple TV control
+- Status: Superseded by ADR-009 for personal experimental distribution
 - Date: 2026-07-21
 
 ## Context
@@ -105,7 +105,7 @@ Until a compliant route is verified:
 
 ## Replacement decision gates
 
-This rejected ADR may be superseded only after one of these routes is documented and approved:
+ADR-009 accepts a narrowly scoped personal-distribution experiment using undocumented LAN protocols. For any future public distribution, this assessment may be superseded only after one of these routes is documented and approved:
 
 - Apple publishes a public iPhone API that supports the required direct-control capabilities
 - Apple grants Aura a documented entitlement or partner capability suitable for consumer App Store distribution
