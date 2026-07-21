@@ -2,13 +2,13 @@
 
 > **Control Less. Experience More.**
 
-Aura is a local-first, experience-driven smart-home platform for iPhone. This repository contains the product, design, integration, architecture and implementation specifications that guide development.
+Aura is a local-first, experience-driven smart-home platform for iPhone. This repository contains the product, design, integration, architecture, implementation and planning specifications that guide development.
 
 ## Documentation status
 
-Documents 00–21 now exist in the repository. Document 22 — Roadmap is the remaining planned platform document.
+The complete documentation set from 00 through 22 now exists in the repository.
 
-> Note: The documentation files were originally created without a `.md` filename extension. The links below point to their real repository paths. New numbered documentation should use the same convention until all files are migrated together in one coordinated change.
+> Note: The numbered documentation files were originally created without a `.md` filename extension. The links below point to their real repository paths. Keep the current convention until all numbered files are migrated together in one coordinated change.
 
 ## Product and design
 
@@ -41,11 +41,28 @@ Documents 00–21 now exist in the repository. Document 22 — Roadmap is the re
 - [19 — Diagnostics](./19_Diagnostics)
 - [20 — App Architecture](./20_App_Architecture)
 - [21 — Codex Rules](./21_Codex_Rules)
+- [22 — Roadmap](./22_Roadmap)
 
 ## Review and planning
 
 - [Technical Review](./TECHNICAL_REVIEW.md)
-- 22 — Roadmap — planned
+
+## Current project stage
+
+Documentation foundation: complete.
+
+Implementation has not yet begun in the production repository. The next milestone is the bounded Phase 1 foundation described in `22_Roadmap`:
+
+- Create the Xcode project and test targets
+- Add root `AGENTS.md`
+- Implement the application bootstrap and dependency environment
+- Implement design tokens and base components
+- Create the five-tab application shell
+- Add vendor-neutral domain models and mock data
+- Deliver a mock Home Dashboard
+- Establish build and test automation
+
+Real-device integrations should begin only after the foundation and feasibility gates in the roadmap are satisfied.
 
 ## Core principles
 
@@ -68,7 +85,23 @@ Aura is designed around a small set of non-negotiable principles:
 
 `21_Codex_Rules` defines how Codex and other AI-assisted development tools must inspect, implement, test and report changes in the repository.
 
+`22_Roadmap` defines milestone order, release gates and the first bounded implementation task.
+
 Feature-specific documents define behavior within those shared architectural boundaries.
+
+## Recommended development workflow
+
+Implementation work should normally use a feature branch and pull request rather than direct commits to `main`.
+
+Before changing code, Codex should:
+
+1. Read `21_Codex_Rules`.
+2. Read `20_App_Architecture`.
+3. Read the relevant feature documents.
+4. Inspect the current repository state.
+5. Report conflicts or unverified platform assumptions.
+6. Create a small implementation plan.
+7. Build and test before presenting the change as complete.
 
 ## Documentation rules
 
