@@ -1,0 +1,608 @@
+# Aura
+## Information Architecture
+Version: 1.0
+Status: Draft
+Owner: Daniel Hagen
+Project: Aura Platform
+Document ID: AURA-05
+
+Dependencies
+
+• AURA-00 Product Vision
+• AURA-01 Product Requirements
+• AURA-02 Brand Guidelines
+• AURA-03 Aura Design Language
+• AURA-04 Design Tokens
+
+---
+
+# Purpose
+
+This document defines how information is structured, organized and accessed throughout the Aura Platform.
+
+A good information architecture reduces cognitive load.
+
+Users should always know:
+
+• Where they are
+• What they can do
+• Where to go next
+
+Without thinking.
+
+---
+
+# Navigation Philosophy
+
+Aura is built around experiences.
+
+Users should rarely browse devices.
+
+Instead they interact with rooms, scenes and activities.
+
+The hierarchy is intentionally shallow.
+
+Maximum navigation depth is three levels.
+
+---
+
+# Application Structure
+
+Aura
+
+├── Home
+├── Rooms
+├── Scenes
+├── Automations
+├── Devices
+├── Diagnostics
+└── Settings
+
+Everything begins from Home.
+
+---
+
+# Primary Navigation
+
+The bottom navigation consists of five tabs.
+
+1. Home
+2. Rooms
+3. Scenes
+4. Devices
+5. Settings
+
+Diagnostics is accessed from Settings or through contextual error messages.
+
+---
+
+# Home
+
+Purpose
+
+Provide an immediate overview of the home.
+
+Contains
+
+• Suggested Actions
+• Current Activity
+• Favorite Devices
+• Room Overview
+• Recent Activity
+• Active Scenes
+• Alerts
+• Quick Controls
+
+The Home screen should answer:
+
+"What should I do right now?"
+
+---
+
+# Rooms
+
+Purpose
+
+Group everything by physical location.
+
+Example
+
+Living Room
+
+Contains
+
+Television
+
+Apple TV
+
+Lights
+
+Speakers
+
+Sensors
+
+Cameras
+
+Scenes
+
+Automation shortcuts
+
+Every room acts as its own dashboard.
+
+---
+
+# Room Detail
+
+Every room contains:
+
+Hero Header
+
+↓
+
+Current Activity
+
+↓
+
+Device Cards
+
+↓
+
+Lighting
+
+↓
+
+Media
+
+↓
+
+Scenes
+
+↓
+
+Sensors
+
+↓
+
+Room Settings
+
+---
+
+# Scenes
+
+Purpose
+
+Display every available experience.
+
+Examples
+
+Movie Night
+
+Gaming
+
+Relax
+
+Reading
+
+Away
+
+Sleep
+
+Good Morning
+
+Party
+
+Scenes can be
+
+Suggested
+
+Pinned
+
+Scheduled
+
+Manual
+
+Automatic
+
+---
+
+# Scene Detail
+
+Contains
+
+Description
+
+Affected Devices
+
+Preview
+
+Conditions
+
+Actions
+
+Edit
+
+Run
+
+History
+
+---
+
+# Devices
+
+Purpose
+
+Show every connected device.
+
+Grouped by
+
+Category
+
+Manufacturer
+
+Room
+
+Favorites
+
+Status
+
+---
+
+# Device Detail
+
+Every device page contains
+
+Device Status
+
+Controls
+
+Connection
+
+Battery
+
+Firmware
+
+Network
+
+Capabilities
+
+Diagnostics
+
+Settings
+
+History
+
+---
+
+# Diagnostics
+
+Purpose
+
+Help users understand problems.
+
+Never expose technical details first.
+
+Instead answer
+
+What happened?
+
+Can I fix it?
+
+What should I do?
+
+Advanced diagnostics are hidden behind an "Advanced" section.
+
+---
+
+# Settings
+
+General
+
+Appearance
+
+Home
+
+Devices
+
+Automation
+
+Privacy
+
+Accessibility
+
+Notifications
+
+Developer
+
+About
+
+---
+
+# Search
+
+Global Search is available from every screen.
+
+Search includes
+
+Rooms
+
+Devices
+
+Scenes
+
+Automations
+
+Settings
+
+Diagnostics
+
+Results appear instantly.
+
+---
+
+# Information Priority
+
+Level 1
+
+Current activity
+
+Examples
+
+Watching TV
+
+Gaming
+
+Movie Night
+
+---
+
+Level 2
+
+Controls
+
+Examples
+
+Power
+
+Volume
+
+Lights
+
+Scenes
+
+---
+
+Level 3
+
+Status
+
+Examples
+
+Online
+
+Offline
+
+Battery
+
+Signal
+
+---
+
+Level 4
+
+Technical Information
+
+Firmware
+
+API Version
+
+IP Address
+
+Logs
+
+Hidden unless requested.
+
+---
+
+# Content Hierarchy
+
+Every screen follows
+
+Primary Content
+
+↓
+
+Primary Action
+
+↓
+
+Secondary Information
+
+↓
+
+Contextual Actions
+
+↓
+
+Technical Details
+
+This order must never change.
+
+---
+
+# Relationships
+
+Rooms contain Devices.
+
+Devices participate in Scenes.
+
+Scenes trigger Automations.
+
+Automations control Devices.
+
+Diagnostics monitors everything.
+
+---
+
+# Data Flow
+
+User
+
+↓
+
+Intent
+
+↓
+
+Aura Core
+
+↓
+
+Relevant Module
+
+↓
+
+Connected Device
+
+↓
+
+Response
+
+↓
+
+Updated Interface
+
+The user never interacts directly with hardware APIs.
+
+---
+
+# Context Awareness
+
+Aura continuously evaluates
+
+Current Room
+
+Current Time
+
+Current Activity
+
+Connected Devices
+
+Network Status
+
+Recent Usage
+
+Suggestions are generated from this context.
+
+---
+
+# Empty States
+
+Every empty screen should guide the user.
+
+Example
+
+"No scenes yet.
+
+Create your first scene to automate multiple devices with one tap."
+
+Never display blank pages.
+
+---
+
+# Error Hierarchy
+
+Minor Issues
+
+Small inline messages.
+
+Medium Issues
+
+Banner notifications.
+
+Critical Issues
+
+Dedicated error screen with recovery steps.
+
+---
+
+# Notifications
+
+Notifications should never interrupt ongoing interactions unless absolutely necessary.
+
+Priority
+
+Critical
+
+Warning
+
+Informational
+
+Suggestions
+
+Suggestions should always be dismissible.
+
+---
+
+# Future Expansion
+
+The information architecture must support future modules without restructuring.
+
+Examples
+
+Energy Dashboard
+
+Solar Panels
+
+EV Charging
+
+Weather
+
+Presence Detection
+
+Robot Vacuum
+
+Security
+
+Air Quality
+
+These modules should integrate naturally into existing navigation.
+
+---
+
+# Navigation Principles
+
+Users should never need to remember where something is.
+
+Aura should make the destination feel obvious.
+
+If users hesitate, the architecture should be reconsidered.
+
+---
+
+# Design Validation Checklist
+
+Every screen must answer:
+
+Where am I?
+
+What can I do?
+
+What is most important?
+
+Can I go back easily?
+
+Can I complete my task within two taps?
+
+If any answer is "No", the navigation must be redesigned.
+
+---
+
+# IA Motto
+
+Information should be discovered.
+
+Never searched for.
+
+---
+
+End of Document
