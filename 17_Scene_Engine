@@ -1,0 +1,1271 @@
+# Aura
+## Scene Engine
+
+Version: 1.0  
+Status: Draft  
+Owner: Daniel Hagen  
+Project: Aura Platform  
+Document ID: AURA-17
+
+## Dependencies
+
+- AURA-01 Product Requirements
+- AURA-05 Information Architecture
+- AURA-06 User Flows
+- AURA-08 Component Library
+- AURA-09 Interaction Guidelines
+- AURA-10 Motion System
+- AURA-11 Haptics
+- AURA-12 Philips TV Integration
+- AURA-13 Apple TV Integration
+- AURA-14 HomeKit Integration
+- AURA-15 Hue Bridge Integration
+- AURA-16 Device Discovery
+- AURA-18 Automation Engine
+- AURA-19 Diagnostics
+- AURA-20 App Architecture
+
+---
+
+# 1. Purpose
+
+The Aura Scene Engine coordinates multiple device actions as one coherent user experience.
+
+A scene is not merely a collection of commands. It is a named experience with intent, sequencing, timing, feedback, recovery and a clear completion state.
+
+Examples include:
+
+- Movie Night
+- Gaming
+- Good Night
+- Morning
+- Leaving Home
+- Focus
+- Relax
+
+The Scene Engine shall hide vendor differences and execute actions across Philips TV, Apple TV, Hue, HomeKit and future plugins through Aura’s unified capability model.
+
+---
+
+# 2. Product Goals
+
+The Scene Engine shall:
+
+- Execute cross-device experiences from one user action.
+- Support ordered, parallel and conditional steps.
+- Provide clear progress and completion feedback.
+- Recover gracefully from transient failures.
+- Report partial success honestly.
+- Avoid repeated commands when their result is uncertain.
+- Preserve user control during execution.
+- Remain local-first wherever integrations allow it.
+- Provide deterministic behavior suitable for automation.
+- Support preview, validation and diagnostics.
+
+The user should feel that the room changes state as one coordinated system.
+
+---
+
+# 3. Non-Goals
+
+Version 1 shall not:
+
+- Replace vendor-specific advanced scene editors.
+- Guarantee atomic transactions across unrelated devices.
+- Pretend that every device supports rollback.
+- Hide meaningful failures behind a false success state.
+- Execute arbitrary user scripts.
+- Allow unsafe infinite loops or recursive scene chains.
+- Depend on cloud execution for normal local scenes.
+- Require every action to complete before independent actions begin.
+
+---
+
+# 4. Core Concepts
+
+## 4.1 Scene
+
+A scene is a persisted definition containing metadata, actions, execution rules and presentation information.
+
+```swift
+struct AuraScene: Identifiable, Sendable, Codable, Equatable {
+    let id: AuraSceneID
+    var name: String
+    var icon: AuraSceneIcon
+    var roomIDs: Set<AuraRoomID>
+    var actions: [AuraSceneAction]
+    var executionPolicy: AuraSceneExecutionPolicy
+    var feedbackPolicy: AuraSceneFeedbackPolicy
+    var isFavorite: Bool
+    var createdAt: Date
+    var updatedAt: Date
+    var revision: Int
+}
+```
+
+## 4.2 Action
+
+An action is one requested change to one logical target or one scene-control operation.
+
+Examples:
+
+- Turn on Philips TV.
+- Select HDMI 1.
+- Wake Apple TV.
+- Activate Hue scene Cinema.
+- Set hallway lights to 15 percent.
+- Execute a HomeKit scene.
+- Wait 500 milliseconds.
+- Verify TV power state.
+
+## 4.3 Execution
+
+An execution is one runtime instance of a scene.
+
+```swift
+struct AuraSceneExecution: Identifiable, Sendable {
+    let id: AuraSceneExecutionID
+    let sceneID: AuraSceneID
+    let sceneRevision: Int
+    let startedAt: Date
+    let source: AuraExecutionSource
+    var state: AuraSceneExecutionState
+    var actionResults: [AuraSceneActionResult]
+}
+```
+
+## 4.4 Plan
+
+A plan is the validated runtime graph produced from a scene definition before commands are sent.
+
+The plan resolves:
+
+- Logical devices to active control routes.
+- Capabilities to plugin commands.
+- Dependencies between actions.
+- Parallel groups.
+- Timeouts.
+- Retry policy.
+- Preconditions.
+- Unsupported actions.
+
+---
+
+# 5. High-Level Architecture
+
+```mermaid
+flowchart TD
+    UI[Aura UI] --> API[Scene Engine API]
+    AUTO[Automation Engine] --> API
+    API --> VALIDATE[Scene Validator]
+    VALIDATE --> PLANNER[Execution Planner]
+    PLANNER --> EXECUTOR[Scene Executor]
+    EXECUTOR --> COMMANDS[Unified Command Bus]
+    COMMANDS --> REGISTRY[Device Registry]
+    REGISTRY --> PHILIPS[Philips TV Plugin]
+    REGISTRY --> APPLETV[Apple TV Plugin]
+    REGISTRY --> HUE[Hue Plugin]
+    REGISTRY --> HOMEKIT[HomeKit Plugin]
+    EXECUTOR --> STORE[Execution Store]
+    EXECUTOR --> FEEDBACK[Feedback Coordinator]
+    EXECUTOR --> DIAG[Diagnostics]
+```
+
+The UI and Automation Engine must not communicate directly with device plugins during scene execution.
+
+---
+
+# 6. Responsibilities
+
+The Scene Engine owns:
+
+- Scene persistence.
+- Scene validation.
+- Plan creation.
+- Dependency resolution.
+- Parallel and sequential execution.
+- Timeout handling.
+- Retry classification.
+- Cancellation.
+- Progress reporting.
+- Partial-success handling.
+- Execution history.
+- Feedback coordination.
+- Diagnostics integration.
+
+The Scene Engine does not own:
+
+- Device discovery.
+- Vendor authentication.
+- Raw network communication.
+- Global navigation.
+- Device-specific UI.
+- Automation trigger evaluation.
+
+---
+
+# 7. Scene Action Model
+
+```swift
+enum AuraSceneAction: Identifiable, Sendable, Codable, Equatable {
+    case command(AuraCommandAction)
+    case externalScene(AuraExternalSceneAction)
+    case delay(AuraDelayAction)
+    case condition(AuraConditionAction)
+    case verify(AuraVerificationAction)
+    case group(AuraActionGroup)
+}
+```
+
+## 7.1 Command Action
+
+```swift
+struct AuraCommandAction: Identifiable, Sendable, Codable, Equatable {
+    let id: AuraSceneActionID
+    let target: AuraTargetReference
+    let command: AuraCommandDescriptor
+    let precondition: AuraActionCondition?
+    let timeout: Duration
+    let retryPolicy: AuraRetryPolicy
+    let failurePolicy: AuraActionFailurePolicy
+}
+```
+
+## 7.2 External Scene Action
+
+Used for vendor scenes such as Hue or HomeKit scenes.
+
+```swift
+struct AuraExternalSceneAction: Identifiable, Sendable, Codable, Equatable {
+    let id: AuraSceneActionID
+    let source: AuraDeviceSource
+    let externalSceneID: String
+    let displayName: String
+    let timeout: Duration
+    let failurePolicy: AuraActionFailurePolicy
+}
+```
+
+## 7.3 Delay Action
+
+Delays must be explicit and uncommon.
+
+```swift
+struct AuraDelayAction: Identifiable, Sendable, Codable, Equatable {
+    let id: AuraSceneActionID
+    let duration: Duration
+}
+```
+
+Delays must not be used to compensate for an unreliable state model when proper verification is available.
+
+## 7.4 Verification Action
+
+Verification confirms state after a command where the plugin supports reliable reads.
+
+Examples:
+
+- TV power is on.
+- Current input is HDMI 1.
+- Hue room brightness is below 20 percent.
+
+---
+
+# 8. Action Groups
+
+Scenes shall support explicit action groups.
+
+```swift
+struct AuraActionGroup: Identifiable, Sendable, Codable, Equatable {
+    let id: AuraSceneActionID
+    let mode: AuraActionGroupMode
+    let actions: [AuraSceneAction]
+    let failurePolicy: AuraActionFailurePolicy
+}
+
+enum AuraActionGroupMode: String, Sendable, Codable {
+    case sequential
+    case parallel
+}
+```
+
+## 8.1 Sequential Group
+
+Actions execute in order.
+
+Use when:
+
+- A later action depends on an earlier state.
+- TV input selection requires the TV to be awake.
+- Verification must happen after a command.
+
+## 8.2 Parallel Group
+
+Independent actions execute concurrently.
+
+Use when:
+
+- Turning on lights and waking Apple TV can happen independently.
+- Multiple rooms can change at the same time.
+- Parallel execution reduces perceived latency without introducing risk.
+
+---
+
+# 9. Example Scene Definition
+
+```text
+Movie Night
+
+Sequential
+├── Parallel
+│   ├── Wake Apple TV
+│   ├── Turn on Philips TV
+│   └── Activate Hue scene Cinema
+├── Verify Philips TV is on
+├── Select HDMI input for Apple TV
+├── Set hallway lights to 15%
+└── Confirm final state
+```
+
+Equivalent conceptual JSON:
+
+```json
+{
+  "name": "Movie Night",
+  "executionPolicy": "balanced",
+  "actions": [
+    {
+      "type": "group",
+      "mode": "parallel",
+      "actions": [
+        { "type": "command", "target": "apple-tv-living-room", "command": "wake" },
+        { "type": "command", "target": "philips-tv-living-room", "command": "powerOn" },
+        { "type": "externalScene", "source": "hue", "scene": "cinema" }
+      ]
+    },
+    { "type": "verify", "target": "philips-tv-living-room", "condition": "powerOn" },
+    { "type": "command", "target": "philips-tv-living-room", "command": "selectInput:hdmi1" },
+    { "type": "command", "target": "hallway", "command": "brightness:0.15" }
+  ]
+}
+```
+
+---
+
+# 10. Validation
+
+Every scene must be validated before saving and again before execution.
+
+Validation checks include:
+
+- Scene has a non-empty name.
+- Scene contains at least one action.
+- Every target can be resolved or is intentionally optional.
+- Target supports the requested capability.
+- No recursive scene chain exists.
+- No cyclic dependency exists.
+- Timeouts are within allowed limits.
+- Delays are within allowed limits.
+- Parallel groups do not contain unsafe conflicts.
+- Commands contain valid values.
+- Required permissions are available.
+- External scenes still exist.
+
+```swift
+struct AuraSceneValidationResult: Sendable {
+    let isValid: Bool
+    let errors: [AuraSceneValidationIssue]
+    let warnings: [AuraSceneValidationIssue]
+}
+```
+
+Warnings do not always block execution.
+
+Examples:
+
+- A device is currently offline.
+- An action is optional.
+- An external scene has not been refreshed recently.
+
+---
+
+# 11. Execution States
+
+```swift
+enum AuraSceneExecutionState: Sendable, Equatable {
+    case preparing
+    case validating
+    case executing(progress: Double)
+    case waitingForDevice
+    case cancelling
+    case succeeded
+    case partiallySucceeded
+    case failed(AuraSceneExecutionError)
+    case cancelled
+}
+```
+
+State changes must be monotonic except for internal retries.
+
+A completed execution must never return to an active state.
+
+---
+
+# 12. Execution Flow
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant UI
+    participant Engine
+    participant Planner
+    participant Bus as Command Bus
+    participant Plugins
+
+    User->>UI: Activate scene
+    UI->>Engine: execute(sceneID)
+    Engine->>Planner: validate and build plan
+    Planner-->>Engine: execution plan
+    Engine-->>UI: preparing
+    Engine->>Bus: dispatch ready actions
+    Bus->>Plugins: execute commands
+    Plugins-->>Bus: action results
+    Bus-->>Engine: normalized results
+    Engine-->>UI: progress update
+    Engine->>Engine: evaluate dependencies and failures
+    Engine-->>UI: final result
+```
+
+---
+
+# 13. Execution Policies
+
+```swift
+enum AuraSceneExecutionPolicy: String, Sendable, Codable {
+    case strict
+    case balanced
+    case bestEffort
+}
+```
+
+## 13.1 Strict
+
+- Stop when a required action fails.
+- Do not continue dependent actions.
+- Report failure clearly.
+
+Use for scenes where incorrect partial state is undesirable.
+
+## 13.2 Balanced
+
+- Continue independent actions.
+- Stop only affected dependency branches.
+- Report partial success.
+
+This should be the default.
+
+## 13.3 Best Effort
+
+- Attempt all safe actions.
+- Record failures.
+- Complete as partially successful unless no meaningful action succeeded.
+
+Use for broad convenience scenes such as Good Night.
+
+---
+
+# 14. Failure Policies
+
+```swift
+enum AuraActionFailurePolicy: String, Sendable, Codable {
+    case required
+    case optional
+    case continueGroup
+    case stopGroup
+    case stopScene
+}
+```
+
+Required actions influence the final scene state.
+
+Optional actions may fail without changing a successful result when the scene’s intended experience is still achieved.
+
+Optional must not be used to hide important failures.
+
+---
+
+# 15. Retry Strategy
+
+Retries must be deliberate, bounded and based on command semantics.
+
+```swift
+struct AuraRetryPolicy: Sendable, Codable, Equatable {
+    let maximumAttempts: Int
+    let initialDelay: Duration
+    let backoffMultiplier: Double
+    let retryableErrors: Set<AuraRetryableErrorCategory>
+}
+```
+
+Rules:
+
+- Default maximum attempts: 1 for commands, 2 for safe reads.
+- Never retry indefinitely.
+- Do not retry authentication failures automatically.
+- Do not retry unsupported commands.
+- Do not blindly retry non-idempotent actions.
+- Retry only when the plugin classifies the operation as safe.
+- Cancel scheduled retries when the execution is cancelled.
+
+---
+
+# 16. Idempotency
+
+Every executable command must declare its idempotency characteristics.
+
+```swift
+enum AuraCommandIdempotency: Sendable {
+    case idempotent
+    case conditionallyIdempotent
+    case nonIdempotent
+}
+```
+
+Examples:
+
+- `setBrightness(0.2)` is idempotent.
+- `powerOn` is usually idempotent.
+- `togglePower` is non-idempotent.
+- `nextChannel` is non-idempotent.
+- `incrementVolume` is non-idempotent.
+
+Scenes should prefer absolute commands over toggles and increments.
+
+Use `setVolume(0.3)` rather than repeated volume-down commands when supported.
+
+---
+
+# 17. Preconditions
+
+Actions may define preconditions.
+
+Examples:
+
+- Execute only if the device is reachable.
+- Select HDMI only after TV power is confirmed.
+- Dim lights only if someone is home.
+- Skip a redundant command when state is already correct.
+
+Preconditions may be:
+
+- Required.
+- Advisory.
+- Cached-state based.
+- Live-state verified.
+
+Live verification should be used only when its latency is justified.
+
+---
+
+# 18. State Verification
+
+The Scene Engine should verify state when:
+
+- A later action depends on it.
+- The command result is ambiguous.
+- The integration does not provide reliable acknowledgment.
+- The scene is configured as strict.
+
+Verification should not be applied to every action by default because excessive reads increase latency and network load.
+
+Verification results shall be:
+
+```swift
+enum AuraVerificationResult: Sendable {
+    case satisfied
+    case notSatisfied
+    case unavailable
+    case timedOut
+}
+```
+
+---
+
+# 19. Command Routing
+
+The Scene Engine requests logical capabilities through the Unified Command Bus.
+
+```swift
+protocol AuraCommandBus: Sendable {
+    func execute(
+        _ command: AuraResolvedCommand,
+        context: AuraExecutionContext
+    ) async -> AuraCommandResult
+}
+```
+
+The Device Registry selects a control route.
+
+Example:
+
+A Hue light may be reachable through both:
+
+- Direct Hue Bridge integration.
+- HomeKit.
+
+Aura should choose the preferred route based on:
+
+- User preference.
+- Route health.
+- Feature completeness.
+- Expected latency.
+- Current authorization.
+- Scene consistency.
+
+The selected route must be recorded in diagnostics.
+
+---
+
+# 20. Conflict Detection
+
+The planner must identify conflicting actions.
+
+Examples:
+
+- Turn the same light on and off in one parallel group.
+- Set two different TV inputs simultaneously.
+- Start and stop the same dynamic scene in parallel.
+- Set different brightness values on overlapping Hue room and individual-light targets.
+
+Conflict resolution rules:
+
+1. Prefer explicit sequential order when defined.
+2. Prefer the most specific target when intentionally overriding a group.
+3. Reject ambiguous parallel conflicts.
+4. Surface a validation error rather than guessing.
+
+---
+
+# 21. Timeouts
+
+Timeouts must be applied per action and to the scene as a whole.
+
+Recommended defaults:
+
+- Local light command: 2 seconds.
+- Local media command: 3 seconds.
+- TV wake or power verification: 8 seconds.
+- External scene activation: 5 seconds.
+- Full scene maximum: 30 seconds unless explicitly justified.
+
+Timeouts must not block the main actor.
+
+A timeout does not prove the command failed. The result must represent uncertainty when appropriate.
+
+---
+
+# 22. Cancellation
+
+Users must be able to cancel a long-running scene.
+
+Cancellation rules:
+
+- Stop dispatching actions not yet started.
+- Cancel in-flight tasks where supported.
+- Do not assume already-sent commands can be undone.
+- Preserve completed action results.
+- Mark the execution as cancelled.
+- Explain that some changes may already have occurred.
+
+Cancellation is not rollback.
+
+---
+
+# 23. Rollback
+
+Automatic rollback is optional and must be conservative.
+
+Rollback should only occur when:
+
+- The previous state is known.
+- The target supports reliable absolute commands.
+- Reverting is safe.
+- The scene explicitly enables rollback.
+
+Rollback should not be attempted for:
+
+- Toggle commands.
+- Incremental remote actions.
+- Media navigation.
+- Actions with uncertain completion.
+- External scenes without known prior state.
+
+Version 1 should prioritize honest partial-success reporting over complex rollback.
+
+---
+
+# 24. Partial Success
+
+A scene is partially successful when meaningful actions completed but one or more required or visible actions failed.
+
+```swift
+struct AuraSceneExecutionSummary: Sendable {
+    let executionID: AuraSceneExecutionID
+    let state: AuraSceneExecutionState
+    let succeeded: Int
+    let failed: Int
+    let skipped: Int
+    let uncertain: Int
+    let duration: Duration
+    let failures: [AuraSceneFailureSummary]
+}
+```
+
+User-facing example:
+
+> Movie Night started, but the TV input could not be changed.
+
+The user should receive one concise summary, not a flood of device errors.
+
+---
+
+# 25. Progress Model
+
+Progress should represent completed weighted work rather than only action count.
+
+Long operations such as TV wake verification may have greater weight than a local light command.
+
+```swift
+struct AuraSceneProgress: Sendable, Equatable {
+    let completedWeight: Double
+    let totalWeight: Double
+    let currentLabel: String?
+
+    var fraction: Double {
+        guard totalWeight > 0 else { return 0 }
+        return min(max(completedWeight / totalWeight, 0), 1)
+    }
+}
+```
+
+Progress should remain smooth but truthful.
+
+---
+
+# 26. User Feedback
+
+## 26.1 Start
+
+On activation:
+
+- Immediate visual pressed state.
+- Light haptic.
+- Scene card enters executing state.
+- Progress appears only when execution is not near-instant.
+
+## 26.2 Success
+
+On success:
+
+- Scene card settles into active state where meaningful.
+- Success haptic.
+- Brief confirmation.
+- Avoid large modal interruptions.
+
+## 26.3 Partial Success
+
+- Warning haptic only when appropriate.
+- Concise explanation.
+- Offer details or diagnostics.
+
+## 26.4 Failure
+
+- Error feedback must be calm and actionable.
+- Preserve a Retry action.
+- Do not expose raw plugin errors.
+
+---
+
+# 27. Scene Active State
+
+Some scenes can be inferred as active from current device state.
+
+Examples:
+
+- Movie Night may be active when TV is on, Apple TV input is selected and Cinema lights are active.
+- Good Night may be active when all configured lights are off and media devices are sleeping.
+
+Scene active state is an interpretation, not a guarantee.
+
+```swift
+enum AuraSceneActivationState: Sendable, Equatable {
+    case inactive
+    case activating
+    case active(confidence: Double)
+    case partiallyActive(confidence: Double)
+    case unknown
+}
+```
+
+Confidence must not be shown as a raw number in normal UI.
+
+---
+
+# 28. Scene Editing
+
+The scene editor shall allow users to:
+
+- Name the scene.
+- Choose an icon.
+- Assign rooms.
+- Add actions.
+- Reorder actions.
+- Create parallel groups.
+- Mark actions optional where appropriate.
+- Set simple timing.
+- Preview the execution plan.
+- Test the scene.
+- Review validation warnings.
+
+The editor should use experience language rather than protocol language.
+
+Example:
+
+Use `Turn on Living Room TV`, not `Execute power capability on PhilipsTVPlugin`.
+
+---
+
+# 29. Templates
+
+Aura may provide scene templates.
+
+Examples:
+
+- Movie Night
+- Gaming
+- Good Night
+- Morning
+- Leaving Home
+- Relax
+
+Templates must adapt to discovered capabilities and never create invalid actions.
+
+Template generation flow:
+
+```mermaid
+flowchart TD
+    Start[Choose template] --> Inspect[Inspect rooms and capabilities]
+    Inspect --> Suggest[Generate suggested actions]
+    Suggest --> Review[User reviews]
+    Review --> Validate[Validate scene]
+    Validate --> Save[Save scene]
+```
+
+---
+
+# 30. Persistence
+
+Persist:
+
+- Scene definition.
+- Revision.
+- User ordering.
+- Favorites.
+- Room associations.
+- Last execution summary.
+- Optional sanitized execution history.
+
+Do not persist:
+
+- Secrets.
+- Raw plugin payloads.
+- Authentication credentials.
+- Unbounded logs.
+
+Scene definitions must support schema migration.
+
+```swift
+struct AuraSceneEnvelope: Codable, Sendable {
+    let schemaVersion: Int
+    let scene: AuraScene
+}
+```
+
+---
+
+# 31. Revision Handling
+
+Executions must capture the scene revision used at start.
+
+If a scene is edited while running:
+
+- The active execution continues using its immutable plan.
+- The saved scene receives a new revision.
+- Future executions use the new revision.
+
+This prevents mid-execution mutation.
+
+---
+
+# 32. Concurrency Architecture
+
+The engine should use an actor to isolate execution state.
+
+```swift
+actor AuraSceneEngine {
+    private var executions: [AuraSceneExecutionID: AuraSceneExecution] = [:]
+
+    func execute(
+        sceneID: AuraSceneID,
+        source: AuraExecutionSource
+    ) async throws -> AuraSceneExecutionID
+
+    func cancel(executionID: AuraSceneExecutionID) async
+
+    func executionStream(
+        for executionID: AuraSceneExecutionID
+    ) -> AsyncStream<AuraSceneExecutionUpdate>
+}
+```
+
+Rules:
+
+- No scene execution may block the main actor.
+- In-flight tasks must be cancellable.
+- Execution state must be actor-isolated.
+- Plugin callbacks must be normalized before merging.
+- A scene may define whether duplicate concurrent executions are allowed.
+
+---
+
+# 33. Duplicate Execution Protection
+
+Repeated taps must not launch accidental duplicate scenes.
+
+Default behavior:
+
+- Debounce activation taps briefly.
+- If the same scene is already executing, focus its current progress.
+- Allow explicit restart only after confirmation where needed.
+- Automation deduplication uses an execution key.
+
+```swift
+struct AuraExecutionKey: Hashable, Sendable {
+    let sceneID: AuraSceneID
+    let sourceScope: String
+    let timeBucket: Int
+}
+```
+
+---
+
+# 34. Automation Integration
+
+The Automation Engine may start scenes through the same public Scene Engine API used by the UI.
+
+Automation execution must not bypass:
+
+- Validation.
+- Capability checks.
+- Retry policy.
+- Diagnostics.
+- Execution history.
+
+The execution source shall be recorded.
+
+```swift
+enum AuraExecutionSource: Sendable, Codable, Equatable {
+    case user
+    case automation(AuraAutomationID)
+    case shortcut
+    case widget
+    case appIntent
+    case systemRecovery
+}
+```
+
+---
+
+# 35. Scene Chaining
+
+Version 1 may allow one scene to call another only under strict limits.
+
+Rules:
+
+- No recursion.
+- Maximum nesting depth: 3.
+- Validate full dependency graph before execution.
+- Child-scene results roll into the parent summary.
+- Cancellation propagates to active child executions.
+
+Direct scene chaining may be deferred if it increases complexity excessively.
+
+---
+
+# 36. Diagnostics
+
+Scene diagnostics shall include:
+
+- Execution ID.
+- Scene ID and revision.
+- Start and completion time.
+- Execution source.
+- Plan structure.
+- Selected control routes.
+- Per-action duration.
+- Retry attempts.
+- Timeouts.
+- Failure categories.
+- Skipped actions.
+- Cancellation state.
+- Final summary.
+
+Sensitive data and user-created names must be redacted in exports where appropriate.
+
+---
+
+# 37. Logging
+
+Structured categories:
+
+- scene.validation
+- scene.planning
+- scene.execution
+- scene.command
+- scene.retry
+- scene.verification
+- scene.feedback
+- scene.persistence
+- scene.diagnostics
+
+Logs must not contain:
+
+- Credentials.
+- Authorization headers.
+- Full raw device responses.
+- Sensitive home activity history.
+
+---
+
+# 38. Error Model
+
+```swift
+enum AuraSceneExecutionError: Error, Sendable, Equatable {
+    case sceneNotFound
+    case invalidScene([AuraSceneValidationIssue])
+    case targetUnavailable(AuraTargetReference)
+    case capabilityUnavailable(AuraCapability)
+    case permissionDenied
+    case planningFailed
+    case commandFailed(AuraSceneActionID, AuraError)
+    case verificationFailed(AuraSceneActionID)
+    case timedOut
+    case cancelled
+    case dependencyFailed(AuraSceneActionID)
+    case conflictingActions
+    case persistenceFailed
+    case unknown
+}
+```
+
+The UI receives translated, user-friendly messages.
+
+---
+
+# 39. Failure Scenarios
+
+## Scenario A: One device is offline before execution
+
+Expected behavior:
+
+- Validation marks the action unavailable.
+- Optional actions may be skipped.
+- Required actions influence the final result.
+- Independent actions may continue under balanced policy.
+
+## Scenario B: TV powers on but input selection fails
+
+Expected behavior:
+
+- Keep successful power action.
+- Report partial success.
+- Offer retry for the failed input action when safe.
+- Do not turn the TV off automatically.
+
+## Scenario C: Hue event confirmation never arrives
+
+Expected behavior:
+
+- Use API acknowledgment where available.
+- Perform a bounded verification read if needed.
+- Mark result uncertain rather than falsely failed when evidence is incomplete.
+
+## Scenario D: User taps the same scene repeatedly
+
+Expected behavior:
+
+- One active execution remains.
+- UI displays current progress.
+- No duplicate command storm occurs.
+
+## Scenario E: App moves to background
+
+Expected behavior:
+
+- Continue only within allowed iOS execution time.
+- Persist execution state.
+- Avoid claiming completion without evidence.
+- Reconcile state when the app resumes.
+
+## Scenario F: Network changes during execution
+
+Expected behavior:
+
+- Pause affected dispatch briefly.
+- Allow plugins to recover routes.
+- Retry only safe actions.
+- Continue unaffected local integrations.
+
+---
+
+# 40. Performance Budgets
+
+Targets under normal local-network conditions:
+
+- Scene validation: under 50 ms for ordinary scenes.
+- Plan creation: under 100 ms.
+- First command dispatch: under 150 ms after activation.
+- Local lighting response: visible within 300 ms.
+- Progress update latency: under 100 ms after action result.
+- Simple scene completion: under 2 seconds where devices permit.
+- Complex media scene completion: under 10 seconds including wake verification.
+
+Performance must be measured by scene type rather than one global number.
+
+---
+
+# 41. Testing Strategy
+
+## 41.1 Unit Tests
+
+Required coverage:
+
+- Scene decoding and migration.
+- Validation.
+- Dependency graph generation.
+- Cycle detection.
+- Conflict detection.
+- Parallel grouping.
+- Sequential grouping.
+- Retry classification.
+- Timeout handling.
+- Partial-success calculation.
+- Progress weighting.
+- Cancellation.
+- Duplicate-execution prevention.
+- Idempotency handling.
+- Result summarization.
+
+## 41.2 Integration Tests
+
+Test with mocked plugins:
+
+- Full success.
+- Required-action failure.
+- Optional-action failure.
+- Parallel partial failure.
+- Timeout.
+- Authentication failure.
+- Route change.
+- Event confirmation delay.
+- App background and resume.
+- User cancellation.
+
+## 41.3 Hardware Tests
+
+Test scenes using:
+
+- Philips TV 65PUS7800/12.
+- Apple TV 4K first generation.
+- Hue Bridge v2.
+- HomePod mini where exposed through supported integration paths.
+- HomeKit accessories available in the test home.
+
+Required scenarios:
+
+- Movie Night.
+- Gaming.
+- Good Night.
+- One-device-offline variant.
+- Internet unavailable with LAN still working.
+- Router restart recovery.
+
+## 41.4 UI Tests
+
+Verify:
+
+- Scene activation feedback.
+- Progress presentation.
+- Success state.
+- Partial-success message.
+- Retry action.
+- Cancellation.
+- Dynamic Type.
+- VoiceOver.
+- Reduce Motion.
+
+---
+
+# 42. Acceptance Criteria
+
+The Scene Engine is ready for initial release when:
+
+- Users can create, edit, reorder and delete scenes.
+- Scenes can contain actions from multiple integrations.
+- Sequential and parallel groups execute correctly.
+- Capability validation prevents unsupported commands.
+- Duplicate taps do not create duplicate executions.
+- Independent actions continue after unrelated failures under balanced policy.
+- Required failures produce partial or failed results honestly.
+- Scene execution progress is observable by the UI.
+- Scene execution can be cancelled.
+- Safe retries are bounded.
+- Non-idempotent actions are never blindly retried.
+- Timeouts are enforced without blocking the main actor.
+- Execution history records sanitized summaries.
+- Scene diagnostics include per-action results and selected routes.
+- Automation Engine can execute scenes through the same API.
+- Core flows pass on the target hardware.
+
+---
+
+# 43. Future Enhancements
+
+Potential future work:
+
+- Natural-language scene creation.
+- Scene recommendations.
+- Scene preview simulation.
+- State-diff preview before execution.
+- Advanced conditional branches.
+- Time-based transitions.
+- Temporary scenes with automatic restoration.
+- Apple Watch scene execution.
+- App Intents and Siri.
+- Lock Screen widgets.
+- Shared household scene synchronization.
+- Scene analytics stored locally.
+- Adaptive scenes based on context.
+- Transaction-like rollback for fully supported device groups.
+
+---
+
+# 44. Golden Rule
+
+A scene must feel like one intentional room transformation, not a visible queue of unrelated device commands.
+
+Aura should coordinate complexity, communicate uncertainty honestly and leave the user in control.
+
+---
+
+End of Document
