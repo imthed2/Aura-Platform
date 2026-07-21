@@ -1,0 +1,806 @@
+# Aura
+## User Flows
+Version: 1.0
+Status: Draft
+Owner: Daniel Hagen
+Project: Aura Platform
+Document ID: AURA-06
+
+Dependencies
+
+• AURA-05 Information Architecture
+• AURA-05.5 Navigation System
+
+---
+
+# Purpose
+
+This document defines every major user journey within Aura.
+
+A User Flow describes:
+
+• User Goal
+• Starting Point
+• User Actions
+• System Response
+• Success Criteria
+• Error Recovery
+
+Every flow should feel effortless.
+
+The ideal experience is one where the user never wonders what to do next.
+
+---
+
+# User Journey Philosophy
+
+Aura is designed around intentions, not devices.
+
+Traditional Smart Home
+
+Open App
+↓
+
+Find Device
+↓
+
+Control Device
+
+Aura
+
+Open Aura
+↓
+
+Select Experience
+↓
+
+Aura coordinates devices automatically
+
+---
+
+# Flow 01 — First Launch
+
+Goal
+
+Help the user understand Aura within 60 seconds.
+
+Steps
+
+Launch Aura
+
+↓
+
+Welcome Screen
+
+↓
+
+Privacy Overview
+
+↓
+
+Choose Home
+
+↓
+
+Discover Devices
+
+↓
+
+Setup Complete
+
+↓
+
+Home Dashboard
+
+Requirements
+
+• No account required
+• Skip available at every step
+• Maximum setup time: 2 minutes
+
+Success
+
+The user reaches the Home screen with at least one connected device.
+
+---
+
+# Flow 02 — Automatic Device Discovery
+
+Goal
+
+Find compatible devices without user configuration.
+
+Steps
+
+Home
+
+↓
+
+Scan Local Network
+
+↓
+
+Display Found Devices
+
+↓
+
+User Confirms
+
+↓
+
+Aura Configures
+
+↓
+
+Device Ready
+
+Failure
+
+If discovery fails:
+
+Explain why.
+
+Offer Retry.
+
+Offer Manual Setup.
+
+---
+
+# Flow 03 — Add Philips TV
+
+User taps
+
+Add Device
+
+↓
+
+Philips TV
+
+↓
+
+Discovery
+
+↓
+
+Authentication (if required)
+
+↓
+
+Capabilities Detected
+
+↓
+
+Assign Room
+
+↓
+
+Done
+
+Aura automatically detects
+
+• Power Support
+• Volume Support
+• Input Switching
+• EasyLink
+• Firmware
+• Available Features
+
+---
+
+# Flow 04 — Add Hue Bridge
+
+Home
+
+↓
+
+Add Device
+
+↓
+
+Hue Bridge
+
+↓
+
+Press Bridge Button
+
+↓
+
+Authenticate
+
+↓
+
+Import Rooms
+
+↓
+
+Import Lights
+
+↓
+
+Done
+
+Aura creates room assignments automatically.
+
+---
+
+# Flow 05 — Connect Apple Home
+
+Settings
+
+↓
+
+Apple Home
+
+↓
+
+Request Permission
+
+↓
+
+Read Home
+
+↓
+
+Read Rooms
+
+↓
+
+Read Accessories
+
+↓
+
+Sync Complete
+
+No HomeKit data is stored externally.
+
+---
+
+# Flow 06 — Movie Night
+
+User taps
+
+Movie Night
+
+Aura performs
+
+Turn TV On
+
+↓
+
+Switch HDMI
+
+↓
+
+Turn Apple TV On
+
+↓
+
+Dim Lights
+
+↓
+
+Warm White
+
+↓
+
+Reduce Brightness
+
+↓
+
+Done
+
+Expected completion
+
+Less than five seconds.
+
+---
+
+# Flow 07 — Gaming
+
+User selects
+
+Gaming
+
+Aura
+
+Power TV
+
+↓
+
+Switch HDMI
+
+↓
+
+Enable Game Mode
+
+↓
+
+Turn Accent Lights Blue
+
+↓
+
+Reduce Ambient Lighting
+
+↓
+
+Ready
+
+---
+
+# Flow 08 — Good Night
+
+User taps
+
+Good Night
+
+Aura
+
+Turn TV Off
+
+↓
+
+Pause Media
+
+↓
+
+Turn Lights Off
+
+↓
+
+Arm Security (Future)
+
+↓
+
+Done
+
+---
+
+# Flow 09 — Manual TV Control
+
+Home
+
+↓
+
+Living Room
+
+↓
+
+Television
+
+↓
+
+Remote
+
+↓
+
+Volume
+
+↓
+
+Input
+
+↓
+
+Power
+
+Primary controls always remain visible.
+
+---
+
+# Flow 10 — Manual Lighting Control
+
+Room
+
+↓
+
+Lights
+
+↓
+
+Brightness
+
+↓
+
+Color
+
+↓
+
+Temperature
+
+↓
+
+Save
+
+Changes appear instantly.
+
+---
+
+# Flow 11 — Create Scene
+
+Scenes
+
+↓
+
+New Scene
+
+↓
+
+Choose Name
+
+↓
+
+Choose Devices
+
+↓
+
+Choose Actions
+
+↓
+
+Preview
+
+↓
+
+Save
+
+↓
+
+Ready
+
+Users may leave at any time.
+
+Progress is automatically saved.
+
+---
+
+# Flow 12 — Edit Scene
+
+Scenes
+
+↓
+
+Select Scene
+
+↓
+
+Edit
+
+↓
+
+Modify Devices
+
+↓
+
+Save
+
+↓
+
+Done
+
+---
+
+# Flow 13 — Create Automation
+
+Automation
+
+↓
+
+Trigger
+
+↓
+
+Conditions
+
+↓
+
+Actions
+
+↓
+
+Review
+
+↓
+
+Save
+
+↓
+
+Enabled
+
+---
+
+# Flow 14 — Device Offline
+
+Aura detects
+
+TV Offline
+
+↓
+
+Inline Warning
+
+↓
+
+Diagnostics
+
+↓
+
+Retry
+
+↓
+
+Reconnect
+
+↓
+
+Success
+
+Users never see raw network errors.
+
+---
+
+# Flow 15 — Lost Hue Bridge
+
+Bridge Offline
+
+↓
+
+Explanation
+
+↓
+
+Troubleshooting
+
+↓
+
+Retry
+
+↓
+
+Manual Help
+
+↓
+
+Resolved
+
+---
+
+# Flow 16 — Diagnostics
+
+Settings
+
+↓
+
+Diagnostics
+
+↓
+
+Select Device
+
+↓
+
+Run Tests
+
+↓
+
+Show Results
+
+↓
+
+Suggested Fixes
+
+Every failure includes human-readable guidance.
+
+---
+
+# Flow 17 — Search
+
+Tap Search
+
+↓
+
+Type
+
+↓
+
+Instant Results
+
+↓
+
+Open Item
+
+↓
+
+Continue Previous Context
+
+Search should feel instantaneous.
+
+---
+
+# Flow 18 — Favorite Device
+
+Long Press Device
+
+↓
+
+Favorite
+
+↓
+
+Appears on Home Dashboard
+
+No confirmation dialog.
+
+---
+
+# Flow 19 — Rename Device
+
+Device
+
+↓
+
+Settings
+
+↓
+
+Rename
+
+↓
+
+Save
+
+↓
+
+Updated Everywhere
+
+---
+
+# Flow 20 — Remove Device
+
+Device Settings
+
+↓
+
+Remove Device
+
+↓
+
+Confirmation
+
+↓
+
+Cleanup
+
+↓
+
+Dashboard Updates
+
+---
+
+# Flow 21 — Restore Previous Session
+
+Launch Aura
+
+↓
+
+Restore Navigation State
+
+↓
+
+Restore Scroll Position
+
+↓
+
+Restore Expanded Cards
+
+↓
+
+Continue Exactly Where User Left
+
+---
+
+# Flow 22 — Network Recovery
+
+Aura detects restored connection.
+
+↓
+
+Reconnect Devices
+
+↓
+
+Refresh States
+
+↓
+
+Remove Offline Indicators
+
+↓
+
+Continue Normally
+
+No user interaction required.
+
+---
+
+# Flow 23 — Daily Use
+
+Launch Aura
+
+↓
+
+See Suggestions
+
+↓
+
+Tap Activity
+
+↓
+
+Home Adjusts
+
+↓
+
+Exit
+
+The complete interaction should require no more than two taps.
+
+---
+
+# Global UX Rules
+
+Every flow should satisfy:
+
+Maximum three navigation levels.
+
+Maximum two taps for common tasks.
+
+Never lose user progress.
+
+Never display technical jargon.
+
+Always offer recovery.
+
+Always preserve context.
+
+---
+
+# Error Recovery Principles
+
+When something fails:
+
+Explain what happened.
+
+Explain why.
+
+Suggest the next step.
+
+Offer Retry.
+
+Never leave the user at a dead end.
+
+---
+
+# Success Metrics
+
+95% of users complete onboarding without assistance.
+
+90% of users discover devices automatically.
+
+80% of users create their first Scene within five minutes.
+
+Common tasks require two taps or fewer.
+
+Recovery flows succeed without external documentation.
+
+---
+
+# User Flow Principles
+
+The best user flow is the one users never notice.
+
+If users must think about navigation, the flow should be redesigned.
+
+---
+
+End of Document
