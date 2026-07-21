@@ -1,0 +1,695 @@
+# Aura
+## Interaction Guidelines
+Version: 1.0
+Status: Draft
+Owner: Daniel Hagen
+Project: Aura Platform
+Document ID: AURA-09
+
+Dependencies
+
+• AURA-03 Aura Design Language
+• AURA-04 Design Tokens
+• AURA-08 Component Library
+
+---
+
+# Purpose
+
+Interaction defines how Aura responds to every user action.
+
+Every touch, animation, transition and response should make the interface feel alive, predictable and effortless.
+
+Interactions are never decorative.
+
+They communicate intent, feedback and state.
+
+---
+
+# Philosophy
+
+Aura should feel less like software...
+
+and more like touching physical objects.
+
+The interface should feel responsive before users consciously notice it.
+
+Nothing should ever feel delayed.
+
+Nothing should ever surprise the user.
+
+---
+
+# Core Principles
+
+Immediate
+
+Responsive
+
+Predictable
+
+Elegant
+
+Calm
+
+Forgiving
+
+Consistent
+
+---
+
+# Touch Response
+
+Every touch receives immediate visual feedback.
+
+Target response time:
+
+< 50 milliseconds
+
+Touch feedback should begin before the action is completed.
+
+---
+
+# Tap
+
+Tap is the primary interaction.
+
+Expected behavior
+
+Touch
+
+↓
+
+Immediate visual compression
+
+↓
+
+Optional haptic
+
+↓
+
+Action
+
+↓
+
+State update
+
+↓
+
+Return to idle
+
+---
+
+# Button Behavior
+
+Buttons should compress naturally.
+
+Scale
+
+100%
+
+↓
+
+97%
+
+↓
+
+100%
+
+Animation
+
+Spring
+
+Duration
+
+0.18s
+
+No button should ever "flash."
+
+---
+
+# Card Interaction
+
+Cards are interactive surfaces.
+
+Touch
+
+↓
+
+Subtle elevation change
+
+↓
+
+Small scale reduction
+
+↓
+
+Optional glow
+
+↓
+
+Navigation or action
+
+Cards should feel soft.
+
+Never rigid.
+
+---
+
+# Long Press
+
+Purpose
+
+Reveal advanced functionality.
+
+Examples
+
+Rename
+
+Move
+
+Favorite
+
+Diagnostics
+
+Long press must never contain essential actions.
+
+---
+
+# Swipe
+
+Allowed
+
+Delete
+
+Favorite
+
+Archive
+
+Mute
+
+Pin
+
+Not Allowed
+
+Open Settings
+
+Run Scenes
+
+Critical actions
+
+---
+
+# Scroll Behavior
+
+Scrolling should feel natural.
+
+Momentum should match native iOS.
+
+Never interfere with system gestures.
+
+---
+
+# Pull to Refresh
+
+Refresh begins immediately.
+
+Progress indicator appears naturally.
+
+Never block scrolling.
+
+---
+
+# Loading Behavior
+
+Aura avoids waiting whenever possible.
+
+Preferred order
+
+Cached Content
+
+↓
+
+Skeleton
+
+↓
+
+Live Content
+
+↓
+
+Animated Update
+
+Avoid blank screens.
+
+---
+
+# State Transitions
+
+State changes should animate.
+
+Offline
+
+↓
+
+Connecting
+
+↓
+
+Online
+
+Not
+
+Offline
+
+↓
+
+Instantly Online
+
+Transitions explain what changed.
+
+---
+
+# Device Status
+
+Online
+
+Small fade.
+
+Offline
+
+Soft desaturation.
+
+Busy
+
+Gentle pulse.
+
+Updating
+
+Progress animation.
+
+Error
+
+Subtle shake once.
+
+---
+
+# Scene Execution
+
+Example
+
+Movie Night
+
+User taps
+
+↓
+
+Medium haptic
+
+↓
+
+Hero card expands
+
+↓
+
+Progress indicator
+
+↓
+
+Lights respond
+
+↓
+
+TV powers on
+
+↓
+
+Completion animation
+
+↓
+
+Success banner
+
+Users should understand that Aura is working.
+
+---
+
+# Automation Feedback
+
+Automatic actions should be visible but unobtrusive.
+
+Example
+
+Good Night activated.
+
+Small banner.
+
+No modal.
+
+---
+
+# Navigation
+
+Navigation should always indicate hierarchy.
+
+Push
+
+Slides horizontally.
+
+Modal
+
+Slides vertically.
+
+Dismiss
+
+Returns naturally.
+
+Never invent transitions.
+
+---
+
+# Search
+
+Results begin appearing after the first character.
+
+Animation
+
+Fade
+
+↓
+
+Expand
+
+↓
+
+Highlight
+
+No search button required.
+
+---
+
+# Selection
+
+Selecting an item should update immediately.
+
+Never require confirmation for non-destructive actions.
+
+---
+
+# Toggle Behavior
+
+Touch
+
+↓
+
+Immediate thumb movement
+
+↓
+
+Color transition
+
+↓
+
+Haptic
+
+↓
+
+Updated state
+
+Never delay toggle animations.
+
+---
+
+# Sliders
+
+Used for
+
+Volume
+
+Brightness
+
+Temperature
+
+Rules
+
+Continuous updates
+
+Gentle haptic detents
+
+Smooth interpolation
+
+Never jump.
+
+---
+
+# Lists
+
+Rows highlight immediately.
+
+Selection fades naturally.
+
+Swipe actions follow native iOS behavior.
+
+---
+
+# Context Menus
+
+Appear instantly.
+
+Blur background.
+
+Scale animation.
+
+Dismiss with tap outside.
+
+---
+
+# Sheets
+
+Presentation
+
+Spring animation.
+
+Dismiss
+
+Drag
+
+Swipe
+
+Close button
+
+All supported.
+
+---
+
+# Errors
+
+Errors never interrupt unless necessary.
+
+Preferred
+
+Inline message
+
+↓
+
+Banner
+
+↓
+
+Sheet
+
+↓
+
+Full screen
+
+Only critical failures deserve full-screen interruption.
+
+---
+
+# Empty States
+
+Should encourage action.
+
+Example
+
+"No automations yet.
+
+Create your first automation."
+
+Never display:
+
+"No Data"
+
+---
+
+# Recovery
+
+Every failed interaction should offer a clear recovery.
+
+Retry
+
+Reconnect
+
+Diagnostics
+
+Help
+
+Never leave users without an action.
+
+---
+
+# Motion Hierarchy
+
+Small interactions
+
+0.18 seconds
+
+Navigation
+
+0.28 seconds
+
+Hero transitions
+
+0.45 seconds
+
+Celebration
+
+Maximum 0.60 seconds
+
+---
+
+# Haptic Mapping
+
+Selection
+
+Light
+
+Scene Launch
+
+Medium
+
+Scene Complete
+
+Success
+
+Delete
+
+Warning
+
+Critical Failure
+
+Error
+
+---
+
+# Accessibility
+
+Every interaction must support
+
+Reduce Motion
+
+VoiceOver
+
+Switch Control
+
+Dynamic Type
+
+Assistive Touch
+
+When Reduce Motion is enabled
+
+Replace movement with opacity transitions.
+
+---
+
+# One-Handed Usage
+
+Primary actions should remain reachable.
+
+Avoid placing important controls in the extreme top-right corner.
+
+Frequently used controls belong near the lower third of the screen.
+
+---
+
+# Interruptions
+
+Incoming events should never reset user progress.
+
+Examples
+
+Network reconnect
+
+Background refresh
+
+Device status changes
+
+All updates should preserve the current interaction.
+
+---
+
+# Delight Moments
+
+Aura may occasionally reward the user with subtle moments.
+
+Examples
+
+Scene completed.
+
+New device added.
+
+Automation created.
+
+These moments should feel satisfying without becoming playful.
+
+---
+
+# Anti-Patterns
+
+Never use
+
+Blocking loading screens
+
+Unexpected navigation
+
+Multiple confirmation dialogs
+
+Flashing elements
+
+Oversized animations
+
+Auto-playing tutorials
+
+Forced onboarding
+
+Aggressive notifications
+
+---
+
+# Interaction Checklist
+
+Before approving any interaction ask:
+
+Does it feel immediate?
+
+Does it feel native?
+
+Can it be completed with fewer steps?
+
+Is feedback clear?
+
+Would this still feel premium after years of use?
+
+If any answer is "No"
+
+Redesign the interaction.
+
+---
+
+# Golden Rule
+
+Every interaction should leave the interface feeling calmer than before it was touched.
+
+---
+
+End of Document
