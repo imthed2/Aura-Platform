@@ -2,13 +2,13 @@
 
 > **Control Less. Experience More.**
 
-Aura is a local-first, experience-driven smart-home platform for iPhone. This repository currently contains the product, design, integration, architecture and implementation specifications that will guide development.
+Aura is a local-first, experience-driven smart-home platform for iPhone. This repository contains the product, design, integration, architecture and implementation specifications that guide development.
 
 ## Documentation status
 
-Documents 00–15 exist in the repository. Documents 16–22 are planned and will be added sequentially.
+Documents 00–21 now exist in the repository. Document 22 — Roadmap is the remaining planned platform document.
 
-> Note: The existing documentation files were originally created without a `.md` filename extension. The links below point to their real repository paths. New documentation should use the same convention until the files are migrated together, so links and references remain consistent.
+> Note: The documentation files were originally created without a `.md` filename extension. The links below point to their real repository paths. New numbered documentation should use the same convention until all files are migrated together in one coordinated change.
 
 ## Product and design
 
@@ -31,17 +31,21 @@ Documents 00–15 exist in the repository. Documents 16–22 are planned and wil
 - [12 — Philips TV](./12_Philips_TV)
 - [13 — Apple TV](./13_Apple_TV)
 - [14 — HomeKit](./14_HomeKit)
-- [15 — Hue Bridge](./15_Hue_Bridge)
+- [15 — Philips Hue Bridge](./15_Hue_Bridge)
 
-## Planned platform documents
+## Platform and architecture
 
-- 16 — Device Discovery
-- 17 — Scene Engine
-- 18 — Automation Engine
-- 19 — Diagnostics
-- 20 — App Architecture
-- 21 — Codex Rules
-- 22 — Roadmap
+- [16 — Device Discovery](./16_Device_Discovery)
+- [17 — Scene Engine](./17_Scene_Engine)
+- [18 — Automation Engine](./18_Automation_Engine)
+- [19 — Diagnostics](./19_Diagnostics)
+- [20 — App Architecture](./20_App_Architecture)
+- [21 — Codex Rules](./21_Codex_Rules)
+
+## Review and planning
+
+- [Technical Review](./TECHNICAL_REVIEW.md)
+- 22 — Roadmap — planned
 
 ## Core principles
 
@@ -55,9 +59,19 @@ Aura is designed around a small set of non-negotiable principles:
 - Graceful offline and recovery behavior
 - Calm, premium and accessible interaction design
 - No integration-specific API models in the SwiftUI layer
+- Explicit side effects and clear state ownership
+- Honest handling of platform and hardware limitations
+
+## Architecture authority
+
+`20_App_Architecture` is the primary technical architecture contract for the application.
+
+`21_Codex_Rules` defines how Codex and other AI-assisted development tools must inspect, implement, test and report changes in the repository.
+
+Feature-specific documents define behavior within those shared architectural boundaries.
 
 ## Documentation rules
 
 Each technical document should define its purpose, goals, non-goals, dependencies, architecture, state model, error handling, security, privacy, performance budgets, testing strategy and acceptance criteria.
 
-Implementation-specific claims must be verified against current first-party platform documentation before production code is written.
+Implementation-specific claims must be verified against current first-party platform documentation and real supported hardware before production code is considered complete.
