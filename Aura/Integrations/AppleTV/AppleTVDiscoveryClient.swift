@@ -78,14 +78,14 @@ actor AppleTVDiscoveryClient: AppleTVDiscovering {
     ) -> AsyncThrowingStream<Set<AppleTVDiscoveryObservation>, Error> {
         AsyncThrowingStream { continuation in
             let browser = NWBrowser(
-                for: .bonjour(type: service.rawValue, domain: "local."),
+                for: .bonjourWithTXTRecord(type: service.rawValue, domain: "local."),
                 using: .tcp
             )
             let queue = DispatchQueue(label: "com.danielhagen.aura.apple-tv.discovery")
 
             browser.browseResultsChangedHandler = { results, _ in
                 let observations = Set(results.compactMap { result in
-                    Self.observation(from: result.endpoint, service: service)
+                    Self.observation(from: result, service: service)
                 })
                 continuation.yield(observations)
             }
@@ -112,12 +112,21 @@ actor AppleTVDiscoveryClient: AppleTVDiscovering {
     }
 
     private nonisolated static func observation(
-        from endpoint: NWEndpoint,
+        from result: NWBrowser.Result,
         service: AppleTVBonjourService
     ) -> AppleTVDiscoveryObservation? {
+        let endpoint = result.endpoint
         guard case let .service(name, type, domain, _) = endpoint,
               type == service.rawValue else {
             return nil
+        }
+
+        if service == .companion {
+            guard case .bonjour(let txtRecord) = result.metadata else { return nil }
+            let properties = Dictionary(uniqueKeysWithValues: txtRecord.dictionary.map {
+                ($0.key.lowercased(), $0.value)
+            })
+            guard properties["rpmd"]?.hasPrefix("AppleTV") == true else { return nil }
         }
 
         return AppleTVDiscoveryObservation(

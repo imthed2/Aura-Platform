@@ -15,7 +15,7 @@ struct AppleTVDiscoveryObservation: Hashable, Sendable {
     let endpoint: AppleTVBonjourEndpoint
 }
 
-struct AppleTVDiscoveryCandidate: Equatable, Sendable {
+struct AppleTVDiscoveryCandidate: Hashable, Sendable {
     let displayName: String
     let endpoints: Set<AppleTVBonjourEndpoint>
 }
