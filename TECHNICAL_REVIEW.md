@@ -26,7 +26,9 @@ The following rules supersede any conflicting wording in `15_Hue_Bridge` until t
 
 ### HTTPS is required
 
-Hue API v2 communication must use HTTPS. Aura must not implement HTTP as a production fallback. Certificate validation and Hue bridge identity verification require an explicit design before implementation.
+Hue API v2 communication must use HTTPS. Aura must not implement HTTP as a production fallback. `ADR/ADR-006-hue-https-certificate-strategy.md` now records the proposed fail-closed design and has been incorporated into `15_Hue_Bridge`.
+
+This review item is not fully resolved. The exact Signify trust anchor, certificate-to-bridge-identifier binding, host policy and rotation behavior still require authenticated Hue documentation and real-hardware verification. Production Hue networking remains blocked until both gates in ADR-006 pass.
 
 ### Discovery priority
 
