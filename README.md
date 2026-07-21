@@ -51,7 +51,7 @@ The complete documentation set from 00 through 22 now exists in the repository.
 
 Documentation foundation: complete.
 
-Implementation has not yet begun in the production repository. The next milestone is the bounded Phase 1 foundation described in `22_Roadmap`:
+The first bounded implementation milestone is in progress on `feature/phase-1-aura-foundation`:
 
 - Create the Xcode project and test targets
 - Add root `AGENTS.md`
@@ -63,6 +63,40 @@ Implementation has not yet begun in the production repository. The next mileston
 - Establish build and test automation
 
 Real-device integrations should begin only after the foundation and feasibility gates in the roadmap are satisfied.
+
+## Local development
+
+Requirements:
+
+- macOS with Xcode 16 or later
+- An installed iOS Simulator runtime
+- No third-party package installation
+
+Open `Aura.xcodeproj` in Xcode and run the shared `Aura` scheme, or use the command line from the repository root.
+
+Build without requiring a booted simulator:
+
+```sh
+xcodebuild \
+  -project Aura.xcodeproj \
+  -scheme Aura \
+  -configuration Debug \
+  -destination 'generic/platform=iOS Simulator' \
+  build
+```
+
+Run unit and UI tests on an available simulator (replace the device name when needed):
+
+```sh
+xcodebuild \
+  -project Aura.xcodeproj \
+  -scheme Aura \
+  -configuration Debug \
+  -destination 'platform=iOS Simulator,name=iPhone 16' \
+  test
+```
+
+The app uses deterministic local mock data. It requires no account, cloud backend, local-network access, HomeKit entitlement, device credentials, or signing secrets for Simulator development.
 
 ## Core principles
 
