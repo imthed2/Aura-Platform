@@ -1,0 +1,548 @@
+# Aura
+## Navigation System
+Version: 1.0
+Status: Draft
+Owner: Daniel Hagen
+Project: Aura Platform
+Document ID: AURA-05.5
+
+Dependencies
+
+• AURA-03 Aura Design Language
+• AURA-04 Design Tokens
+• AURA-05 Information Architecture
+
+---
+
+# Purpose
+
+The Navigation System defines how users move throughout Aura.
+
+Navigation should become invisible.
+
+Users should never stop to think where something is located.
+
+Navigation should always feel predictable.
+
+---
+
+# Navigation Principles
+
+Aura follows Apple's Human Interface Guidelines while introducing a simplified navigation model centered around experiences instead of devices.
+
+The user should always know:
+
+• Where they are
+• What is happening
+• How to go back
+• What the next action is
+
+---
+
+# Primary Navigation
+
+Aura uses a fixed bottom navigation bar.
+
+Tabs
+
+Home
+
+Rooms
+
+Scenes
+
+Devices
+
+Settings
+
+Maximum:
+
+Five tabs.
+
+Never more.
+
+---
+
+# Home
+
+The starting point.
+
+Opening Aura always returns the user here unless continuing an unfinished task.
+
+Purpose
+
+Current home status
+
+Suggestions
+
+Quick Actions
+
+Favorite devices
+
+Current room
+
+Current scene
+
+---
+
+# Navigation Depth
+
+Maximum depth:
+
+Level 1
+
+Tab
+
+↓
+
+Level 2
+
+Detail
+
+↓
+
+Level 3
+
+Configuration
+
+Never deeper.
+
+If a fourth level becomes necessary, redesign the feature.
+
+---
+
+# Navigation Style
+
+Use NavigationStack.
+
+Never mix multiple navigation systems.
+
+Avoid nested NavigationStacks.
+
+---
+
+# Screen Presentation
+
+Push Navigation
+
+Used for:
+
+Room Details
+
+Device Details
+
+Scene Details
+
+Automation Details
+
+---
+
+Modal Sheets
+
+Used for:
+
+Quick Settings
+
+Scene Picker
+
+Device Picker
+
+Filters
+
+Short forms
+
+Small configuration tasks
+
+Preferred heights:
+
+Medium
+
+Large
+
+---
+
+Full Screen Covers
+
+Reserved only for:
+
+Onboarding
+
+First-time setup
+
+Critical pairing flows
+
+Authentication
+
+Emergency recovery
+
+Never use full screen unnecessarily.
+
+---
+
+# Back Navigation
+
+Users should always be able to return with:
+
+Navigation Back
+
+Swipe Gesture
+
+System Back
+
+No custom back buttons.
+
+---
+
+# Context Menus
+
+Context menus expose advanced functionality.
+
+Never hide primary actions.
+
+Examples
+
+Rename
+
+Favorite
+
+Diagnostics
+
+Remove
+
+Information
+
+---
+
+# Long Press
+
+Long press is optional.
+
+Never required.
+
+Examples
+
+Device card
+
+↓
+
+Long Press
+
+↓
+
+Rename
+
+Diagnostics
+
+Restart
+
+Move
+
+Favorite
+
+---
+
+# Swipe Actions
+
+Allowed
+
+Favorite
+
+Delete
+
+Archive
+
+Disable
+
+Not allowed
+
+Complex workflows
+
+Confirmation dialogs
+
+Multi-step actions
+
+---
+
+# Search
+
+Universal Search is available from:
+
+Home
+
+Rooms
+
+Devices
+
+Scenes
+
+Settings
+
+Search is always one tap away.
+
+---
+
+# Deep Linking
+
+Aura supports direct navigation into:
+
+Room
+
+Device
+
+Scene
+
+Automation
+
+Settings
+
+Diagnostics
+
+Every screen must be uniquely addressable.
+
+---
+
+# Universal Links
+
+Future versions may support
+
+aura://room/living-room
+
+aura://scene/movie-night
+
+aura://device/tv
+
+These links should restore navigation state automatically.
+
+---
+
+# State Restoration
+
+Aura remembers:
+
+Last selected room
+
+Expanded cards
+
+Scroll position
+
+Selected scene
+
+Current navigation path
+
+Users should continue exactly where they left off.
+
+---
+
+# Tab Switching
+
+Switching tabs should never reset state.
+
+Each tab preserves:
+
+Navigation
+
+Scroll position
+
+Selected filters
+
+Expanded cards
+
+---
+
+# Multiwindow
+
+Future iPad support
+
+Each window maintains its own navigation state.
+
+No shared navigation history.
+
+---
+
+# Error Navigation
+
+Errors should provide direct navigation to the relevant screen.
+
+Example
+
+TV Offline
+
+↓
+
+Open TV Diagnostics
+
+↓
+
+Retry Connection
+
+Never force the user to search manually.
+
+---
+
+# Pairing Flow
+
+New Device
+
+↓
+
+Discovery
+
+↓
+
+Selection
+
+↓
+
+Authentication
+
+↓
+
+Confirmation
+
+↓
+
+Device Detail
+
+Users should always understand where they are in the process.
+
+---
+
+# Scene Creation Flow
+
+Scenes should follow a wizard.
+
+Name
+
+↓
+
+Choose Devices
+
+↓
+
+Choose Actions
+
+↓
+
+Preview
+
+↓
+
+Save
+
+Users may return to previous steps at any time.
+
+---
+
+# Automation Creation Flow
+
+Trigger
+
+↓
+
+Conditions
+
+↓
+
+Actions
+
+↓
+
+Preview
+
+↓
+
+Save
+
+---
+
+# Navigation Animations
+
+Push
+
+Slide
+
+Sheet
+
+Spring
+
+Dismiss
+
+Fade
+
+Animations should communicate hierarchy.
+
+Never decoration.
+
+---
+
+# Gesture Rules
+
+Swipe Back
+
+Always enabled.
+
+Pull to Refresh
+
+Available where meaningful.
+
+Pinch
+
+Reserved for future interfaces.
+
+Double Tap
+
+Never required.
+
+---
+
+# Accessibility
+
+Navigation must support
+
+VoiceOver
+
+Switch Control
+
+Keyboard Navigation
+
+Large Text
+
+Reduce Motion
+
+One-handed use
+
+---
+
+# Navigation Checklist
+
+Before approving a screen ask:
+
+Can users reach it in three levels?
+
+Can users return naturally?
+
+Does it follow iOS expectations?
+
+Can VoiceOver navigate it?
+
+Does state restore correctly?
+
+Can users continue interrupted tasks?
+
+If any answer is "No"
+
+The navigation must be redesigned.
+
+---
+
+# Golden Rule
+
+The fastest interface is the one users never think about.
+
+Navigation should disappear.
+
+Only the experience should remain.
+
+---
+
+End of Document
