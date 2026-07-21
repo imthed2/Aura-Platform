@@ -56,11 +56,7 @@ struct RootView: View {
                 message: "Create experiences that coordinate your home with one action."
             )
         case .devices:
-            FoundationTabView(
-                title: "Devices",
-                symbol: "switch.2",
-                message: "Verified devices will appear here after discovery is implemented."
-            )
+            DevicesView(pairingModel: environment.appleTVPairingModel)
         case .settings:
             FoundationTabView(
                 title: "Settings",
@@ -75,4 +71,3 @@ struct RootView: View {
     RootView(environment: AppBootstrapper.makeEnvironment())
         .preferredColorScheme(.dark)
 }
-

@@ -28,6 +28,18 @@
 		B00000000000000000000013 /* Aura/PreviewSupport/AuraMockData.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000013 /* Aura/PreviewSupport/AuraMockData.swift */; };
 		B00000000000000000000014 /* AuraTests/AuraDomainTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000014 /* AuraTests/AuraDomainTests.swift */; };
 		B00000000000000000000015 /* AuraUITests/AuraUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000015 /* AuraUITests/AuraUITests.swift */; };
+		B00000000000000000000016 /* Aura/Integrations/AppleTV/AppleTVDiscoveryModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000016 /* Aura/Integrations/AppleTV/AppleTVDiscoveryModels.swift */; };
+		B00000000000000000000017 /* Aura/Integrations/AppleTV/AppleTVDiscoveryClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000017 /* Aura/Integrations/AppleTV/AppleTVDiscoveryClient.swift */; };
+		B00000000000000000000018 /* AuraTests/AppleTVDiscoveryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000018 /* AuraTests/AppleTVDiscoveryTests.swift */; };
+		B00000000000000000000019 /* Aura/Integrations/AppleTV/AppleTVPairingCodecs.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000020 /* Aura/Integrations/AppleTV/AppleTVPairingCodecs.swift */; };
+		B0000000000000000000001A /* Aura/Integrations/AppleTV/AppleTVPairingModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000021 /* Aura/Integrations/AppleTV/AppleTVPairingModels.swift */; };
+		B0000000000000000000001B /* Aura/Integrations/AppleTV/AppleTVPairingClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000022 /* Aura/Integrations/AppleTV/AppleTVPairingClient.swift */; };
+		B0000000000000000000001C /* Aura/Integrations/AppleTV/AppleTVCredentialStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000023 /* Aura/Integrations/AppleTV/AppleTVCredentialStore.swift */; };
+		B0000000000000000000001D /* Aura/Features/Devices/AppleTVPairingModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000024 /* Aura/Features/Devices/AppleTVPairingModel.swift */; };
+		B0000000000000000000001E /* Aura/Features/Devices/DevicesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000025 /* Aura/Features/Devices/DevicesView.swift */; };
+		B00000000000000000000020 /* SRP in Frameworks */ = {isa = PBXBuildFile; productRef = P00000000000000000000001 /* SRP */; };
+		B00000000000000000000021 /* Crypto in Frameworks */ = {isa = PBXBuildFile; productRef = P00000000000000000000002 /* Crypto */; };
+		B0000000000000000000001F /* AuraTests/AppleTVPairingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000026 /* AuraTests/AppleTVPairingTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -69,6 +81,17 @@
 		F00000000000000000000013 /* Aura/PreviewSupport/AuraMockData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Aura/PreviewSupport/AuraMockData.swift; sourceTree = SOURCE_ROOT; };
 		F00000000000000000000014 /* AuraTests/AuraDomainTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuraTests/AuraDomainTests.swift; sourceTree = SOURCE_ROOT; };
 		F00000000000000000000015 /* AuraUITests/AuraUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuraUITests/AuraUITests.swift; sourceTree = SOURCE_ROOT; };
+		F00000000000000000000016 /* Aura/Integrations/AppleTV/AppleTVDiscoveryModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Aura/Integrations/AppleTV/AppleTVDiscoveryModels.swift; sourceTree = SOURCE_ROOT; };
+		F00000000000000000000017 /* Aura/Integrations/AppleTV/AppleTVDiscoveryClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Aura/Integrations/AppleTV/AppleTVDiscoveryClient.swift; sourceTree = SOURCE_ROOT; };
+		F00000000000000000000018 /* AuraTests/AppleTVDiscoveryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuraTests/AppleTVDiscoveryTests.swift; sourceTree = SOURCE_ROOT; };
+		F00000000000000000000019 /* Aura/Resources/Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Aura/Resources/Info.plist; sourceTree = SOURCE_ROOT; };
+		F00000000000000000000020 /* Aura/Integrations/AppleTV/AppleTVPairingCodecs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Aura/Integrations/AppleTV/AppleTVPairingCodecs.swift; sourceTree = SOURCE_ROOT; };
+		F00000000000000000000021 /* Aura/Integrations/AppleTV/AppleTVPairingModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Aura/Integrations/AppleTV/AppleTVPairingModels.swift; sourceTree = SOURCE_ROOT; };
+		F00000000000000000000022 /* Aura/Integrations/AppleTV/AppleTVPairingClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Aura/Integrations/AppleTV/AppleTVPairingClient.swift; sourceTree = SOURCE_ROOT; };
+		F00000000000000000000023 /* Aura/Integrations/AppleTV/AppleTVCredentialStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Aura/Integrations/AppleTV/AppleTVCredentialStore.swift; sourceTree = SOURCE_ROOT; };
+		F00000000000000000000024 /* Aura/Features/Devices/AppleTVPairingModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Aura/Features/Devices/AppleTVPairingModel.swift; sourceTree = SOURCE_ROOT; };
+		F00000000000000000000025 /* Aura/Features/Devices/DevicesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Aura/Features/Devices/DevicesView.swift; sourceTree = SOURCE_ROOT; };
+		F00000000000000000000026 /* AuraTests/AppleTVPairingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuraTests/AppleTVPairingTests.swift; sourceTree = SOURCE_ROOT; };
 		F00000000000000000000101 /* Aura.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Aura.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F00000000000000000000102 /* AuraTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AuraTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F00000000000000000000103 /* AuraUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AuraUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -79,6 +102,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B00000000000000000000020 /* SRP in Frameworks */,
+				B00000000000000000000021 /* Crypto in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -130,6 +155,15 @@
 				F00000000000000000000011 /* Aura/Features/Home/HomeDashboardView.swift */,
 				F00000000000000000000012 /* Aura/Features/Shared/FoundationTabView.swift */,
 				F00000000000000000000013 /* Aura/PreviewSupport/AuraMockData.swift */,
+				F00000000000000000000016 /* Aura/Integrations/AppleTV/AppleTVDiscoveryModels.swift */,
+				F00000000000000000000017 /* Aura/Integrations/AppleTV/AppleTVDiscoveryClient.swift */,
+				F00000000000000000000020 /* Aura/Integrations/AppleTV/AppleTVPairingCodecs.swift */,
+				F00000000000000000000021 /* Aura/Integrations/AppleTV/AppleTVPairingModels.swift */,
+				F00000000000000000000022 /* Aura/Integrations/AppleTV/AppleTVPairingClient.swift */,
+				F00000000000000000000023 /* Aura/Integrations/AppleTV/AppleTVCredentialStore.swift */,
+				F00000000000000000000024 /* Aura/Features/Devices/AppleTVPairingModel.swift */,
+				F00000000000000000000025 /* Aura/Features/Devices/DevicesView.swift */,
+				F00000000000000000000019 /* Aura/Resources/Info.plist */,
 			);
 			name = Aura;
 			sourceTree = "<group>";
@@ -139,6 +173,8 @@
 			children = (
 				F00000000000000000000014 /* AuraTests/AuraDomainTests.swift */,
 				F00000000000000000000015 /* AuraUITests/AuraUITests.swift */,
+				F00000000000000000000018 /* AuraTests/AppleTVDiscoveryTests.swift */,
+				F00000000000000000000026 /* AuraTests/AppleTVPairingTests.swift */,
 			);
 			name = Tests;
 			sourceTree = "<group>";
@@ -169,6 +205,10 @@
 			dependencies = (
 			);
 			name = Aura;
+			packageProductDependencies = (
+				P00000000000000000000001 /* SRP */,
+				P00000000000000000000002 /* Crypto */,
+			);
 			productName = Aura;
 			productReference = F00000000000000000000101 /* Aura.app */;
 			productType = "com.apple.product-type.application";
@@ -242,6 +282,10 @@
 			);
 			mainGroup = 500000000000000000000001;
 			productRefGroup = 500000000000000000000004 /* Products */;
+			packageReferences = (
+				S00000000000000000000001 /* XCRemoteSwiftPackageReference "swift-srp" */,
+				S00000000000000000000002 /* XCRemoteSwiftPackageReference "swift-crypto" */,
+			);
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -300,6 +344,14 @@
 				B00000000000000000000011 /* Aura/Features/Home/HomeDashboardView.swift in Sources */,
 				B00000000000000000000012 /* Aura/Features/Shared/FoundationTabView.swift in Sources */,
 				B00000000000000000000013 /* Aura/PreviewSupport/AuraMockData.swift in Sources */,
+				B00000000000000000000016 /* Aura/Integrations/AppleTV/AppleTVDiscoveryModels.swift in Sources */,
+				B00000000000000000000017 /* Aura/Integrations/AppleTV/AppleTVDiscoveryClient.swift in Sources */,
+				B00000000000000000000019 /* Aura/Integrations/AppleTV/AppleTVPairingCodecs.swift in Sources */,
+				B0000000000000000000001A /* Aura/Integrations/AppleTV/AppleTVPairingModels.swift in Sources */,
+				B0000000000000000000001B /* Aura/Integrations/AppleTV/AppleTVPairingClient.swift in Sources */,
+				B0000000000000000000001C /* Aura/Integrations/AppleTV/AppleTVCredentialStore.swift in Sources */,
+				B0000000000000000000001D /* Aura/Features/Devices/AppleTVPairingModel.swift in Sources */,
+				B0000000000000000000001E /* Aura/Features/Devices/DevicesView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -308,6 +360,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				B00000000000000000000014 /* AuraTests/AuraDomainTests.swift in Sources */,
+				B00000000000000000000018 /* AuraTests/AppleTVDiscoveryTests.swift in Sources */,
+				B0000000000000000000001F /* AuraTests/AppleTVPairingTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -342,12 +396,8 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 8Z423BQQT8;
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = Aura;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UIRequiresFullScreen = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Aura/Resources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				MARKETING_VERSION = 0.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.danielhagen.aura;
@@ -365,12 +415,8 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 8Z423BQQT8;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = Aura;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UIRequiresFullScreen = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Aura/Resources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				MARKETING_VERSION = 0.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.danielhagen.aura;
@@ -528,6 +574,38 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		S00000000000000000000001 /* XCRemoteSwiftPackageReference "swift-srp" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/adam-fowler/swift-srp";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.3.0;
+			};
+		};
+		S00000000000000000000002 /* XCRemoteSwiftPackageReference "swift-crypto" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-crypto";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 3.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		P00000000000000000000001 /* SRP */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = S00000000000000000000001 /* XCRemoteSwiftPackageReference "swift-srp" */;
+			productName = SRP;
+		};
+		P00000000000000000000002 /* Crypto */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = S00000000000000000000002 /* XCRemoteSwiftPackageReference "swift-crypto" */;
+			productName = Crypto;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 300000000000000000000001 /* Project object */;
 }
