@@ -1,0 +1,1466 @@
+# Aura
+## Codex Rules
+
+Version: 1.0  
+Status: Active  
+Owner: Daniel Hagen  
+Project: Aura Platform  
+Document ID: AURA-21
+
+## Dependencies
+
+- AURA-00 Product Vision
+- AURA-01 Product Requirements
+- AURA-02 Brand Guidelines
+- AURA-03 Aura Design Language
+- AURA-04 Design Tokens
+- AURA-05 Information Architecture
+- AURA-05.5 Navigation System
+- AURA-06 User Flows
+- AURA-07 Screen Specifications
+- AURA-08 Component Library
+- AURA-09 Interaction Guidelines
+- AURA-10 Motion System
+- AURA-11 Haptics
+- AURA-12 Philips TV Integration
+- AURA-13 Apple TV Integration
+- AURA-14 HomeKit Integration
+- AURA-15 Philips Hue Bridge Integration
+- AURA-16 Device Discovery
+- AURA-17 Scene Engine
+- AURA-18 Automation Engine
+- AURA-19 Diagnostics
+- AURA-20 App Architecture
+
+---
+
+# 1. Purpose
+
+This document defines the mandatory operating rules for Codex and any other AI-assisted development system working on Aura.
+
+It converts Aura's product, design and architecture documentation into an execution contract for code changes.
+
+Codex must use this file as a repository-level instruction manual.
+
+The purpose is to ensure that AI-assisted development remains:
+
+- Deliberate
+- Architecturally consistent
+- Reviewable
+- Testable
+- Secure
+- Reversible
+- Honest about uncertainty
+- Aligned with Aura's product identity
+
+Codex is an implementation assistant.
+
+It is not the product owner, design owner or architecture authority.
+
+---
+
+# 2. Authority Order
+
+When working in Aura, Codex shall resolve instructions in this order:
+
+1. The user's current explicit request
+2. Security, privacy and platform constraints
+3. `21_Codex_Rules`
+4. `20_App_Architecture`
+5. The feature-specific technical document
+6. Product requirements and user flows
+7. Design system and interaction documents
+8. Existing code conventions
+9. Codex's own implementation preference
+
+Codex must not silently choose convenience over a higher-priority requirement.
+
+When two documents conflict, Codex shall:
+
+1. Stop the conflicting implementation decision
+2. Identify the conflicting sections
+3. Explain the practical consequence
+4. Propose the smallest explicit resolution
+5. Record the decision in documentation or an Architecture Decision Record when approved
+
+Codex must never hide a documentation conflict inside code.
+
+---
+
+# 3. Mandatory Reading Before Work
+
+Before changing code, Codex must read:
+
+- The current task request
+- This document
+- The relevant section of `20_App_Architecture`
+- The relevant feature or integration specification
+- Any existing files it intends to modify
+- Existing tests for the affected area
+
+For UI work, Codex must also read:
+
+- `03_Aura_Design_Language`
+- `04_Design_Tokens`
+- `07_Screen_Specifications`
+- `08_Component_Library`
+- `09_Interaction_Guidelines`
+- `10_Motion_System`
+- `11_Haptics`
+
+For integration work, Codex must also read:
+
+- `16_Device_Discovery`
+- `19_Diagnostics`
+- The vendor-specific integration document
+- `TECHNICAL_REVIEW.md`
+
+For scene or automation work, Codex must read:
+
+- `17_Scene_Engine`
+- `18_Automation_Engine`
+- `19_Diagnostics`
+
+Codex must not begin by generating files from memory when the repository already contains the relevant contract.
+
+---
+
+# 4. Core Operating Principles
+
+## 4.1 Understand Before Editing
+
+Codex shall inspect the current implementation before proposing a replacement.
+
+It must identify:
+
+- Existing ownership boundaries
+- Data flow
+- State ownership
+- Public interfaces
+- Tests
+- Call sites
+- Migration risk
+
+A file name alone is not sufficient context.
+
+## 4.2 Make the Smallest Correct Change
+
+Codex should prefer the smallest change that fully solves the task.
+
+It must not perform unrelated cleanup, renaming or restructuring unless:
+
+- The user requested it
+- The task cannot be completed safely without it
+- The change is clearly separated and explained
+
+## 4.3 Preserve Working Behavior
+
+Existing behavior is presumed intentional until verified otherwise.
+
+Codex must not remove behavior merely because it is undocumented.
+
+It should first determine whether the behavior is:
+
+- Required
+- Legacy
+- Accidental
+- Covered by tests
+- Used by another feature
+
+## 4.4 Be Explicit About Uncertainty
+
+Codex must distinguish between:
+
+- Verified fact
+- Repository assumption
+- Platform assumption
+- Proposed design
+- Temporary implementation
+
+It must never present an unverified vendor API, Apple framework capability or background-execution behavior as guaranteed.
+
+## 4.5 No Fake Completion
+
+Codex must not claim that a feature works unless it has appropriate evidence.
+
+Acceptable evidence may include:
+
+- Successful build
+- Passing tests
+- Simulator verification
+- Real-device verification
+- Mock integration verification
+- Static validation for documentation-only changes
+
+When hardware or entitlement verification is still required, Codex must say so.
+
+---
+
+# 5. Task Execution Protocol
+
+Every implementation task should follow this sequence.
+
+## Phase 1 — Understand
+
+Codex shall:
+
+1. Read the request
+2. Locate relevant documentation
+3. Inspect affected code and tests
+4. Identify dependencies and risk
+5. Clarify only when a missing decision materially blocks correct work
+
+## Phase 2 — Plan
+
+For non-trivial work, Codex shall produce a compact implementation plan containing:
+
+- Files to add or change
+- Architectural layer affected
+- Data flow
+- Test strategy
+- Known limitations
+
+A plan is not permission to rewrite unrelated code.
+
+## Phase 3 — Implement
+
+Codex shall:
+
+- Follow existing style
+- Keep dependencies flowing inward
+- Use named services for side effects
+- Preserve cancellation
+- Add diagnostics where operations can fail
+- Add accessibility to user-facing controls
+- Avoid placeholders unless explicitly approved
+
+## Phase 4 — Validate
+
+Codex shall run the strongest validation available:
+
+1. Formatting or linting where configured
+2. Unit tests for changed logic
+3. Integration tests where applicable
+4. Build for the relevant target
+5. Simulator validation for UI flows
+6. Real-hardware validation when required and available
+
+## Phase 5 — Report
+
+The final task report shall state:
+
+- What changed
+- Why it changed
+- What was validated
+- What remains unverified
+- Any migration or follow-up required
+
+Do not report every line changed.
+
+Report behavior and risk.
+
+---
+
+# 6. Repository Safety Rules
+
+Codex must never:
+
+- Rewrite Git history
+- Force-push without explicit approval
+- Delete branches without explicit approval
+- Delete user work because it appears unused
+- Overwrite a file without first reading its current content
+- Commit secrets
+- Commit generated credentials
+- Commit personal network identifiers
+- Commit large binary assets without confirming they belong in source control
+- Change signing, provisioning or bundle identity casually
+- Modify entitlements without explaining the requirement
+- Add third-party dependencies without approval
+
+For meaningful code changes, Codex should normally work on a feature branch unless Daniel explicitly requests direct changes to `main`.
+
+Documentation-only additions may be committed directly when explicitly requested.
+
+Commit messages should be:
+
+- Specific
+- Imperative or descriptive
+- Limited to one logical change
+
+Good:
+
+```text
+Add automation trigger deduplication
+Fix Hue event stream reconnect state
+Document HomeKit authorization boundary
+```
+
+Avoid:
+
+```text
+Updates
+Fix stuff
+Changes
+WIP final final
+```
+
+---
+
+# 7. File and Naming Rules
+
+Use the repository structure defined in `20_App_Architecture`.
+
+New types should have clear ownership.
+
+Examples:
+
+```text
+Domain/Automations/AutomationDefinition.swift
+Application/Scenes/RunSceneUseCase.swift
+Integrations/Hue/HueEventStreamClient.swift
+Platform/Security/KeychainCredentialStore.swift
+Presentation/Components/AuraDeviceCard.swift
+```
+
+Naming rules:
+
+- Use full descriptive names
+- Avoid unexplained abbreviations
+- Use `Aura` prefix for shared UI components
+- Use vendor prefixes only inside vendor integration boundaries
+- Use nouns for models
+- Use verbs or use-case language for operations
+- Use `Providing`, `Storing`, `Executing`, `Resolving` or similarly clear protocol names
+
+Avoid generic containers such as:
+
+- `Manager`
+- `Helper`
+- `Utils`
+- `Common`
+- `Misc`
+
+These names are allowed only when the responsibility is genuinely clear and documented.
+
+One file should normally contain one primary production type.
+
+Small closely related value types may share a file when that improves readability.
+
+---
+
+# 8. Architecture Rules
+
+## 8.1 Dependency Direction
+
+Dependencies must follow:
+
+```text
+Presentation
+    ↓
+Application
+    ↓
+Domain
+    ↑
+Infrastructure and Integrations implement Domain contracts
+```
+
+The Domain layer must not import:
+
+- SwiftUI
+- UIKit
+- HomeKit
+- Network.framework
+- Vendor SDKs
+- Persistence frameworks
+
+## 8.2 Presentation Layer
+
+SwiftUI views may:
+
+- Render immutable state
+- Bind to view models or feature stores
+- Emit user intent
+- Request presentation-level motion and haptics
+
+SwiftUI views must not:
+
+- Perform network requests
+- Access Keychain
+- Parse vendor responses
+- Own retry policy
+- Execute scenes directly
+- Evaluate automations
+- Determine permanent device identity
+- Start unstructured background work in `body`
+
+## 8.3 Application Layer
+
+Application services own orchestration.
+
+They should express user intent through use cases such as:
+
+- `RunSceneUseCase`
+- `AddDeviceUseCase`
+- `SetDeviceBrightnessUseCase`
+- `CreateAutomationUseCase`
+- `RunDiagnosticsUseCase`
+
+Application services may coordinate domain contracts.
+
+They must not become vendor API wrappers.
+
+## 8.4 Domain Layer
+
+Domain types must remain stable and vendor-neutral.
+
+Examples:
+
+- `AuraDevice`
+- `AuraCapability`
+- `AuraCommand`
+- `SceneDefinition`
+- `AutomationDefinition`
+- `DiagnosticIssue`
+
+A Hue response, HomeKit object or Philips TV endpoint model must never become a domain entity.
+
+## 8.5 Integration Layer
+
+Each integration owns:
+
+- Vendor discovery details
+- Pairing
+- Authentication
+- API or framework objects
+- Vendor resource decoding
+- Capability mapping
+- Vendor command execution
+- Event synchronization
+- Vendor diagnostics
+
+An integration must expose normalized Aura contracts.
+
+## 8.6 State Ownership
+
+One concern must have one authoritative owner.
+
+Examples:
+
+- Device identity: Unified Device Registry
+- Scene execution: Scene Engine
+- Automation scheduling and execution: Automation Engine
+- Diagnostic issues: Diagnostics Center
+- Credentials: Credential Store
+- Navigation path: Navigation Store
+
+Codex must not introduce a second independent source of truth for the same concern.
+
+---
+
+# 9. Swift Language Rules
+
+Aura should use modern Swift appropriate for the deployment target.
+
+Codex shall:
+
+- Prefer value types for immutable domain data
+- Mark cross-concurrency models `Sendable` where valid
+- Use actors for shared mutable state
+- Use `async` and `await` for asynchronous work
+- Preserve task cancellation
+- Use typed errors where callers need recovery behavior
+- Use protocol-based dependency injection at architectural boundaries
+- Avoid unnecessary protocol abstraction inside small local implementations
+- Avoid force unwraps in production code
+- Avoid `try!`
+- Avoid unsafe casts
+- Avoid globally mutable variables
+
+Codex must not add `@unchecked Sendable` merely to silence a compiler warning.
+
+It may be used only when thread safety is proven and documented near the declaration.
+
+Prefer exhaustive switches for domain state.
+
+Do not use a default case when explicit future compiler checking is valuable.
+
+---
+
+# 10. Swift Concurrency Rules
+
+## 10.1 Main Actor
+
+The Main Actor owns UI-facing mutable state.
+
+Networking, decoding, persistence and integration event processing must not run on the Main Actor unless required by a framework contract.
+
+Codex must not solve concurrency problems by marking an entire subsystem `@MainActor`.
+
+## 10.2 Structured Concurrency
+
+Prefer:
+
+- `async let`
+- Task groups
+- Child tasks
+- Actors
+- Async sequences
+
+Avoid detached tasks unless isolation from parent context is intentional and documented.
+
+## 10.3 Cancellation
+
+Every long-running operation must define cancellation behavior.
+
+Examples:
+
+- Discovery sessions stop network browsers
+- Event streams close connections
+- Pairing attempts stop retries
+- Slider updates cancel stale commands
+- Scene execution stops cancellable pending actions
+- Diagnostics tests stop when the user leaves
+
+A task that ignores cancellation is incomplete.
+
+## 10.4 Actor Reentrancy
+
+Actor methods that await external work must not assume state remained unchanged during suspension.
+
+Codex must revalidate important state after an `await` when necessary.
+
+## 10.5 Async Streams
+
+Long-lived event streams must:
+
+- Finish on shutdown
+- Handle cancellation
+- Avoid retaining consumers forever
+- Bound buffering where event volume can grow
+- Define duplicate and ordering behavior
+
+---
+
+# 11. UI and SwiftUI Rules
+
+## 11.1 Design System First
+
+All UI must use Aura design tokens and reusable components.
+
+Do not hardcode:
+
+- Colors
+- Spacing
+- Corner radii
+- Typography
+- Animation durations
+- Shadows
+- Haptic mappings
+
+When a required token does not exist, Codex should propose a token addition rather than inventing a one-off value.
+
+## 11.2 Component Reuse
+
+Before creating a component, Codex must check `08_Component_Library` and existing code.
+
+If three screens need the same pattern, it should become a reusable Aura component.
+
+Do not create multiple nearly identical cards with different names.
+
+## 11.3 View Complexity
+
+A SwiftUI view should remain focused on composition.
+
+Extract a subview when it:
+
+- Has its own responsibility
+- Has independent state or accessibility behavior
+- Is reused
+- Makes the parent materially easier to understand
+
+Do not split every few lines into a new type merely to reduce file length.
+
+## 11.4 State Management
+
+View-local ephemeral state belongs in the view.
+
+Feature state belongs in a feature store or view model.
+
+Domain state belongs in domain owners.
+
+Never duplicate confirmed device state inside multiple screens.
+
+## 11.5 Previews
+
+Reusable visual components and meaningful screen states should include previews when practical.
+
+Previews must use mocks and must not access:
+
+- Local network
+- Keychain
+- HomeKit
+- Real devices
+- Production persistence
+
+## 11.6 Loading and Errors
+
+Prefer:
+
+- Cached content
+- Skeletons
+- Progressive updates
+- Inline recovery
+
+Avoid blank screens and blocking spinners.
+
+User-facing errors must describe:
+
+- What happened
+- What the user can do next
+
+Raw errors belong in diagnostics, not normal UI.
+
+---
+
+# 12. Accessibility Rules
+
+Accessibility is required for every user-facing change.
+
+Codex must verify:
+
+- VoiceOver labels
+- VoiceOver values
+- VoiceOver hints where useful
+- Logical reading order
+- Dynamic Type
+- Minimum touch target
+- Sufficient contrast
+- Reduce Motion
+- Non-color state indicators
+- Focus stability during live updates
+
+Controls must announce state separately from action.
+
+Example:
+
+```text
+Label: Living room lights
+Value: On, 40 percent brightness
+Hint: Double tap to turn off
+```
+
+Haptics and motion must never be the only feedback.
+
+Security-sensitive actions must clearly announce pending and confirmed states.
+
+---
+
+# 13. Motion and Haptics Rules
+
+Motion must explain change.
+
+Haptics must reinforce meaningful interaction.
+
+Codex must use the systems defined in:
+
+- `10_Motion_System`
+- `11_Haptics`
+
+Do not:
+
+- Add decorative continuous animation
+- Trigger haptics for background events
+- Stack multiple haptics for one action
+- Fake scene completion through animation
+- Delay interaction until an animation finishes
+- Ignore Reduce Motion
+
+Scene progress must reflect real execution state.
+
+---
+
+# 14. Networking Rules
+
+All network clients must define:
+
+- Request timeout
+- Cancellation behavior
+- Response-size limits where relevant
+- Error translation
+- Logging category
+- Retry classification
+- Security assumptions
+
+Codex must not implement:
+
+- Broad port scanning
+- Infinite retries
+- Aggressive polling
+- Credentials in URLs
+- Secrets in logs
+- Silent HTTP fallback where HTTPS is required
+- Trust-all certificate handling
+
+Retries are allowed only when the operation is safe to retry.
+
+Operations that may already have succeeded must not be repeated blindly.
+
+Event-driven updates are preferred.
+
+Polling must be bounded, contextual and stopped when no longer necessary.
+
+---
+
+# 15. Vendor Integration Rules
+
+## 15.1 General
+
+Before implementing a vendor capability, Codex must verify:
+
+- Public API availability
+- Authentication requirements
+- Platform permissions
+- Current protocol version
+- Device or firmware limitations
+- App Store implications
+
+Capability support must come from verified runtime data, not product-name assumptions.
+
+Unsupported capabilities must remain absent.
+
+Do not simulate support.
+
+## 15.2 Philips TV
+
+Codex must not assume that endpoints from another Philips model apply to `65PUS7800/12`.
+
+Model- and firmware-specific behavior must be verified.
+
+Power and standby behavior require real-device validation.
+
+## 15.3 Apple TV
+
+Codex must not ship private or reverse-engineered Apple TV protocols without an explicit approved decision.
+
+Desired functionality in documentation is not proof of a public Apple API.
+
+## 15.4 HomeKit
+
+HomeKit framework objects must remain inside the HomeKit integration boundary.
+
+Codex must respect current entitlements, authorization behavior and public framework limits.
+
+## 15.5 Philips Hue
+
+Hue API versions must remain isolated.
+
+Hue API v2 production communication must use HTTPS.
+
+Normal REST control must respect current bridge command-rate guidance.
+
+High-frequency entertainment streaming must use the dedicated entertainment path, not repeated REST commands.
+
+---
+
+# 16. Security Rules
+
+Codex must treat security as a design requirement.
+
+Secrets include:
+
+- API keys
+- Pairing tokens
+- Authentication headers
+- Home identifiers where sensitive
+- Raw device serial numbers
+- Private network details
+
+Secrets must:
+
+- Be stored in Keychain or approved secure storage
+- Never appear in logs
+- Never appear in analytics
+- Never be committed
+- Never be embedded in source code
+- Never be copied into test fixtures without sanitization
+
+All external input is untrusted.
+
+Codex must use:
+
+- Strict decoding
+- Input validation
+- Bounded payloads
+- Safe string rendering
+- Explicit trust decisions
+
+Do not weaken transport security to make development easier.
+
+Development-only bypasses require clear compile-time isolation and must never be enabled in release builds.
+
+---
+
+# 17. Privacy Rules
+
+Aura is local-first.
+
+Codex must not add data upload, analytics or cloud storage implicitly.
+
+The following data should remain local by default:
+
+- Device names
+- Room names
+- Scene names
+- Automation definitions
+- Local IP addresses
+- Device usage
+- Motion events
+- Viewing activity
+- HomeKit structure
+- Diagnostic history
+
+New telemetry requires:
+
+- Explicit product approval
+- Documented purpose
+- Data minimization
+- User consent where required
+- Redaction rules
+- Retention rules
+
+Crash and diagnostic exports must be sanitized.
+
+User-created names must not be included in analytics by default.
+
+---
+
+# 18. Persistence Rules
+
+Persistence must use versioned models.
+
+Codex shall define:
+
+- Stable identifiers
+- Schema version
+- Migration path
+- Failure recovery
+- Backup behavior where relevant
+
+Cached state is not automatically authoritative.
+
+Security-sensitive current state must never be restored as confirmed solely from cache.
+
+Examples include:
+
+- Lock status
+- Alarm state
+- Garage state
+- Presence state
+- Current authorization
+
+Credentials must not be stored alongside ordinary Codable data.
+
+Destructive migrations require explicit approval and backup consideration.
+
+---
+
+# 19. Diagnostics and Logging Rules
+
+Every subsystem capable of failure must integrate with Diagnostics.
+
+Codex should add:
+
+- Structured log category
+- Correlation ID where an operation crosses modules
+- Start and completion events for meaningful operations
+- Sanitized error context
+- Recovery outcome
+
+Examples of correlation boundaries:
+
+- Device discovery session
+- Pairing flow
+- Scene run
+- Automation run
+- Diagnostic test
+- Reconnection attempt
+
+Logs must not include secrets or unredacted private identifiers.
+
+Normal UI should show actionable language.
+
+Advanced diagnostics may show technical detail after sanitization.
+
+Do not use `print()` as production logging.
+
+---
+
+# 20. Error Handling Rules
+
+Errors must remain scoped whenever possible.
+
+One unavailable light must not mark the entire Hue Bridge unusable.
+
+One failed automation action must not erase successful action results.
+
+Codex should distinguish:
+
+- Validation error
+- Authorization error
+- Unavailable resource
+- Timeout
+- Cancellation
+- Transient network failure
+- Permanent unsupported capability
+- Partial success
+- Unknown system failure
+
+Do not convert cancellation into an error banner.
+
+Do not retry authorization denial indefinitely.
+
+Do not expose raw framework or vendor errors to users.
+
+Every recoverable error should define a recovery action.
+
+---
+
+# 21. Scene and Automation Rules
+
+## 21.1 Scene Engine
+
+Scene execution must remain owned by the Scene Engine.
+
+Codex must not implement scene orchestration inside:
+
+- A SwiftUI view
+- A device plugin
+- An automation trigger handler
+
+Scene actions require:
+
+- Stable action identity
+- Timeout behavior
+- Cancellation behavior
+- Result reporting
+- Correlation ID
+- Retry classification
+
+Parallel actions may run concurrently only when their dependencies allow it.
+
+## 21.2 Automation Engine
+
+Automation evaluation must be deterministic.
+
+Codex must preserve:
+
+- Event deduplication
+- Cooldown
+- Debounce
+- Loop prevention
+- Correlation tracking
+- Execution history
+- Reliability classification
+
+An automation must not recursively trigger itself through reflected device state.
+
+Background execution must remain honest about iOS limitations.
+
+Do not promise exact unattended execution unless the platform can provide it.
+
+---
+
+# 22. Testing Rules
+
+No meaningful production logic should be added without a test strategy.
+
+## 22.1 Unit Tests
+
+Unit tests should cover:
+
+- Domain policies
+- Mapping
+- Validation
+- State transitions
+- Retry classification
+- Deduplication
+- Error translation
+- Persistence migration
+
+## 22.2 Integration Tests
+
+Integration tests should cover boundaries such as:
+
+- Plugin to registry
+- Registry to application use case
+- Scene Engine to plugins
+- Automation Engine to Scene Engine
+- Diagnostics provider aggregation
+
+## 22.3 UI Tests
+
+UI tests should focus on high-value flows:
+
+- First launch
+- Add device
+- Run scene
+- Create automation
+- Recover from offline device
+- Open diagnostics
+
+Avoid brittle tests that assert incidental animation timing or exact view hierarchy.
+
+## 22.4 Hardware Tests
+
+Real hardware is mandatory for capabilities that cannot be proven in simulation.
+
+Initial hardware matrix:
+
+- iPhone 16
+- Philips TV 65PUS7800/12
+- Apple TV 4K first generation
+- Philips Hue Bridge v2
+- HomePod mini
+- HomeKit environment
+
+Codex must clearly mark hardware-required validation.
+
+## 22.5 Test Quality
+
+Tests must:
+
+- Be deterministic
+- Avoid real secrets
+- Avoid relying on public internet availability
+- Use injectable clocks for time behavior
+- Use mocks or fixtures for vendor responses
+- Verify behavior rather than implementation details
+
+Do not weaken a test merely to make it pass.
+
+---
+
+# 23. Build and Validation Rules
+
+Before declaring a code task complete, Codex should run the relevant available commands.
+
+Expected minimum for code changes:
+
+- Build the affected target
+- Run affected unit tests
+- Run broader tests when shared architecture changed
+- Check compiler warnings introduced by the change
+
+For UI changes:
+
+- Build
+- Verify previews where available
+- Run in simulator
+- Check Dynamic Type
+- Check Reduce Motion
+- Check VoiceOver labels where practical
+
+For integration changes:
+
+- Run unit and fixture tests
+- Validate timeout and cancellation paths
+- Validate sanitized logging
+- Mark real-device validation status
+
+A successful compile alone does not prove correct behavior.
+
+---
+
+# 24. Performance Rules
+
+Codex must protect Aura's performance budgets.
+
+Avoid:
+
+- Blocking the Main Actor
+- Heavy mapping in SwiftUI view bodies
+- Repeated full-registry publication for one small update
+- Unbounded event buffers
+- Excessive polling
+- Re-decoding static metadata repeatedly
+- Large image decoding on the main thread
+- Recreating long-lived services per screen
+
+Measure when changing:
+
+- Launch path
+- Scrolling
+- Discovery
+- Event propagation
+- Scene execution
+- Automation evaluation
+- Diagnostics aggregation
+
+Performance claims must be based on measurement, not impression.
+
+---
+
+# 25. Dependency Rules
+
+The default is no new external dependency.
+
+Before adding one, Codex must explain:
+
+- The problem it solves
+- Why Apple frameworks or existing code are insufficient
+- Maintenance health
+- License
+- Binary size impact
+- Privacy impact
+- Security impact
+- Concurrency compatibility
+- Exit strategy
+
+A dependency must not be added for trivial utilities.
+
+Vendor SDKs should remain isolated behind integration boundaries.
+
+Do not expose dependency types throughout the app.
+
+---
+
+# 26. Documentation Rules
+
+Code and documentation must remain synchronized.
+
+Codex must update documentation when changing:
+
+- Public architecture
+- Domain model
+- Integration capability
+- Permission requirement
+- Persistence format
+- Scene or automation semantics
+- Security behavior
+- Significant UX flow
+
+Use an Architecture Decision Record when a decision:
+
+- Changes dependency direction
+- Adds a major framework or dependency
+- Introduces cloud behavior
+- Uses a private or reverse-engineered protocol
+- Changes device identity rules
+- Changes persistence strategy
+- Changes security assumptions
+
+Do not rewrite product documentation to justify an implementation shortcut.
+
+---
+
+# 27. Comment Rules
+
+Comments should explain why, not restate what the code does.
+
+Good:
+
+```swift
+// Revalidate after awaiting the plugin because another event may have
+// removed this route while the actor was suspended.
+```
+
+Avoid:
+
+```swift
+// Set isLoading to true
+isLoading = true
+```
+
+Temporary workarounds must include:
+
+- Reason
+- Scope
+- Removal condition
+- Related issue or decision reference where available
+
+Do not leave unexplained TODO comments.
+
+---
+
+# 28. Forbidden Patterns
+
+Codex must not introduce:
+
+- Networking in SwiftUI views
+- Vendor models in Domain
+- Global mutable singletons
+- Force unwraps for ordinary runtime data
+- `try!` in production paths
+- Empty catch blocks
+- Infinite retry loops
+- Polling from every screen independently
+- Duplicate sources of truth
+- Hidden side effects in property observers
+- Authentication tokens in UserDefaults
+- Secrets in source code
+- Trust-all TLS delegates
+- Broad network scanning
+- Blocking semaphores around async work
+- Arbitrary sleeps used as synchronization
+- Massive view models owning multiple unrelated features
+- God services that own the entire app
+- Unbounded diagnostic history
+- Fake success states
+- Placeholder controls for unsupported capabilities
+- Private Apple APIs without explicit approval
+
+---
+
+# 29. Refactoring Rules
+
+Refactoring must preserve externally observable behavior unless a behavior change is explicitly requested.
+
+Before a large refactor, Codex should:
+
+1. Add or confirm characterization tests
+2. Identify public boundaries
+3. Move one responsibility at a time
+4. Keep commits reviewable
+5. Build and test after each meaningful stage
+
+Do not combine a behavior change, architecture migration and visual redesign in one opaque change.
+
+A refactor is complete only when obsolete paths are removed safely and tests cover the new boundary.
+
+---
+
+# 30. Migration Rules
+
+When changing stored data or identifiers, Codex must define:
+
+- Old format
+- New format
+- Migration trigger
+- Failure behavior
+- Rollback or recovery behavior
+- Test fixtures for old versions
+
+Never regenerate stable device identifiers casually.
+
+A device must not appear as new merely because its IP address changed or a cache schema changed.
+
+Migration code should be removable only after the supported upgrade window is explicitly closed.
+
+---
+
+# 31. Feature Flag Rules
+
+Feature flags may be used for:
+
+- Incomplete integrations
+- Risky migrations
+- Hardware-limited experiments
+- Developer diagnostics
+- Gradual rollout
+
+A feature flag must define:
+
+- Owner
+- Default state
+- Release behavior
+- Removal condition
+
+Do not use flags as permanent architecture.
+
+Production-disabled features must not silently collect data or start background work.
+
+---
+
+# 32. Review Checklist
+
+Before presenting a change, Codex shall check:
+
+## Product
+
+- Does this solve the requested user problem?
+- Does it preserve Aura's experience-first philosophy?
+- Does it avoid unnecessary complexity?
+
+## Architecture
+
+- Is dependency direction preserved?
+- Is state owned once?
+- Are vendor types isolated?
+- Are side effects explicit?
+
+## Reliability
+
+- Are timeout, cancellation and retry defined?
+- Is partial failure handled?
+- Are stale states honest?
+
+## Security and Privacy
+
+- Are secrets protected?
+- Is external input validated?
+- Is unnecessary data collection avoided?
+
+## UI
+
+- Are tokens and components used?
+- Is accessibility complete?
+- Does loading and error behavior follow Aura rules?
+
+## Testing
+
+- Are relevant tests included?
+- Was the strongest available validation run?
+- Is remaining hardware validation stated?
+
+## Maintenance
+
+- Are names clear?
+- Is documentation updated?
+- Is the change reviewable and reversible?
+
+---
+
+# 33. Definition of Done
+
+A task is done only when:
+
+1. The requested behavior is implemented
+2. Architecture boundaries remain valid
+3. Error and cancellation paths are handled
+4. Security and privacy requirements are satisfied
+5. Accessibility is included for UI changes
+6. Relevant tests are added or updated
+7. The affected target builds
+8. Documentation is updated when needed
+9. No secrets or private identifiers were introduced
+10. Remaining limitations are clearly reported
+
+A task is not done because code was generated.
+
+It is done when the change is understandable, validated and safe to continue building upon.
+
+---
+
+# 34. Codex Response Format
+
+After completing a development task, Codex should report using this structure:
+
+```text
+Implemented
+- Behavior-level summary
+
+Changed
+- Important files or architectural areas
+
+Validated
+- Build, tests, simulator or hardware checks completed
+
+Remaining
+- Unverified hardware behavior, platform limitations or follow-up work
+```
+
+Do not flood the user with low-value implementation detail.
+
+Do not claim validation that did not occur.
+
+---
+
+# 35. Initial Build Order
+
+Unless Daniel changes the priority, Codex should follow the implementation order defined in `20_App_Architecture`.
+
+A safe initial sequence is:
+
+1. Xcode project and app shell
+2. Design tokens and core components
+3. Domain identifiers, capabilities and commands
+4. App environment and dependency injection
+5. Unified Device Registry with mocks
+6. Home dashboard vertical slice using mock data
+7. Diagnostics foundation
+8. Device Discovery foundation
+9. First verified hardware integration
+10. Scene Engine
+11. Automation Engine
+12. Additional integrations and advanced flows
+
+Codex must prefer a complete tested vertical slice over many disconnected placeholder modules.
+
+---
+
+# 36. First Vertical Slice Standard
+
+The first production-quality vertical slice should prove the architecture end to end.
+
+Example:
+
+```text
+Mock or verified device
+↓
+Integration or provider
+↓
+Unified Device Registry
+↓
+Application use case
+↓
+Feature state
+↓
+AuraDeviceCard
+↓
+User command
+↓
+Confirmed or failed result
+↓
+Diagnostics event
+```
+
+The slice must include:
+
+- Loading state
+- Success state
+- Offline state
+- Error recovery
+- Accessibility
+- Unit tests
+- At least one integration-level test
+
+A visually complete screen backed by fake disconnected logic does not satisfy this standard.
+
+---
+
+# 37. Final Rule
+
+Codex must make Aura easier to understand after every change.
+
+The codebase should become:
+
+- Clearer
+- Safer
+- More testable
+- More consistent
+- More faithful to the product
+
+Never optimize for the amount of code produced.
+
+Optimize for confidence in the next change.
+
+---
+
+# 38. Golden Rule
+
+Codex should behave like a careful senior engineer working inside a premium product team.
+
+Read first.
+
+Change deliberately.
+
+Test honestly.
+
+Protect the architecture.
+
+Keep Aura calm.
+
+---
+
+End of Document
