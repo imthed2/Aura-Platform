@@ -1,7 +1,7 @@
 # Aura
 ## Apple TV Integration
-Version: 1.0
-Status: Draft
+Version: 1.1
+Status: Scope blocked pending ADR-007 product review
 Owner: Daniel Hagen
 Project: Aura Platform
 Document ID: AURA-13
@@ -26,6 +26,32 @@ Instead, Aura complements the Apple TV experience.
 
 ---
 
+# Current Public API Gate
+
+`ADR/ADR-007-apple-tv-public-capability-scope.md` is the authority for implementation scope.
+
+The remainder of this document records the desired product experience. It is not evidence that Apple provides a public API for those capabilities.
+
+The current assessment found no public iPhone API for a third-party app to pair with and directly control Apple TV system navigation, power, playback, Now Playing state or applications. Aura must not implement those capabilities through private or reverse-engineered protocols.
+
+Until ADR-007 is accepted or superseded:
+
+• No production Apple TV plugin may be implemented
+• No Apple TV pairing credential may be created or stored
+• No direct Apple TV command may appear in an Aura Scene
+• Unsupported controls must remain absent from production UI
+• Mock Apple TV data is preview-only and does not prove capability support
+
+Public system-mediated routes are limited to:
+
+• Apple's Control Center Remote, presented as external user guidance rather than Aura control
+• AirPlay route selection for media Aura itself owns
+• Aggregate HomeKit home-hub state and runtime HomeKit characteristics actually exposed
+• User-composed Shortcuts that combine system actions with future Aura App Intents
+• A future same-team Aura tvOS companion through a separately approved Handoff design
+
+---
+
 # Design Goals
 
 Native
@@ -42,7 +68,9 @@ Battery Efficient
 
 ---
 
-# Responsibilities
+# Desired Responsibilities
+
+The list below is aspirational and is not authorized for implementation by this document.
 
 The module shall:
 
@@ -126,7 +154,9 @@ Authentication tokens are stored securely in Keychain.
 
 ---
 
-# Supported Features
+# Desired Features
+
+The features below are not currently supported through an accepted public Apple TV integration route.
 
 Power
 
@@ -453,6 +483,8 @@ Simulator Testing
 ---
 
 # Acceptance Criteria
+
+These criteria are inactive while ADR-007 remains Proposed. Acceptance requires a verified public API and a superseding architecture decision; private or reverse-engineered behavior cannot satisfy them.
 
 Apple TV is discovered automatically.
 

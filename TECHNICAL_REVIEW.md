@@ -88,6 +88,8 @@ No endpoint should be implemented from assumptions based on another Philips mode
 
 The Apple TV integration document currently describes desired capabilities, not a guaranteed public Apple API surface.
 
+`ADR/ADR-007-apple-tv-public-capability-scope.md` now records the first-party capability assessment. Its proposed decision is to omit a direct Apple TV plugin from Version 1 because the reviewed public APIs do not provide third-party system-level discovery, pairing, navigation, power, arbitrary playback state or application detection. Product approval is still required before the ADR becomes Accepted.
+
 Before implementation, divide features into:
 
 1. Publicly supported Apple frameworks and system integrations
@@ -96,6 +98,8 @@ Before implementation, divide features into:
 4. Unsupported or reverse-engineered protocols
 
 Aura should not ship a production dependency on private Apple protocols without an explicit legal, reliability and App Store review decision. Unsupported capabilities must be removed or reframed rather than presented as guaranteed.
+
+System-owned Control Center Remote, AirPlay routing for Aura-owned media, aggregate HomeKit hub state, runtime HomeKit accessory characteristics, user-composed Shortcuts and future same-team Handoff are separate public surfaces. None should be presented as proof that Aura directly controlled Apple TV.
 
 ## Architecture decisions confirmed
 
