@@ -1,0 +1,1003 @@
+# Aura
+## HomeKit Integration
+
+Version: 1.0  
+Status: Draft  
+Owner: Daniel Hagen  
+Project: Aura Platform  
+Document ID: AURA-14
+
+## Dependencies
+
+- AURA-01 Product Requirements
+- AURA-05 Information Architecture
+- AURA-06 User Flows
+- AURA-08 Component Library
+- AURA-11 Haptics
+- AURA-13 Apple TV Integration
+- AURA-16 Device Discovery
+- AURA-17 Scene Engine
+- AURA-18 Automation Engine
+- AURA-20 App Architecture
+
+---
+
+# 1. Purpose
+
+The HomeKit integration connects Aura to the user's existing Apple Home configuration.
+
+Aura must use HomeKit as a trusted system source for homes, rooms, zones, accessories, services, characteristics, scenes and automations while presenting them through Aura's own experience-first interface.
+
+Aura does not replace the Apple Home app and must not create a competing home database. It reads and controls the shared HomeKit database through Apple's HomeKit framework and maps that data into Aura's unified device and capability models.
+
+The integration shall feel native, immediate, private and predictable.
+
+---
+
+# 2. Product Goals
+
+The module shall:
+
+- Import the user's existing HomeKit home structure.
+- Display homes, rooms and compatible accessories inside Aura.
+- Control supported accessory characteristics.
+- Reflect external changes made in Apple Home or other HomeKit apps.
+- Expose HomeKit scenes inside Aura.
+- Allow Aura scenes to include HomeKit actions.
+- Preserve HomeKit permissions and security boundaries.
+- Recover cleanly when accessories, hubs or networks become unavailable.
+- Hide unsupported technical complexity from the user.
+
+---
+
+# 3. Non-Goals
+
+Version 1 shall not:
+
+- Replace Apple's HomeKit database.
+- Bypass HomeKit permissions.
+- Attempt to control accessories unavailable through HomeKit.
+- Duplicate every advanced configuration option from the Apple Home app.
+- Modify homes, rooms or ownership without an explicit user action.
+- Promise remote control when the user's Apple home infrastructure does not support it.
+- Treat Matter and HomeKit as identical implementation layers.
+
+---
+
+# 4. Platform Foundations
+
+Aura shall use Apple's HomeKit framework as the primary integration surface.
+
+A single long-lived `HMHomeManager` instance shall coordinate access to the user's HomeKit data. The integration must not create temporary managers per screen or per request.
+
+The HomeKit database is shared between Apple's Home app and authorized third-party apps. Aura must therefore treat external changes as normal operating conditions rather than exceptional events.
+
+The `homes` collection must not be considered ready immediately after creating `HMHomeManager`. Aura shall wait for the first `homeManagerDidUpdateHomes(_:)` callback before marking the HomeKit store as loaded.
+
+Matter onboarding is a related but separate capability. MatterSupport may be introduced later for commissioning compatible accessories, but version 1 of this module focuses on accessories already visible through HomeKit.
+
+---
+
+# 5. High-Level Architecture
+
+```mermaid
+flowchart TD
+    UI[Aura UI] --> Core[Aura Core Engine]
+    Core --> Registry[Unified Device Registry]
+    Core --> HomeKitPlugin[HomeKit Plugin]
+    HomeKitPlugin --> Adapter[HomeKit Adapter Layer]
+    Adapter --> Manager[HMHomeManager]
+    Manager --> DB[Shared HomeKit Database]
+    DB --> Accessories[HomeKit Accessories]
+    Registry --> Scenes[Aura Scene Engine]
+    Registry --> Diagnostics[Aura Diagnostics]
+```
+
+The UI must never communicate directly with `HMHomeManager`, `HMHome`, `HMAccessory`, `HMService` or `HMCharacteristic`.
+
+All Apple framework objects shall remain inside the HomeKit integration boundary.
+
+---
+
+# 6. Module Responsibilities
+
+The HomeKit plugin owns:
+
+- Authorization state.
+- Home loading and synchronization.
+- Home, room and zone mapping.
+- Accessory discovery through HomeKit.
+- Service and characteristic inspection.
+- Capability translation.
+- Characteristic reads and writes.
+- Event subscription management.
+- HomeKit scene execution.
+- External-change observation.
+- Error translation.
+- Diagnostics data.
+
+The plugin does not own:
+
+- Global navigation.
+- Aura visual components.
+- Cross-platform scene orchestration.
+- General persistence outside HomeKit mapping metadata.
+- Philips TV, Apple TV or Hue-specific APIs.
+
+---
+
+# 7. Authorization
+
+## 7.1 Authorization States
+
+Aura shall map HomeKit authorization into the following internal states:
+
+```swift
+enum AuraHomeAuthorizationState: Sendable, Equatable {
+    case unknown
+    case loading
+    case authorized
+    case restricted
+    case denied
+    case unavailable
+}
+```
+
+The exact HomeKit framework status must remain available to diagnostics, but normal UI should use Aura-friendly language.
+
+## 7.2 Permission Flow
+
+```mermaid
+flowchart TD
+    Start[User opens Home integration] --> Check[Check authorization]
+    Check -->|Authorized| Load[Load homes]
+    Check -->|Undetermined| Explain[Show permission explanation]
+    Explain --> Request[Trigger HomeKit access]
+    Request --> Result{Result}
+    Result -->|Allowed| Load
+    Result -->|Denied| Denied[Show Settings guidance]
+    Check -->|Denied or Restricted| Denied
+    Load --> Ready[HomeKit ready]
+```
+
+Aura must explain why access is needed before triggering the system permission flow.
+
+Suggested permission copy:
+
+> Aura uses access to your Apple Home to show and control your rooms, lights and other smart-home accessories. Your home data stays on your devices and in Apple's HomeKit system.
+
+## 7.3 Denied Access
+
+When access is denied:
+
+- Existing cached HomeKit data must not be presented as live.
+- Aura shall show a clear explanation.
+- The primary action shall open the relevant app settings where supported.
+- The user must still be able to use non-HomeKit integrations.
+- Aura shall not repeatedly trigger or simulate permission prompts.
+
+---
+
+# 8. Home Loading Lifecycle
+
+## 8.1 Initialization
+
+The integration shall be initialized once during application startup or when the signed-in local profile activates.
+
+Recommended sequence:
+
+1. Create `HMHomeManager`.
+2. Assign the delegate immediately.
+3. Set integration state to `loading`.
+4. Wait for `homeManagerDidUpdateHomes(_:)`.
+5. Read homes and primary-home information.
+6. Build normalized snapshots.
+7. Subscribe to relevant changes.
+8. Publish the synchronized Aura model.
+
+## 8.2 Loading States
+
+```swift
+enum HomeKitStoreState: Sendable, Equatable {
+    case idle
+    case requestingAuthorization
+    case loading
+    case ready(lastSync: Date)
+    case empty
+    case denied
+    case failed(AuraHomeKitError)
+}
+```
+
+## 8.3 Empty State
+
+An empty HomeKit database is not an error.
+
+Aura shall display:
+
+- Title: `No Apple Home found`
+- Explanation: `Set up a home in Apple's Home app, then return to Aura.`
+- Primary action: `Open Home`
+- Secondary action: `Try Again`
+
+---
+
+# 9. Domain Mapping
+
+Aura shall convert framework objects into stable, Sendable domain models.
+
+```swift
+struct AuraHomeSnapshot: Identifiable, Sendable, Equatable {
+    let id: UUID
+    let name: String
+    let isPrimary: Bool
+    let rooms: [AuraRoomSnapshot]
+    let zones: [AuraZoneSnapshot]
+    let scenes: [AuraExternalSceneSnapshot]
+}
+
+struct AuraRoomSnapshot: Identifiable, Sendable, Equatable {
+    let id: UUID
+    let homeID: UUID
+    let name: String
+    let deviceIDs: [UUID]
+}
+
+struct AuraDeviceSnapshot: Identifiable, Sendable, Equatable {
+    let id: UUID
+    let source: AuraDeviceSource
+    let externalIdentifier: UUID
+    let homeID: UUID
+    let roomID: UUID?
+    let name: String
+    let manufacturer: String?
+    let model: String?
+    let firmwareVersion: String?
+    let isReachable: Bool
+    let capabilities: Set<AuraCapability>
+    let state: AuraDeviceState
+}
+```
+
+Do not expose HomeKit classes directly through SwiftUI observable state.
+
+---
+
+# 10. Identity and Deduplication
+
+HomeKit accessory identifiers shall be used as the primary external identity for HomeKit-imported devices.
+
+Aura shall maintain a mapping record:
+
+```swift
+struct DeviceIdentityRecord: Codable, Sendable {
+    let auraDeviceID: UUID
+    let source: AuraDeviceSource
+    let externalIdentifier: UUID
+    let firstSeenAt: Date
+    var lastSeenAt: Date
+}
+```
+
+Rules:
+
+- Never deduplicate solely by accessory name.
+- Never deduplicate solely by manufacturer or model.
+- A bridged accessory remains an individual Aura device when HomeKit exposes it individually.
+- If a device is also found through a native Aura plugin, automatic merging must occur only when a reliable shared identifier exists.
+- Ambiguous duplicates shall remain separate until the user or a verified mapping resolves them.
+
+---
+
+# 11. Homes, Rooms and Zones
+
+Aura shall preserve the user's HomeKit hierarchy.
+
+## 11.1 Homes
+
+Each HomeKit home maps to an Aura home context.
+
+The user may have multiple homes. Aura must not assume that only one exists.
+
+The selected Aura home shall be persisted locally, but the user must be able to change it.
+
+## 11.2 Rooms
+
+HomeKit rooms shall appear as Aura rooms unless the user explicitly creates an Aura-only presentation layer later.
+
+Unnamed or default rooms shall receive a friendly fallback presentation without changing the source HomeKit data.
+
+## 11.3 Zones
+
+Zones are optional organizational metadata.
+
+Aura may use zones for filtering and context, but zones must not replace rooms in primary navigation.
+
+## 11.4 External Changes
+
+Renaming or moving accessories in Apple's Home app shall update Aura automatically.
+
+Aura should animate layout changes calmly and preserve the user's current navigation position whenever possible.
+
+---
+
+# 12. Accessory and Service Inspection
+
+HomeKit accessories may expose multiple services, and each service may expose multiple characteristics.
+
+Aura shall inspect all relevant services before assigning capabilities.
+
+Examples include:
+
+- Lightbulb service.
+- Switch service.
+- Outlet service.
+- Thermostat service.
+- Fan service.
+- Lock mechanism service.
+- Garage door opener service.
+- Window covering service.
+- Sensor services.
+- Battery service.
+- Television service.
+- Speaker service.
+
+Capability detection must be characteristic-based rather than name-based.
+
+A device shall expose a capability only when the required service and writable or readable characteristic combination is available.
+
+---
+
+# 13. Unified Capability Mapping
+
+HomeKit characteristics shall map into Aura's capability model.
+
+Example mapping:
+
+| HomeKit concept | Aura capability |
+|---|---|
+| Power state | `.power` |
+| Brightness | `.brightness` |
+| Hue and saturation | `.colorHSB` |
+| Color temperature | `.colorTemperature` |
+| Current temperature | `.temperatureSensor` |
+| Target temperature | `.thermostatTarget` |
+| Lock target/current state | `.lockControl` |
+| Position | `.positionControl` |
+| Motion detected | `.motionSensor` |
+| Contact state | `.contactSensor` |
+| Battery level | `.batteryStatus` |
+| Active state | `.activeState` |
+
+A capability shall include metadata describing:
+
+- Readability.
+- Writability.
+- Minimum value.
+- Maximum value.
+- Step value.
+- Unit.
+- Valid values.
+- Event-notification support.
+
+---
+
+# 14. Characteristic Reading
+
+Aura shall avoid reading every characteristic repeatedly.
+
+Read strategy:
+
+1. Use cached values for immediate rendering.
+2. Subscribe to event notifications where supported.
+3. Perform explicit reads when opening a detail screen or recovering from connectivity loss.
+4. Refresh important dashboard characteristics selectively.
+5. Avoid bulk polling across the entire home.
+
+High-priority characteristics include:
+
+- Power.
+- Reachability.
+- Brightness.
+- Lock state.
+- Door or window state.
+- Active media state.
+- Current temperature.
+- Alarm or leak state.
+
+Low-priority characteristics include:
+
+- Firmware metadata.
+- Static manufacturer information.
+- Rarely changed configuration values.
+
+---
+
+# 15. Characteristic Writing
+
+Every write shall follow this sequence:
+
+```mermaid
+sequenceDiagram
+    participant UI as Aura UI
+    participant Core as Aura Core
+    participant HK as HomeKit Plugin
+    participant Device as HomeKit Accessory
+
+    UI->>Core: User changes control
+    Core->>HK: Execute normalized command
+    HK->>HK: Validate capability and value
+    HK->>Device: Write characteristic
+    alt Success
+        Device-->>HK: Completion
+        HK-->>Core: Confirmed state
+        Core-->>UI: Success feedback
+    else Failure
+        Device-->>HK: Error
+        HK-->>Core: Normalized error
+        Core-->>UI: Revert or show recovery
+    end
+```
+
+## 15.1 Optimistic UI
+
+Optimistic UI may be used for low-risk, reversible actions such as:
+
+- Light power.
+- Brightness.
+- Fan speed.
+- Color selection.
+
+Optimistic UI must not be used as final confirmation for security-sensitive actions such as:
+
+- Door locks.
+- Garage doors.
+- Alarm systems.
+- Entry access.
+
+For those actions, the UI shall display a pending state until HomeKit confirms the resulting state.
+
+## 15.2 Value Validation
+
+Before writing:
+
+- Confirm that the characteristic is writable.
+- Clamp numeric values to supported ranges.
+- Respect step values.
+- Convert Aura units to HomeKit units.
+- Reject unsupported enum values.
+- Avoid duplicate writes for unchanged values.
+
+---
+
+# 16. Event Subscriptions
+
+Aura should enable characteristic notifications for visible or operationally important states when HomeKit supports them.
+
+Subscription priorities:
+
+## Tier 1 — Always while integration is active
+
+- Reachability.
+- Lock state.
+- Garage door state.
+- Alarm state.
+- Leak, smoke and carbon-monoxide sensors.
+
+## Tier 2 — While app is foregrounded
+
+- Power.
+- Brightness.
+- Temperature.
+- Motion.
+- Contact sensors.
+- Media activity.
+
+## Tier 3 — While relevant screen is visible
+
+- Fine-grained color values.
+- Position values.
+- Detailed environmental measurements.
+
+Aura must remove unnecessary subscriptions when context changes.
+
+---
+
+# 17. Reachability and Availability
+
+HomeKit reachability is an important signal but not a complete guarantee that a command will succeed.
+
+Aura shall distinguish:
+
+```swift
+enum AuraAvailability: Sendable, Equatable {
+    case available
+    case unavailable
+    case updating
+    case unknown
+}
+```
+
+Rules:
+
+- A reachable accessory may still return an operation error.
+- An unreachable accessory shall not be removed from the home.
+- Temporary unavailability should not produce destructive UI changes.
+- Last-known values may be displayed with a stale indicator.
+- Security-relevant stale values must be clearly labeled.
+
+---
+
+# 18. Scenes and Action Sets
+
+HomeKit action sets shall be imported as external scenes.
+
+Aura shall display:
+
+- Scene name.
+- Source badge: `Apple Home`.
+- Home association.
+- Execution availability.
+- Last execution result recorded by Aura.
+
+Aura may execute a HomeKit action set through the HomeKit framework.
+
+Imported HomeKit scenes must not be silently edited by Aura.
+
+Aura scenes may combine:
+
+- A HomeKit scene.
+- Individual HomeKit characteristic writes.
+- Philips TV commands.
+- Apple TV commands.
+- Hue-native commands.
+- Delays and conditions supported by Aura's Scene Engine.
+
+Example:
+
+```mermaid
+flowchart LR
+    Start[Movie Night] --> HK[Execute HomeKit scene]
+    HK --> TV[Turn on Philips TV]
+    TV --> ATV[Wake Apple TV]
+    ATV --> Lights[Set HomeKit lights to 15%]
+    Lights --> Done[Scene complete]
+```
+
+---
+
+# 19. Automations
+
+HomeKit automations and Aura automations are separate concepts.
+
+Version 1 shall:
+
+- Read enough metadata to identify HomeKit triggers where the framework permits.
+- Avoid claiming ownership of automations created in Apple Home.
+- Allow Aura to execute HomeKit scenes as actions inside Aura automations.
+- Prevent duplicate execution loops between the two systems.
+
+Aura shall store an execution correlation ID for every Aura automation run. The same run must not recursively trigger itself through a reflected HomeKit state change.
+
+---
+
+# 20. Home Hub Awareness
+
+Apple TV and HomePod devices may provide home-hub functionality within Apple's ecosystem, but Aura must not infer remote-control guarantees solely from the presence of a named device.
+
+Aura should present a simple operational result:
+
+- `Available`
+- `Some accessories unavailable`
+- `Home unavailable`
+
+Detailed infrastructure information belongs in Diagnostics.
+
+Aura should not expose unsupported assumptions about which Apple device is currently acting as the active home hub unless that information is reliably provided by public APIs.
+
+---
+
+# 21. HomePod Representation
+
+HomePod mini may appear through HomeKit services, media-related APIs or both, depending on platform capabilities and authorization.
+
+Aura must not promise full HomePod remote control through HomeKit.
+
+Version 1 may expose:
+
+- Room placement.
+- Reachability where available.
+- Basic media or volume capabilities only when publicly exposed and confirmed.
+- Scene participation.
+- Home-hub diagnostics at a high level.
+
+Unsupported controls shall be hidden rather than displayed as disabled placeholders.
+
+---
+
+# 22. Local Network Privacy
+
+Aura uses multiple local integrations beyond HomeKit. The app shall include an accurate `NSLocalNetworkUsageDescription` explaining local-device discovery and control.
+
+Suggested copy:
+
+> Aura uses your local network to find and control TVs, media players, lights and other devices in your home.
+
+The permission explanation must be truthful and broad enough to cover Aura's supported local integrations without implying internet upload.
+
+Bonjour service declarations shall include only service types that Aura actually browses.
+
+HomeKit authorization and Local Network authorization must be treated as separate permission domains.
+
+---
+
+# 23. Concurrency Model
+
+HomeKit framework callbacks shall be isolated behind a dedicated actor or serialized adapter.
+
+Recommended design:
+
+```swift
+actor HomeKitRepository {
+    private let adapter: HomeKitAdapter
+    private var snapshot: AuraHomeKitSnapshot
+
+    func start() async throws
+    func currentSnapshot() -> AuraHomeKitSnapshot
+    func execute(_ command: AuraDeviceCommand) async throws
+    func refresh(_ deviceID: UUID) async throws
+}
+```
+
+Because Apple framework objects may have thread-affinity or callback-order considerations, the adapter must establish one clear execution context and document it.
+
+The app shall never mutate SwiftUI state directly from HomeKit delegate callbacks.
+
+---
+
+# 24. Suggested Swift Architecture
+
+```text
+Integrations/
+└── HomeKit/
+    ├── HomeKitPlugin.swift
+    ├── HomeKitRepository.swift
+    ├── HomeKitAdapter.swift
+    ├── HomeKitAuthorizationService.swift
+    ├── HomeKitMapper.swift
+    ├── HomeKitCapabilityResolver.swift
+    ├── HomeKitCommandExecutor.swift
+    ├── HomeKitEventCoordinator.swift
+    ├── HomeKitSceneService.swift
+    ├── HomeKitDiagnosticsProvider.swift
+    ├── Models/
+    │   ├── HomeKitSnapshot.swift
+    │   ├── HomeKitIdentityRecord.swift
+    │   └── HomeKitCharacteristicDescriptor.swift
+    └── Tests/
+        ├── HomeKitMapperTests.swift
+        ├── HomeKitCommandExecutorTests.swift
+        ├── HomeKitCapabilityResolverTests.swift
+        └── HomeKitRepositoryTests.swift
+```
+
+## 24.1 Protocol Boundary
+
+```swift
+protocol HomeKitProviding: Sendable {
+    func start() async throws
+    func stop() async
+    func snapshot() async -> AuraHomeKitSnapshot
+    func execute(_ command: AuraDeviceCommand) async throws -> AuraCommandResult
+    func executeScene(id: UUID) async throws -> AuraSceneResult
+    func refresh(deviceID: UUID) async throws
+}
+```
+
+Production code uses `HomeKitRepository`.
+Tests and previews use `MockHomeKitProvider`.
+
+---
+
+# 25. State Synchronization
+
+Aura shall use snapshot-based state publication.
+
+A synchronization pass shall:
+
+1. Read the current home hierarchy.
+2. Normalize accessory identities.
+3. Resolve services and capabilities.
+4. Compare with the previous snapshot.
+5. Publish only meaningful changes.
+6. Preserve transient command states.
+7. Update persistence metadata.
+8. Record diagnostics timing.
+
+Large changes should be coalesced to avoid repeated SwiftUI updates.
+
+---
+
+# 26. Caching
+
+Aura may cache normalized HomeKit metadata for fast startup.
+
+Cacheable:
+
+- Home names and identifiers.
+- Room names and identifiers.
+- Device names and identifiers.
+- Manufacturer and model.
+- Capability descriptors.
+- Last-known non-sensitive states.
+- Last synchronization timestamp.
+
+Must not be treated as authoritative:
+
+- Lock state.
+- Alarm state.
+- Garage door state.
+- Presence-related security state.
+- Current authorization.
+- Current reachability.
+
+The cache shall be replaced after a successful HomeKit synchronization.
+
+---
+
+# 27. Error Model
+
+```swift
+enum AuraHomeKitError: Error, Sendable, Equatable {
+    case authorizationDenied
+    case authorizationRestricted
+    case databaseUnavailable
+    case homeNotFound
+    case accessoryNotFound
+    case serviceNotFound
+    case characteristicNotFound
+    case characteristicNotReadable
+    case characteristicNotWritable
+    case invalidValue
+    case accessoryUnreachable
+    case operationTimedOut
+    case operationCancelled
+    case externalChangeConflict
+    case frameworkFailure(code: Int, message: String)
+}
+```
+
+Raw framework errors may be retained in diagnostic logs but must be translated before reaching normal UI.
+
+---
+
+# 28. User-Facing Error Guidance
+
+| Situation | User message | Primary action |
+|---|---|---|
+| Home access denied | `Aura does not have access to your Apple Home.` | `Open Settings` |
+| Accessory unreachable | `This device is not responding right now.` | `Try Again` |
+| Write rejected | `Aura could not apply that change.` | `Retry` |
+| Home database empty | `No Apple Home was found.` | `Open Home` |
+| External structure changed | `Your Apple Home was updated.` | `Refresh` |
+| Security state stale | `Current status could not be confirmed.` | `Check Again` |
+
+Errors should remain attached to the affected device or operation whenever possible rather than becoming global alerts.
+
+---
+
+# 29. Diagnostics
+
+The HomeKit diagnostics provider shall report:
+
+- Authorization state.
+- Home manager lifecycle state.
+- Number of homes.
+- Selected home.
+- Number of rooms.
+- Number of accessories.
+- Reachable and unreachable counts.
+- Capability-resolution failures.
+- Active event subscriptions.
+- Last full synchronization time.
+- Last synchronization duration.
+- Recent command latency.
+- Recent normalized errors.
+- Cache age.
+
+Diagnostics must not expose sensitive home data in exported logs without explicit user consent.
+
+Accessory names should be redacted or pseudonymized in shareable diagnostic packages unless the user chooses otherwise.
+
+---
+
+# 30. Privacy and Security
+
+Aura shall follow these rules:
+
+- Home data remains local unless the user explicitly enables a future synchronization feature.
+- No HomeKit database contents are sent to analytics.
+- No accessory names, room names or scene names are included in crash reports by default.
+- HomeKit authorization is never bypassed.
+- Security-sensitive state is never represented as confirmed when stale.
+- Debug logging is disabled in production except for bounded, privacy-safe operational events.
+- Aura does not store Apple ID credentials.
+- Aura does not request broader permissions than required.
+
+---
+
+# 31. Performance Targets
+
+| Operation | Target |
+|---|---:|
+| Show cached home structure | Under 300 ms after launch |
+| First HomeKit synchronization | Under 3 seconds for a typical home |
+| Single characteristic write dispatch | Under 100 ms from UI to framework call |
+| Confirmed light-state update | Under 750 ms under normal conditions |
+| External state reflected in UI | Under 1 second when notifications are available |
+| Detail-screen refresh | Under 1.5 seconds |
+| Main-thread blocking | 0 operations over 16 ms caused by HomeKit mapping |
+
+Targets are operational goals, not guarantees of accessory or network behavior.
+
+---
+
+# 32. Accessibility
+
+HomeKit controls shall follow the Aura accessibility system.
+
+Requirements:
+
+- Every control has a meaningful accessibility label.
+- Current state is announced separately from the action.
+- Security controls announce pending and confirmed states.
+- Color controls provide non-color descriptions.
+- Dynamic Type is supported.
+- VoiceOver order follows visual hierarchy.
+- Haptics are supplementary, never the only feedback.
+- Reduced Motion is respected during room and device updates.
+
+Example:
+
+- Label: `Living room ceiling light`
+- Value: `On, 40 percent brightness`
+- Hint: `Double tap to turn off`
+
+---
+
+# 33. Haptics
+
+Use Aura's haptic rules:
+
+- Selection haptic when choosing a room or accessory.
+- Light impact for low-risk toggles after dispatch.
+- Success notification only after confirmed security-sensitive actions.
+- Error notification when an operation fails.
+- No repeated haptic feedback for rapid slider updates.
+
+---
+
+# 34. Testing Strategy
+
+## 34.1 Unit Tests
+
+Test:
+
+- Home and room mapping.
+- Accessory identity stability.
+- Service recognition.
+- Capability resolution.
+- Numeric range conversion.
+- Enum conversion.
+- Error translation.
+- Cache invalidation.
+- Snapshot diffing.
+- Deduplication safeguards.
+
+## 34.2 Integration Tests
+
+Test:
+
+- Initial authorization.
+- Denied authorization.
+- Multiple homes.
+- Empty home database.
+- Accessory added externally.
+- Accessory removed externally.
+- Accessory renamed externally.
+- Accessory moved between rooms.
+- Scene execution.
+- Reachability changes.
+- App background and foreground transitions.
+
+## 34.3 Simulated Accessories
+
+Use Apple's HomeKit accessory simulation tools where supported to test:
+
+- Lights.
+- Switches.
+- Thermostats.
+- Sensors.
+- Locks.
+- Garage doors.
+- Window coverings.
+- Multi-service accessories.
+
+## 34.4 Real-Hardware Matrix
+
+Minimum validation set:
+
+- Hue Bridge accessories exposed through HomeKit.
+- HomePod mini present in the home.
+- Apple TV home hub present.
+- At least one native HomeKit or Matter accessory.
+- One temporarily unreachable accessory.
+- Multiple rooms.
+- Multiple scenes.
+
+## 34.5 Regression Tests
+
+Every release shall verify:
+
+- Authorization is not requested unexpectedly.
+- Existing home data loads correctly.
+- Device identity remains stable.
+- External changes synchronize.
+- No duplicate devices appear after relaunch.
+- Scene execution does not trigger twice.
+- Security controls never falsely show success.
+
+---
+
+# 35. Acceptance Criteria
+
+The HomeKit integration is accepted when:
+
+1. Aura requests Home access with clear context.
+2. Existing homes and rooms load without manual reconfiguration.
+3. Compatible accessories appear in the correct rooms.
+4. Supported capabilities are derived from services and characteristics.
+5. Basic light, switch and outlet controls work reliably.
+6. External changes made in Apple Home appear in Aura.
+7. HomeKit scenes can be executed from Aura.
+8. HomeKit actions can participate in Aura scenes.
+9. Unsupported controls are hidden.
+10. Denied authorization does not block the rest of Aura.
+11. Unreachable devices retain their identity and show an honest status.
+12. Security-sensitive operations wait for confirmation.
+13. No HomeKit framework object is exposed directly to the UI layer.
+14. No private home metadata is sent to analytics.
+15. Automated tests cover mapping, capability resolution and error translation.
+
+---
+
+# 36. Future Enhancements
+
+Potential future work:
+
+- Matter accessory commissioning through MatterSupport.
+- Advanced HomeKit automation inspection.
+- Accessory setup-code scanning where public APIs permit it.
+- Home widgets.
+- Apple Watch room controls.
+- Siri and App Intents actions.
+- Context-aware room selection.
+- Energy-consumption views.
+- Rich camera and doorbell support.
+- Secure temporary guest-control profiles.
+- Cross-home scene templates.
+- Home migration diagnostics.
+
+Each enhancement must be evaluated against Apple's current public APIs and privacy requirements before implementation.
+
+---
+
+# 37. Golden Rule
+
+Aura must respect Apple Home as the source of truth while making the experience feel calmer, clearer and more connected.
+
+The user should see one home experience—not two systems competing for control.
+
+---
+
+End of Document
