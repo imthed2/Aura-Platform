@@ -1,6 +1,6 @@
 # ADR-006: Hue HTTPS certificate and bridge-identity strategy
 
-- Status: Proposed — blocked on authenticated vendor guidance and hardware verification
+- Status: Proposed — blocked on authenticated vendor guidance and completion of hardware verification
 - Date: 2026-07-21
 
 ## Context
@@ -11,7 +11,7 @@ An IP address is only a route to a bridge. It may change through DHCP and may la
 
 Apple's URL Loading System normally evaluates server trust. If Aura handles a server-trust challenge itself, it becomes responsible for evaluating the received `SecTrust` before creating a trust credential. Apple also recommends planning for certificate rotation and, when pinning is necessary, preferring a CA or public-key strategy over one leaf certificate.
 
-The public Hue material does not expose enough detail to safely finalize the local bridge validation algorithm. The current application-design guidance that covers certificate handling requires a Hue developer login, and this workspace has no attached Hue Bridge from which to verify the certificate chain, identity fields, renewal behavior, or firmware differences.
+The public Hue material does not expose enough detail to safely finalize the local bridge validation algorithm. The current application-design guidance that covers certificate handling requires a Hue developer login. A Hue Bridge v2 is available for read-only inspection, but one bridge observation cannot establish the supported trust anchors, renewal behavior, or firmware differences.
 
 ## Decision
 
@@ -55,6 +55,23 @@ On supported bridge hardware and current firmware, verify without recording secr
 - Compatibility with both an unpaired candidate and an already paired bridge
 
 Evidence should include sanitized test output and firmware versions. A single observed certificate must not be promoted into a permanent leaf-certificate pin.
+
+### Sanitized hardware observation — 2026-07-21
+
+A read-only inspection of one Hue Bridge v2 produced the following evidence. No API request, pairing request, application key, device command, or state mutation was made.
+
+- Local mDNS advertised one `_hue._tcp` service on port 443 with model `BSB002`.
+- The official Hue iPhone app reported the bridge connected on software version `1.78.1978074000`. This firmware value is user-reported evidence and was not retrieved through an Aura API request.
+- The advertised stable bridge identifier matched the physical label and the leaf certificate's common name and serial number. Exact identifiers are intentionally omitted.
+- The discovered host name used a shorter hardware-address form and did not equal the full stable bridge identifier.
+- The bridge sent one leaf certificate. Its subject organization was Philips Hue and its issuer common name was `root-bridge`; the issuer certificate was not included in the handshake.
+- The leaf certificate contained no subject alternative name, Authority Information Access extension, or certificate revocation-list distribution point. It used an ECDSA P-256 public key, an ECDSA-with-SHA-256 signature, critical non-CA basic constraints, and a validity window spanning 2017–2038.
+- The discovered IPv6 host route and IPv4 route returned the same leaf certificate.
+- The bridge negotiated TLS 1.2 with `ECDHE-ECDSA-AES128-GCM-SHA256` during this observation.
+- OpenSSL could not build the certificate chain from its default trust store, and macOS Security.framework reported the certificate as not trusted. This is expected evidence that Aura needs the vendor-supported Hue trust anchor and policy; it is not justification to bypass validation.
+- No exact bridge identifier, address, certificate fingerprint, certificate bytes, QR payload, or setup data was committed.
+
+This partially satisfies the hardware gate by establishing the observed certificate shape, identity relationship, and reported firmware version. The gate remains open until the authorized Hue documentation supplies the supported root material and policy, and until Aura verifies trusted evaluation, negative identity cases, restart, address change, firmware-update and certificate-rotation behavior, and pre-credential failure behavior.
 
 ## Required automated tests
 
