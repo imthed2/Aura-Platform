@@ -1,0 +1,1339 @@
+# Aura
+## Product and Engineering Roadmap
+
+Version: 1.0  
+Status: Active  
+Owner: Daniel Hagen  
+Project: Aura Platform  
+Document ID: AURA-22
+
+## Dependencies
+
+- AURA-00 Product Vision
+- AURA-01 Product Requirements
+- AURA-02 Brand Guidelines
+- AURA-03 Aura Design Language
+- AURA-04 Design Tokens
+- AURA-05 Information Architecture
+- AURA-05.5 Navigation System
+- AURA-06 User Flows
+- AURA-07 Screen Specifications
+- AURA-08 Component Library
+- AURA-09 Interaction Guidelines
+- AURA-10 Motion System
+- AURA-11 Haptics
+- AURA-12 Philips TV Integration
+- AURA-13 Apple TV Integration
+- AURA-14 HomeKit Integration
+- AURA-15 Philips Hue Bridge Integration
+- AURA-16 Device Discovery
+- AURA-17 Scene Engine
+- AURA-18 Automation Engine
+- AURA-19 Diagnostics
+- AURA-20 App Architecture
+- AURA-21 Codex Rules
+- TECHNICAL_REVIEW.md
+
+---
+
+# 1. Purpose
+
+This document defines the implementation roadmap for Aura.
+
+It converts the complete product and architecture documentation into a practical sequence of milestones that can be executed by a small team using Xcode, Swift, SwiftUI and AI-assisted development.
+
+The roadmap is intentionally ordered by risk and dependency rather than by visual excitement.
+
+Aura must establish a reliable foundation before adding real-device integrations, scenes and automations.
+
+The roadmap shall remain:
+
+- Incremental
+- Testable
+- Reviewable
+- Hardware-aware
+- Local-first
+- Architecture-led
+- Honest about platform limitations
+- Suitable for frequent builds on a real iPhone
+
+---
+
+# 2. Roadmap Principles
+
+## 2.1 Build Vertical Slices
+
+Aura should be developed as a sequence of complete vertical slices.
+
+A vertical slice includes:
+
+- Domain model
+- Application use case
+- Persistence where required
+- SwiftUI presentation
+- Accessibility
+- Diagnostics
+- Tests
+- Real-device validation where applicable
+
+Do not create large disconnected layers that cannot be demonstrated in the running application.
+
+## 2.2 Make the App Runnable at Every Milestone
+
+Every milestone should end with:
+
+- A compiling project
+- Passing tests
+- A usable simulator build
+- A real-device build when hardware behavior is involved
+- No knowingly broken main branch
+
+## 2.3 Prove Risky Integrations Early
+
+The following areas require early technical validation:
+
+- Philips TV model-specific local API behavior
+- Apple TV capabilities available through public and acceptable APIs
+- HomeKit entitlements and authorization behavior
+- Hue Bridge HTTPS, certificate and event-stream behavior
+- iOS local-network permission behavior
+- Background automation limitations
+
+A feature must not be presented as committed for release until its required platform capability has been verified.
+
+## 2.4 Prefer Capability Delivery Over Manufacturer Checklists
+
+Milestones should deliver user capabilities such as:
+
+- Discover a device
+- Turn a light on
+- Run Movie Night
+- Explain why a device is unavailable
+
+They should not exist solely to mirror vendor API endpoints.
+
+## 2.5 Documentation Is Part of Implementation
+
+When implementation reveals a conflict or a new constraint:
+
+1. Record the decision.
+2. Update the affected specification.
+3. Add or update an Architecture Decision Record when appropriate.
+4. Add tests that protect the decision.
+5. Do not leave the documentation knowingly inaccurate.
+
+---
+
+# 3. Priority Definitions
+
+## P0 — Foundation or Release Blocking
+
+Required before the relevant milestone can be considered complete.
+
+Examples:
+
+- Project compiles
+- Core architecture boundaries
+- Secure credential storage
+- Basic device control
+- Error recovery
+- Accessibility for primary flows
+
+## P1 — High Value
+
+Important for a strong first release but may follow the first working vertical slice.
+
+Examples:
+
+- Rich diagnostics
+- Scene editing
+- Multiple rooms
+- Polished onboarding
+- Advanced device state presentation
+
+## P2 — Planned Expansion
+
+Valuable after the core product is stable.
+
+Examples:
+
+- Widgets
+- App Intents
+- Apple Watch
+- Advanced Hue effects
+- Expanded media metadata
+
+## P3 — Experimental
+
+Requires separate validation and may never ship.
+
+Examples:
+
+- Unsupported private protocols
+- Real-time Hue Entertainment streaming
+- AI-generated automation suggestions
+- Cross-platform cloud synchronization
+
+---
+
+# 4. Release Strategy
+
+Aura shall move through the following release stages:
+
+```text
+Documentation Complete
+↓
+Engineering Foundation
+↓
+Internal Prototype
+↓
+Hardware Alpha
+↓
+Feature Alpha
+↓
+Private Beta
+↓
+Release Candidate
+↓
+Version 1.0
+```
+
+Each stage has explicit exit criteria.
+
+Dates may be assigned later, but quality gates must not be removed to satisfy arbitrary dates.
+
+---
+
+# 5. Phase 0 — Repository and Feasibility Baseline
+
+## Objective
+
+Prepare the repository for safe implementation and resolve the highest-risk unknowns before building major features.
+
+## Deliverables
+
+### Repository Foundation
+
+- Root `AGENTS.md` that directs Codex to `21_Codex_Rules` and `20_App_Architecture`
+- Standard `.gitignore` for Xcode and Swift
+- Initial license decision
+- Contribution and pull-request expectations
+- Architecture Decision Record directory
+- Issue and pull-request templates
+- Branch and commit conventions
+- Basic GitHub Actions workflow for build and tests when the Xcode project exists
+
+### Documentation Audit
+
+- Confirm every numbered document exists and is linked from README
+- Resolve or record contradictions
+- Review `TECHNICAL_REVIEW.md`
+- Identify all unverified platform claims
+- Create a documentation issue for each unresolved implementation blocker
+
+### Feasibility Spikes
+
+Create small isolated proof-of-concept branches or projects for:
+
+1. Philips TV discovery and authenticated command on `65PUS7800/12`
+2. Hue Bridge v2 HTTPS pairing and one light command
+3. Hue event-stream connection and state update
+4. HomeKit authorization and accessory enumeration
+5. Apple TV public capability assessment
+6. Local-network permission behavior on the minimum supported iOS version
+
+## Exit Criteria
+
+- Repository contains clear AI and human contribution instructions
+- High-risk integrations have written feasibility results
+- Unsupported assumptions are removed or explicitly marked experimental
+- No production architecture is based on unverified private protocol behavior
+- Initial implementation backlog can be created from evidence rather than assumptions
+
+---
+
+# 6. Phase 1 — Xcode Application Foundation
+
+## Objective
+
+Create the first production-shaped Aura iPhone application shell.
+
+## Deliverables
+
+### Project Setup
+
+- iOS application target
+- iOS 18 minimum deployment target unless intentionally revised
+- Swift 6 language mode where practical
+- Strict concurrency warnings enabled
+- Portrait-first iPhone interface
+- Debug and Release configurations
+- Test target
+- UI test target
+- Preview support
+
+### Application Bootstrap
+
+Implement the minimum architecture from AURA-20:
+
+- `AuraApp`
+- `AppBootstrapper`
+- `AppEnvironment`
+- `AppLifecycleCoordinator`
+- `RootView`
+- Typed navigation store
+- Dependency container
+- Clock abstraction
+- Logger abstraction
+- Settings repository
+
+### Design System Foundation
+
+Implement tokens and base components before feature-specific styling:
+
+- Color tokens
+- Typography tokens
+- Spacing tokens
+- Radius tokens
+- Motion tokens
+- Haptic service
+- `AuraSurface`
+- `AuraCard`
+- `AuraButton`
+- `AuraStatusBadge`
+- `AuraBanner`
+- Loading and empty-state primitives
+
+### App Shell
+
+Create the five-tab shell:
+
+- Home
+- Rooms
+- Scenes
+- Devices
+- Settings
+
+Tabs may initially show high-quality empty states and previews.
+
+## Exit Criteria
+
+- Project builds without warnings that indicate architecture or concurrency problems
+- Five-tab shell works on simulator and iPhone 16
+- Design tokens are used instead of hardcoded visual values
+- Navigation restores its basic state
+- Components support Dynamic Type and VoiceOver
+- Unit-test and UI-test targets run successfully
+
+---
+
+# 7. Phase 2 — Domain Core and Mock Platform
+
+## Objective
+
+Implement the vendor-neutral domain model and make Aura useful with deterministic mock data before connecting real hardware.
+
+## Deliverables
+
+### Core Domain
+
+- `AuraDeviceID`
+- `AuraRoomID`
+- `PluginIdentifier`
+- Device snapshots
+- Room snapshots
+- Capability descriptors
+- Device states
+- Availability states
+- Command model
+- Command results
+- Normalized errors
+- Scene definitions
+- Automation definitions
+- Diagnostics issue model
+
+### Unified Device Registry
+
+Implement:
+
+- Stable logical device identity
+- Multiple control routes per device
+- Preferred route selection
+- Immutable snapshots
+- Device and room queries
+- Capability lookup
+- State freshness
+- Offline and stale-state representation
+
+### Mock Integration Plugin
+
+Create a complete mock plugin with:
+
+- Mock TV
+- Mock Apple TV
+- Mock Hue Bridge
+- Mock lights
+- Mock HomeKit sensors
+- Configurable latency
+- Configurable failures
+- Event updates
+- Pairing simulation
+
+### First Demonstrable Experience
+
+Build a complete mock Living Room:
+
+- TV card
+- Lighting card
+- Apple TV card
+- Favorite controls
+- Mock Movie Night scene
+- Offline and error simulation
+
+## Exit Criteria
+
+- UI can run entirely from mock providers
+- No SwiftUI view imports vendor frameworks
+- Registry is the source of truth for device presentation
+- Mock device commands update confirmed and optimistic states correctly
+- Error states and recovery actions can be demonstrated without hardware
+- Domain and registry tests are deterministic
+
+---
+
+# 8. Phase 3 — First Vertical Slice: Home to Device Control
+
+## Objective
+
+Deliver the first end-to-end user journey through the real application architecture.
+
+## User Journey
+
+```text
+Launch Aura
+↓
+Open Home
+↓
+View Living Room
+↓
+Open Light
+↓
+Turn Light On
+↓
+Receive visual and haptic feedback
+↓
+See confirmed state
+```
+
+Initially this may use the mock plugin; the architecture must be identical to the later real integration path.
+
+## Deliverables
+
+- Home Dashboard basic structure
+- Room Detail basic structure
+- Device Detail basic structure
+- Favorite-device support
+- Device command use case
+- Pending, success and failure state handling
+- Inline diagnostics link
+- State restoration
+- Accessibility labels and values
+- Performance instrumentation
+
+## Exit Criteria
+
+- The flow requires no more than two taps from Home to the primary control
+- UI feedback begins immediately
+- Network or mock latency never blocks the main actor
+- A failed command rolls back or clearly resolves optimistic state
+- VoiceOver can complete the flow
+- The flow is covered by unit and UI tests
+
+---
+
+# 9. Phase 4 — Device Discovery Platform
+
+## Objective
+
+Implement AURA-16 as the shared onboarding and reconnection system.
+
+## Deliverables
+
+- Discovery Coordinator
+- Known Device Store
+- Network Path Service
+- Local Network Permission Service
+- Bonjour/mDNS provider support
+- Plugin discovery registry
+- Candidate verification pipeline
+- Duplicate merge service
+- Manual host/IP flow
+- Progressive Add Device UI
+- Targeted rediscovery
+- Discovery diagnostics
+
+## Initial Providers
+
+Start with providers required by the validated integrations:
+
+1. Hue Bridge
+2. Philips TV
+3. HomeKit enumeration
+4. Apple TV only where a supported discovery path exists
+
+## Exit Criteria
+
+- Known devices appear immediately
+- Verified results appear progressively
+- Duplicate candidates merge into one stable result
+- Discovery cancellation leaves no running browsers or tasks
+- Permission denial has a clear recovery path
+- Network changes trigger bounded targeted recovery
+- No broad port scanning occurs
+
+---
+
+# 10. Phase 5 — Philips Hue Integration
+
+## Objective
+
+Deliver the first production-quality real-device integration.
+
+Hue is the preferred first integration because it provides a strong combination of discovery, pairing, commands, events, rooms, scenes and sensors.
+
+## P0 Deliverables
+
+- Hue Bridge v2 discovery
+- HTTPS communication
+- Bridge identity validation strategy
+- Link-button pairing
+- Keychain credential storage
+- Resource synchronization
+- Event stream
+- Light on/off
+- Brightness
+- Color temperature where supported
+- Color where supported
+- Grouped room control
+- Reachability
+- Error translation
+- Diagnostics
+
+## P1 Deliverables
+
+- Hue rooms and zones
+- Hue scene activation
+- Sensors
+- Buttons as events
+- Gradient capability presentation
+- Dynamic scene support where verified
+- Route reconciliation with HomeKit-exposed Hue devices
+
+## Rate-Limit Requirement
+
+Ordinary REST commands must respect current verified Hue guidance.
+
+High-frequency entertainment behavior is excluded from this phase.
+
+## Exit Criteria
+
+- Hue Bridge reconnects after app relaunch
+- IP changes recover through stable identity and rediscovery
+- Keychain contains secrets; logs and persistence do not
+- Event updates refresh UI without continuous polling
+- Individual and grouped commands respect rate limits
+- Real hardware test matrix passes
+
+---
+
+# 11. Phase 6 — Scene Engine
+
+## Objective
+
+Turn individual device controls into coordinated experiences.
+
+## P0 Deliverables
+
+- Scene persistence
+- Scene validation
+- Execution planning
+- Sequential actions
+- Parallel independent actions
+- Delays
+- Timeouts
+- Cancellation
+- Partial-success results
+- Correlation IDs
+- Execution history
+- Mock and Hue scene actions
+
+## First Production Scene
+
+`Movie Night` should support the capabilities currently available.
+
+The scene must degrade honestly when some integrations are not yet enabled.
+
+Example during early development:
+
+```text
+Activate Hue Cinema scene
+↓
+Set hallway lights to 15%
+↓
+Report TV and Apple TV actions as unavailable until integrated
+```
+
+## Exit Criteria
+
+- Scene execution never blocks the UI
+- Independent actions can run concurrently
+- Per-action results are visible in diagnostics
+- Cancellation stops cancellable work
+- Re-running a scene does not corrupt state
+- Scene execution is deterministic under mocks
+
+---
+
+# 12. Phase 7 — HomeKit Integration
+
+## Objective
+
+Connect Aura to the user's Apple Home while respecting HomeKit as the source of truth.
+
+## P0 Deliverables
+
+- Authorization flow
+- One long-lived HomeKit manager boundary
+- Homes and rooms
+- Accessory mapping
+- Capability resolution
+- Light, switch and outlet control
+- Sensor state
+- HomeKit scene execution
+- External-change synchronization
+- Diagnostics
+
+## Security-Sensitive Behavior
+
+Locks, garage doors, alarms and access controls require confirmed-state UI and dedicated review before release.
+
+## Exit Criteria
+
+- Denied authorization does not break non-HomeKit features
+- External changes appear in Aura
+- HomeKit framework objects remain isolated from presentation
+- Duplicate Hue/HomeKit devices are not auto-merged without reliable evidence
+- Security-sensitive controls never display false success
+- Real HomeKit environment passes regression tests
+
+---
+
+# 13. Phase 8 — Philips TV Integration
+
+## Objective
+
+Deliver verified control of the project target Philips television.
+
+## Required Compatibility Profile
+
+Before implementation is considered production-ready, document the verified behavior of:
+
+- Philips `65PUS7800/12`
+- Firmware version under test
+- Supported API generation
+- Pairing and authentication
+- Certificate behavior
+- Standby and wake behavior
+- Key commands
+- Volume
+- Input switching
+- EasyLink dependencies
+- Ambilight availability
+
+## P0 Deliverables
+
+- Discovery
+- Pairing
+- Secure credential storage
+- Power-state reading
+- Standby
+- Wake where verified
+- Volume and mute
+- Input switching
+- Navigation keys
+- State refresh
+- Targeted reconnect
+- Diagnostics
+
+## P1 Deliverables
+
+- Picture and sound modes where verified
+- Installed apps where verified
+- Now Playing where verified
+- Ambilight where verified
+
+## Exit Criteria
+
+- Every shipped command is verified on the target television
+- Unsupported controls remain absent
+- Standby and wake limitations are communicated honestly
+- Repeated commands do not overload the television
+- Network interruption recovery is bounded and observable
+- Real-hardware acceptance tests pass
+
+---
+
+# 14. Phase 9 — Apple TV Capability Gate and Integration
+
+## Objective
+
+Integrate only capabilities that are supported, reliable and acceptable for distribution.
+
+## Capability Classification
+
+Every desired feature must be placed into one category:
+
+1. Public Apple framework or system surface
+2. HomeKit-exposed capability
+3. App Intent, Shortcut or handoff capability
+4. Unsupported or reverse-engineered protocol
+
+Category 4 features must not become a production dependency without an explicit product, legal, reliability and App Store decision.
+
+## Potential P0 Scope
+
+The final P0 scope depends on the feasibility spike.
+
+Possible deliverables include:
+
+- Discovery where publicly supported
+- HomeKit-based status or controls where exposed
+- Launching Apple system Remote surfaces
+- Scene participation through supported system actions
+- Honest availability and diagnostics
+
+## Exit Criteria
+
+- Every shipped Apple TV capability has a documented supported implementation path
+- No private protocol is silently embedded
+- Unsupported desired features are reclassified as future or removed
+- The app continues to provide value when Apple TV direct control is limited
+
+---
+
+# 15. Phase 10 — Automation Engine
+
+## Objective
+
+Allow Aura to respond automatically to time and trusted local events.
+
+## P0 Deliverables
+
+- Time triggers
+- Sunrise and sunset triggers where location permission is appropriately handled
+- Hue sensor triggers
+- HomeKit state triggers where supported
+- Device online/offline triggers
+- Conditions
+- Scene actions
+- Direct device actions
+- Wait actions
+- Conditional branches
+- Cooldown
+- Debounce
+- Deduplication
+- Loop prevention
+- Execution history
+- Diagnostics
+
+## Reliability Classes
+
+Automations should declare operational expectations such as:
+
+- Foreground reliable
+- Local event driven
+- Requires Home hub
+- Best effort while app is inactive
+- Not supported in background
+
+Aura must not promise continuous background execution beyond iOS capabilities.
+
+## Exit Criteria
+
+- Duplicate events do not cause duplicate runs
+- An automation cannot recursively trigger itself without limit
+- Background limitations are accurately represented
+- Failed actions are recorded with recovery guidance
+- Users can disable an unhealthy automation
+- Automation behavior is testable with an injectable clock and event bus
+
+---
+
+# 16. Phase 11 — Diagnostics and Recovery Experience
+
+## Objective
+
+Make Aura capable of explaining and recovering from common failures without exposing raw technical complexity.
+
+## Deliverables
+
+- Global health summary
+- Integration health
+- Device health
+- Scene and automation run diagnostics
+- Network diagnostics
+- Permission diagnostics
+- Suggested recovery actions
+- Sanitized log export
+- Correlation-based event trace
+- Diagnostic retention policy
+- Privacy-safe redaction
+
+## Exit Criteria
+
+- Every major subsystem contributes diagnostics
+- Normal users see explanations before technical details
+- Recovery actions are classified by safety level
+- Exports contain no credentials
+- Device and room names are handled according to privacy rules
+- One failed subsystem does not make the health screen unusable
+
+---
+
+# 17. Phase 12 — Feature Alpha
+
+## Objective
+
+Complete the primary Aura product loop with real hardware.
+
+## Required Alpha Experiences
+
+- Launch into a useful Home Dashboard
+- View rooms and devices
+- Control Hue lighting
+- Control verified Philips TV features
+- Access HomeKit devices
+- Run a multi-device scene
+- Create a basic automation
+- Understand and recover from common failures
+- Personalize basic appearance and haptics
+
+## Alpha Exit Criteria
+
+- No known data-loss issue
+- No known credential exposure
+- Crash-free internal test sessions meet the current target
+- Main flows pass on iPhone 16
+- All P0 accessibility flows are usable
+- Documentation reflects the implementation
+- Unsupported features are not presented as available
+
+---
+
+# 18. Phase 13 — Private Beta
+
+## Objective
+
+Validate reliability, comprehension and everyday usefulness outside the development setup.
+
+## Beta Preparation
+
+- TestFlight configuration
+- Privacy manifest review
+- App privacy questionnaire preparation
+- Feedback channel
+- Diagnostic export workflow
+- Release notes process
+- Crash reporting with privacy-safe configuration
+- Beta onboarding
+- Known-issues page
+
+## Beta Test Focus
+
+- Different router configurations
+- Multiple Hue device types
+- HomeKit home variations
+- Philips firmware variations where possible
+- Permission denial and recovery
+- Device IP changes
+- App upgrades and persistence migrations
+- Long-running scenes and automations
+- Battery usage
+- Accessibility
+
+## Beta Exit Criteria
+
+- Crash-free sessions exceed the agreed release threshold
+- Scene execution meets reliability target
+- Discovery reliability is measured and acceptable
+- No critical privacy or security issue remains open
+- Common failures provide actionable recovery
+- Migration from previous beta builds succeeds
+
+---
+
+# 19. Phase 14 — Release Candidate and Version 1.0
+
+## Objective
+
+Produce a stable, supportable and honest first public release.
+
+## Release Candidate Gates
+
+### Product
+
+- Primary flows match the Product Requirements or have documented scope changes
+- App presents experiences rather than vendor complexity
+- No placeholder production controls
+
+### Engineering
+
+- Clean Release build
+- Required automated tests pass
+- No unresolved P0 defect
+- No unresolved critical concurrency warning
+- Persistence migration tested
+- Keychain behavior tested
+- Offline startup tested
+
+### Hardware
+
+- Hue Bridge v2 matrix passes
+- Philips target TV matrix passes for shipped features
+- HomeKit environment matrix passes
+- Apple TV scope passes only for features actually included
+
+### Design
+
+- Design tokens used consistently
+- Dynamic Type tested
+- VoiceOver primary flows tested
+- Reduce Motion tested
+- One-handed primary actions reviewed
+
+### Privacy and Security
+
+- Credentials are redacted from all logs
+- Exported diagnostics reviewed
+- Local network and HomeKit descriptions are accurate
+- No unnecessary analytics data
+- No private Apple API dependency without explicit approval
+
+### Operations
+
+- Versioning and release notes ready
+- Support and known-issue process ready
+- Rollback or hotfix process documented
+
+## Version 1.0 Definition
+
+Version 1.0 is achieved when Aura can reliably act as the user's primary daily interface for the subset of supported devices and experiences that have passed all release gates.
+
+Version 1.0 does not require every future feature in the PRD.
+
+It requires a coherent, dependable and premium product.
+
+---
+
+# 20. Post-1.0 Roadmap
+
+## 1.1 — Reliability and Daily Use
+
+Potential scope:
+
+- Improved recovery
+- Faster startup
+- Expanded device compatibility profiles
+- Scene history improvements
+- Automation health improvements
+- Better diagnostics export
+- User-requested accessibility refinements
+
+## 1.2 — Apple Platform Surfaces
+
+Potential scope:
+
+- App Intents
+- Siri Shortcuts
+- Widgets
+- Control Center controls where supported
+- Live Activities for bounded temporary experiences
+- Apple Watch companion
+
+## 1.3 — Expanded Home Capabilities
+
+Potential scope:
+
+- Matter onboarding
+- Thread-aware diagnostics
+- Cameras and doorbells
+- Locks and security devices with strict confirmation UX
+- Thermostats
+- Energy monitoring
+
+## 2.0 — Multi-Device Aura Platform
+
+Potential scope:
+
+- iPad
+- Mac
+- visionOS
+- Multi-home support
+- Secure optional synchronization
+- Shared household preferences
+- Cross-device state restoration
+
+Every post-1.0 milestone requires updated product, privacy and architecture review.
+
+---
+
+# 21. Initial Implementation Order
+
+Unless a feasibility result requires a change, Codex and developers should use this order:
+
+1. Audit repository and create root development guidance
+2. Create Xcode project and test targets
+3. Implement design tokens and app shell
+4. Implement domain models
+5. Implement Unified Device Registry
+6. Implement mock plugin and mock home
+7. Complete first Home-to-Device vertical slice
+8. Implement Device Discovery platform
+9. Implement Hue integration
+10. Implement Scene Engine
+11. Implement HomeKit integration
+12. Implement Philips TV integration
+13. Resolve Apple TV supported scope
+14. Implement Automation Engine
+15. Complete Diagnostics and recovery
+16. Run feature-alpha hardening
+17. Prepare private beta
+
+Do not begin with all integrations simultaneously.
+
+---
+
+# 22. First Codex Milestone
+
+The first Codex implementation task should be deliberately bounded.
+
+## Goal
+
+Create a compiling Aura iOS project with the architectural shell, design-system foundation and mock Home screen.
+
+## Required Output
+
+- Xcode project or approved project-generation setup
+- iOS 18+ app target
+- Swift 6-safe foundation
+- Five-tab navigation shell
+- Core design tokens
+- Base reusable components
+- Mock domain data
+- Mock Home Dashboard
+- Unit tests for initial domain models
+- UI smoke test
+- Root `AGENTS.md`
+- Updated README build instructions
+
+## Explicitly Excluded
+
+- Real Hue networking
+- Real Philips TV networking
+- Real Apple TV protocols
+- HomeKit entitlement work
+- Scene execution beyond mock demonstration
+- Automation execution
+- Cloud services
+
+## Completion Standard
+
+The milestone is complete only when Codex reports:
+
+- Files changed
+- Architecture decisions made
+- Build command used
+- Test command used
+- Build and test result
+- Known limitations
+- Recommended next milestone
+
+---
+
+# 23. Backlog Structure
+
+GitHub issues should use clear, testable slices.
+
+Recommended issue categories:
+
+- `foundation`
+- `design-system`
+- `domain`
+- `discovery`
+- `integration:hue`
+- `integration:homekit`
+- `integration:philips-tv`
+- `integration:apple-tv`
+- `scene-engine`
+- `automation-engine`
+- `diagnostics`
+- `accessibility`
+- `security`
+- `documentation`
+- `bug`
+- `technical-spike`
+
+Each implementation issue should contain:
+
+- User or engineering outcome
+- Relevant Aura documents
+- Scope
+- Non-scope
+- Acceptance criteria
+- Test requirements
+- Hardware requirements
+- Security and privacy considerations
+- Definition of done
+
+---
+
+# 24. Branch and Review Strategy
+
+Recommended workflow:
+
+```text
+main
+└── feature/<small-descriptive-slice>
+    └── pull request
+```
+
+Rules:
+
+- Keep `main` buildable
+- Prefer small reviewable pull requests
+- Do not mix unrelated refactors with features
+- Include tests with behavior changes
+- Update documentation in the same change when behavior changes
+- Use draft pull requests for incomplete or exploratory work
+- Do not merge a technical spike as production architecture without review
+
+Direct commits to `main` may be acceptable during initial documentation setup, but implementation work should normally use branches and pull requests.
+
+---
+
+# 25. Architecture Decision Records
+
+Create `docs/adr/` or an equivalent root ADR directory before significant implementation decisions accumulate.
+
+Suggested initial ADRs:
+
+- ADR-001 Project and dependency management approach
+- ADR-002 Persistence technology
+- ADR-003 Unified Device Registry identity model
+- ADR-004 Plugin registration and dependency injection
+- ADR-005 Navigation state model
+- ADR-006 Hue HTTPS certificate strategy
+- ADR-007 Apple TV supported capability decision
+- ADR-008 Background automation reliability model
+
+An ADR should include:
+
+- Context
+- Decision
+- Alternatives considered
+- Consequences
+- Status
+- Date
+
+---
+
+# 26. Measurement Plan
+
+Track meaningful engineering and product signals without collecting sensitive home data.
+
+## Engineering Metrics
+
+- Cold-launch duration
+- Dashboard-render duration
+- Main-thread stalls
+- Memory usage
+- Discovery time
+- Command latency
+- Scene execution duration
+- Automation execution result
+- Crash-free sessions
+
+## Product Metrics
+
+Only with privacy-safe, opt-in or appropriately disclosed measurement:
+
+- Completion of onboarding
+- Successful device additions by category
+- Scene creation completion
+- Automation creation completion
+- Recovery action success
+
+Never collect:
+
+- Device names
+- Room names
+- Scene names
+- Viewing history
+- Motion history
+- Local IP addresses
+- Bridge credentials
+- Raw home event history
+
+---
+
+# 27. Risk Register
+
+## Risk: Apple TV Feature Availability
+
+Mitigation:
+
+- Complete public-API capability assessment early
+- Keep direct Apple TV functionality outside the critical path until verified
+- Design scenes to degrade gracefully
+
+## Risk: Philips TV Firmware Differences
+
+Mitigation:
+
+- Maintain model and firmware compatibility profiles
+- Capability-detect at runtime
+- Test only shipped features
+
+## Risk: Background Automation Expectations
+
+Mitigation:
+
+- Classify reliability honestly
+- Use HomeKit or system-supported mechanisms where appropriate
+- Avoid claims of continuous background execution
+
+## Risk: Duplicate Devices
+
+Mitigation:
+
+- Stable identity model
+- Multiple internal routes
+- Conservative merge confidence
+- User confirmation for ambiguity
+
+## Risk: Network Instability
+
+Mitigation:
+
+- Cached presentation
+- Event-driven synchronization
+- Bounded retry and backoff
+- Targeted rediscovery
+- Diagnostics
+
+## Risk: AI-Assisted Architectural Drift
+
+Mitigation:
+
+- Root `AGENTS.md`
+- AURA-21 authority order
+- Small pull requests
+- Required test and reporting format
+- Human review for architecture changes
+
+## Risk: Documentation Becoming Stale
+
+Mitigation:
+
+- Documentation changes in the same pull request as behavior changes
+- Periodic technical review
+- ADRs for durable decisions
+
+---
+
+# 28. Definition of Ready
+
+A task is ready for implementation when:
+
+- Its intended outcome is clear
+- Relevant documentation is identified
+- Dependencies are available
+- Platform claims are verified or explicitly part of a spike
+- Acceptance criteria exist
+- Test strategy is known
+- Hardware requirements are known
+- Security and privacy impact is considered
+- Scope and non-scope are explicit
+
+Codex should not silently invent missing product decisions for a task that is not ready.
+
+---
+
+# 29. Definition of Done
+
+A task is done when:
+
+- The implementation matches the agreed scope
+- Architecture boundaries are preserved
+- Code compiles
+- Required tests pass
+- Accessibility is addressed
+- Error and offline behavior are addressed
+- Diagnostics are included where relevant
+- Security and privacy requirements are met
+- Documentation is updated
+- No secrets or private identifiers are committed
+- The result is verified on required hardware
+- Known limitations are reported honestly
+
+---
+
+# 30. Roadmap Governance
+
+This roadmap is active, not immutable.
+
+Changes are allowed when new evidence requires them.
+
+Any significant roadmap change should state:
+
+- What changed
+- Why it changed
+- Which documents are affected
+- Which milestone dependencies move
+- Whether scope, quality or risk changes
+
+The roadmap must not be changed merely to hide delay or avoid an unresolved technical risk.
+
+---
+
+# 31. Immediate Next Action
+
+After this document is accepted:
+
+1. Give Codex access to the repository.
+2. Ask Codex to read all root documentation, beginning with AURA-21 and AURA-20.
+3. Ask Codex to perform a repository-readiness audit without writing production integrations.
+4. Create or verify `AGENTS.md`.
+5. Create the first implementation branch.
+6. Build Phase 1 and the bounded First Codex Milestone.
+7. Require a pull request and a build/test report before moving to real integrations.
+
+---
+
+# 32. Golden Rule
+
+Aura should be built in the same way it is designed:
+
+Calmly.
+
+Deliberately.
+
+One reliable experience at a time.
+
+Do not rush to connect every device.
+
+Build the foundation that makes every future device feel native.
+
+---
+
+End of Document
