@@ -127,6 +127,13 @@ final class AppleTVPairingCodecTests: XCTestCase {
             XCTAssertEqual(error as? OPACKCodecError, .trailingData)
         }
     }
+
+    func testEncryptedSessionNonceUsesLittleEndianCounterAndTwelveBytes() {
+        XCTAssertEqual(
+            AppleTVSessionCrypto.nonceData(counter: 0x0102_0304_0506_0708),
+            Data([0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01, 0, 0, 0, 0])
+        )
+    }
 }
 
 private extension Data {
@@ -178,6 +185,20 @@ final class AppleTVPairingModelTests: XCTestCase {
         XCTAssertEqual(savedCount, 1)
     }
 
+    func testDiscoveryRestoresSinglePairedDevice() async {
+        let candidate = candidate(name: "Apple TV", service: .companion)
+        let store = StubAppleTVCredentialStore(credentials: [.fixture])
+        let model = AppleTVPairingModel(
+            discovery: StubAppleTVDiscovery(candidates: [candidate]),
+            pairing: StubAppleTVPairing(),
+            credentialStore: store
+        )
+
+        await model.discover()
+
+        XCTAssertEqual(model.phase, .paired(deviceName: "Apple TV"))
+    }
+
     func testPINValidationIsLocalAndDeterministic() {
         let model = AppleTVPairingModel(
             discovery: StubAppleTVDiscovery(candidates: []),
@@ -206,6 +227,48 @@ final class AppleTVPairingModelTests: XCTestCase {
     }
 }
 
+@MainActor
+final class AppleTVControlModelTests: XCTestCase {
+    func testVerifiedSessionConfirmsUpCommand() async {
+        let candidate = AppleTVDiscoveryCandidate(
+            displayName: "Apple TV",
+            endpoints: [AppleTVBonjourEndpoint(
+                serviceName: "Apple TV",
+                serviceType: .companion,
+                domain: "local."
+            )]
+        )
+        let controller = StubAppleTVController()
+        let model = AppleTVControlModel(
+            discovery: StubAppleTVDiscovery(candidates: [candidate]),
+            credentialStore: StubAppleTVCredentialStore(credentials: [.fixture]),
+            controller: controller
+        )
+
+        await model.connect()
+        XCTAssertEqual(model.phase, .ready)
+
+        await model.sendUp()
+        XCTAssertEqual(model.phase, .confirmed)
+        let lastCommand = await controller.lastCommandValue()
+        XCTAssertEqual(lastCommand, .up)
+    }
+
+    func testConnectFailsClosedWhenCredentialCannotBeMatchedUniquely() async {
+        let model = AppleTVControlModel(
+            discovery: StubAppleTVDiscovery(candidates: []),
+            credentialStore: StubAppleTVCredentialStore(credentials: [.fixture]),
+            controller: StubAppleTVController()
+        )
+
+        await model.connect()
+
+        guard case .failed = model.phase else {
+            return XCTFail("Expected a failed control state")
+        }
+    }
+}
+
 private struct StubAppleTVDiscovery: AppleTVDiscovering {
     let candidates: [AppleTVDiscoveryCandidate]
 
@@ -231,14 +294,49 @@ private actor StubAppleTVPairing: AppleTVPairing {
 
 private actor StubAppleTVCredentialStore: AppleTVCredentialStoring {
     private(set) var savedCount = 0
+    private var credentials: [AppleTVPairingCredentials]
+
+    init(credentials: [AppleTVPairingCredentials] = []) {
+        self.credentials = credentials
+    }
 
     func save(_ credentials: AppleTVPairingCredentials) {
         savedCount += 1
+        self.credentials.append(credentials)
     }
+
+    func loadAll() -> [AppleTVPairingCredentials] { credentials }
 
     func remove(_ credentials: AppleTVPairingCredentials) {}
 
     func savedCountValue() -> Int {
         savedCount
     }
+}
+
+private actor StubAppleTVController: AppleTVControlling {
+    private var lastCommand: AppleTVRemoteCommand?
+
+    func connect(
+        endpoint: AppleTVBonjourEndpoint,
+        credentials: AppleTVPairingCredentials
+    ) {}
+
+    func send(_ command: AppleTVRemoteCommand) -> AppleTVCommandOutcome {
+        lastCommand = command
+        return .confirmed
+    }
+
+    func disconnect() {}
+
+    func lastCommandValue() -> AppleTVRemoteCommand? { lastCommand }
+}
+
+private extension AppleTVPairingCredentials {
+    static let fixture = AppleTVPairingCredentials(
+        accessoryPublicKey: Data(repeating: 1, count: 32),
+        controllerPrivateKey: Data(repeating: 2, count: 32),
+        accessoryIdentifier: Data("accessory".utf8),
+        controllerIdentifier: Data("controller".utf8)
+    )
 }

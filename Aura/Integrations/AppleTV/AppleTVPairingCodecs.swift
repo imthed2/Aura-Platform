@@ -3,6 +3,9 @@ import Foundation
 enum CompanionFrameType: UInt8, Sendable {
     case pairSetupStart = 0x03
     case pairSetupNext = 0x04
+    case pairVerifyStart = 0x05
+    case pairVerifyNext = 0x06
+    case encryptedOPACK = 0x08
 }
 
 struct CompanionFrame: Equatable, Sendable {

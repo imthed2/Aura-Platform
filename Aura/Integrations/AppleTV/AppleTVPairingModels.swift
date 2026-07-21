@@ -5,6 +5,13 @@ struct AppleTVPairingCredentials: Codable, Equatable, Sendable {
     let controllerPrivateKey: Data
     let accessoryIdentifier: Data
     let controllerIdentifier: Data
+
+    var isStructurallyValid: Bool {
+        accessoryPublicKey.count == 32
+            && controllerPrivateKey.count == 32
+            && (1...256).contains(accessoryIdentifier.count)
+            && (1...256).contains(controllerIdentifier.count)
+    }
 }
 
 enum AppleTVPairingPhase: Equatable, Sendable {

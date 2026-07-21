@@ -29,11 +29,20 @@ final class AppleTVPairingModel {
         phase = .discovering
 
         do {
-            let candidates = try await discovery.discover(timeout: .seconds(5))
+            async let discoveredCandidates = discovery.discover(timeout: .seconds(5))
+            async let storedCredentials = credentialStore.loadAll()
+            let candidates = try await discoveredCandidates
                 .filter { candidate in
                     candidate.endpoints.contains { $0.serviceType == .companion }
                 }
-            phase = .selecting(candidates)
+            let credentials = try await storedCredentials
+            if candidates.count == 1, credentials.count == 1,
+               let candidate = candidates.first {
+                selectedCandidate = candidate
+                phase = .paired(deviceName: candidate.displayName)
+            } else {
+                phase = .selecting(candidates)
+            }
         } catch is CancellationError {
             return
         } catch {

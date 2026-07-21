@@ -5,6 +5,8 @@ enum AppBootstrapper {
     static func makeEnvironment() -> AppEnvironment {
         let logger = SystemAuraLogger()
         let pairing = AppleTVPairingClient(logger: logger)
+        let discovery = AppleTVDiscoveryClient(logger: logger)
+        let credentialStore = AppleTVKeychainCredentialStore()
 
         return AppEnvironment(
             dashboardProvider: MockDashboardProvider(),
@@ -14,9 +16,14 @@ enum AppBootstrapper {
             logger: logger,
             clock: SystemAuraClock(),
             appleTVPairingModel: AppleTVPairingModel(
-                discovery: AppleTVDiscoveryClient(logger: logger),
+                discovery: discovery,
                 pairing: pairing,
-                credentialStore: AppleTVKeychainCredentialStore()
+                credentialStore: credentialStore
+            ),
+            appleTVControlModel: AppleTVControlModel(
+                discovery: discovery,
+                credentialStore: credentialStore,
+                controller: AppleTVCompanionClient(logger: logger)
             )
         )
     }
