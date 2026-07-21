@@ -103,6 +103,8 @@ The plugin must detect actual bridge capabilities at runtime and must not rely o
 
 Aura should prefer the current local Philips Hue API and treat legacy API support as a compatibility layer only where necessary.
 
+Hue API v2 communication must use HTTPS. Aura must not silently fall back to HTTP or accept every certificate presented by a local address. Certificate trust and stable bridge identity are governed by `ADR/ADR-006-hue-https-certificate-strategy.md`. That ADR remains Proposed until its authenticated-documentation and real-hardware gates pass, so production Hue networking is not yet authorized.
+
 The Hue integration is divided into the following layers:
 
 ```text
@@ -174,10 +176,11 @@ The HueBridgePlugin shall:
 Aura should use a layered discovery strategy:
 
 1. Previously paired bridges from local storage
-2. Local network service discovery
-3. SSDP or Hue-compatible discovery broadcasts where available
-4. Manual IP address entry
-5. Optional internet-assisted discovery only as a future fallback
+2. Local mDNS service discovery
+3. Manual IP address entry
+4. Optional Hue internet-assisted discovery only as a future fallback
+
+UPnP/SSDP is deprecated by Philips Hue and must not be a preferred or required discovery path.
 
 Previously paired bridges should appear immediately using cached metadata while Aura validates their current reachability in the background.
 
@@ -926,8 +929,11 @@ Diagnostics may offer:
 Security requirements:
 
 - Store application credentials in Keychain
-- Use secure local transport where supported
-- Validate the target bridge identity
+- Use HTTPS for every Hue API v2 request and event stream
+- Validate server trust and bind it to the expected stable bridge identifier before sending pairing data or credentials
+- Follow `ADR/ADR-006-hue-https-certificate-strategy.md`; do not implement production networking until its verification gates pass
+- Reject trust failures and identity mismatches without a user bypass or HTTP downgrade
+- Treat IP addresses and discovery metadata as untrusted connection hints, not identity
 - Never log secrets
 - Redact network identifiers in exported diagnostics where appropriate
 - Treat bridge responses as untrusted input
@@ -1233,6 +1239,8 @@ The Hue integration is ready for initial release when all of the following are t
 - Credentials are stored securely in Keychain
 - Paired bridges reconnect after app relaunch
 - Bridge IP changes are recovered through rediscovery
+- Rediscovered routes are accepted only after the same stable bridge identity is verified
+- HTTPS trust failures stop requests before pairing data or credentials are sent
 - Lights are mapped into Aura devices
 - Hue rooms can be mapped to Aura rooms
 - Zones are represented without incorrectly becoming rooms
