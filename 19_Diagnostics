@@ -1,0 +1,1320 @@
+# Aura
+## Diagnostics System
+
+Version: 1.0  
+Status: Draft  
+Owner: Daniel Hagen  
+Project: Aura Platform  
+Document ID: AURA-19
+
+## Dependencies
+
+- AURA-01 Product Requirements
+- AURA-03 Aura Design Language
+- AURA-05 Information Architecture
+- AURA-06 User Flows
+- AURA-07 Screen Specifications
+- AURA-08 Component Library
+- AURA-09 Interaction Guidelines
+- AURA-12 Philips TV Integration
+- AURA-13 Apple TV Integration
+- AURA-14 HomeKit Integration
+- AURA-15 Philips Hue Bridge Integration
+- AURA-16 Device Discovery
+- AURA-17 Scene Engine
+- AURA-18 Automation Engine
+- AURA-20 App Architecture
+
+---
+
+# 1. Purpose
+
+The Diagnostics System helps Aura explain problems, verify integrations, measure health and guide users toward recovery.
+
+Diagnostics must make technical failures understandable without forcing users to interpret network protocols, framework errors, vendor response codes or implementation details.
+
+The user should first see:
+
+- What happened
+- What is affected
+- Whether Aura is still usable
+- What Aura is already doing to recover
+- The next recommended action
+
+Advanced technical information must remain available for troubleshooting, development and support, but it must never dominate the normal user experience.
+
+---
+
+# 2. Product Goals
+
+The Diagnostics System shall:
+
+- Detect and summarize integration health
+- Distinguish transient problems from persistent failures
+- Explain failures in human language
+- Suggest the safest next action
+- Provide one-tap tests where useful
+- Collect privacy-safe operational history
+- Support per-device and platform-wide diagnostics
+- Correlate scene, automation, discovery and plugin failures
+- Help developers reproduce problems
+- Export sanitized reports with explicit user action
+- Avoid exposing credentials, private home data or raw secrets
+- Remain available when one or more integrations are offline
+- Support local-first operation
+
+---
+
+# 3. Non-Goals
+
+Version 1 does not aim to:
+
+- Replace professional network-analysis tools
+- Expose unrestricted packet captures
+- Upload logs automatically
+- Diagnose unsupported third-party infrastructure in full detail
+- Guarantee repair of vendor firmware or router problems
+- Show raw stack traces to normal users
+- Store permanent behavioral history
+- Collect viewing, presence or room-activity analytics
+- Execute destructive recovery actions without confirmation
+- Pretend that every failure can be uniquely identified
+
+When uncertainty remains, Aura must say so clearly.
+
+---
+
+# 4. Core Principles
+
+## 4.1 Explain Before Exposing
+
+The first diagnostic layer is always user-facing and actionable.
+
+Technical details belong behind an Advanced section.
+
+## 4.2 Honest State
+
+Aura must distinguish:
+
+- Confirmed failure
+- Suspected failure
+- Temporary unavailability
+- Stale data
+- Unsupported capability
+- Permission restriction
+- Unknown state
+
+The interface must never present an assumption as a confirmed fact.
+
+## 4.3 Recovery First
+
+Diagnostics should attempt safe recovery before asking the user to intervene.
+
+Examples:
+
+- Retry a safe idempotent request
+- Reconnect an event stream
+- Refresh authorization state
+- Rediscover a known device by stable identity
+- Refresh stale capability data
+
+## 4.4 Local and Private
+
+Diagnostic data stays local unless the user explicitly exports it.
+
+## 4.5 Cross-System Correlation
+
+A single user-visible failure may involve multiple modules.
+
+Example:
+
+```text
+Movie Night failed
+├── Philips TV did not wake
+├── Apple TV woke successfully
+└── Hue scene completed successfully
+```
+
+The Diagnostics System must preserve this structure rather than reducing the run to a generic failure.
+
+---
+
+# 5. High-Level Architecture
+
+```mermaid
+flowchart TD
+    UI[Diagnostics UI] --> Service[Diagnostics Service]
+    Service --> Registry[Diagnostics Provider Registry]
+    Registry --> TV[Philips TV Provider]
+    Registry --> ATV[Apple TV Provider]
+    Registry --> HK[HomeKit Provider]
+    Registry --> Hue[Hue Provider]
+    Registry --> Discovery[Discovery Provider]
+    Registry --> Scenes[Scene Engine Provider]
+    Registry --> Automations[Automation Provider]
+    Service --> Store[Diagnostic Event Store]
+    Service --> Health[Health Evaluator]
+    Service --> Recovery[Recovery Coordinator]
+    Service --> Export[Sanitized Export Builder]
+    Health --> UI
+    Recovery --> UI
+```
+
+Every module must expose diagnostics through a stable provider interface.
+
+SwiftUI must never read plugin logs or vendor error objects directly.
+
+---
+
+# 6. Responsibilities
+
+The Diagnostics System owns:
+
+- Health aggregation
+- Diagnostic event normalization
+- Severity classification
+- Root-cause hints
+- User-facing explanations
+- Recovery suggestions
+- Manual test orchestration
+- Sanitized history
+- Export packaging
+- Correlation across modules
+- Diagnostic performance metrics
+
+Individual plugins own:
+
+- Vendor-specific tests
+- Vendor error translation
+- Capability checks
+- Authentication checks
+- Reachability checks
+- Integration-specific recovery operations
+- Sensitive-data redaction before provider output
+
+---
+
+# 7. Diagnostic Scope
+
+Diagnostics exist at four levels.
+
+## 7.1 Platform Level
+
+Covers:
+
+- App readiness
+- Local-network permission
+- HomeKit authorization
+- Network path
+- Persistence health
+- Plugin registration
+- Scene Engine readiness
+- Automation Engine readiness
+- Background task availability
+
+## 7.2 Integration Level
+
+Examples:
+
+- Philips TV integration
+- Apple TV integration
+- HomeKit integration
+- Hue Bridge integration
+
+## 7.3 Device Level
+
+Examples:
+
+- One Philips TV
+- One Hue Bridge
+- One Hue light
+- One HomeKit accessory
+
+## 7.4 Execution Level
+
+Examples:
+
+- One scene run
+- One automation run
+- One discovery session
+- One pairing attempt
+- One command
+
+---
+
+# 8. Health Model
+
+```swift
+enum AuraHealthState: Sendable, Equatable {
+    case healthy
+    case degraded
+    case recovering
+    case unavailable
+    case restricted
+    case unknown
+}
+```
+
+Definitions:
+
+- `healthy`: Core functionality is available and recent checks succeeded
+- `degraded`: Some functionality is unavailable, stale or slower than expected
+- `recovering`: Aura is actively attempting a safe recovery
+- `unavailable`: Required communication or authorization is currently unavailable
+- `restricted`: iOS, HomeKit, local-network permission or user policy prevents operation
+- `unknown`: Aura does not yet have enough evidence
+
+Health is not identical to reachability.
+
+A reachable device may still be unhealthy due to authorization, unsupported capabilities or command rejection.
+
+---
+
+# 9. Severity Model
+
+```swift
+enum DiagnosticSeverity: Int, Sendable, Comparable {
+    case information = 0
+    case notice = 1
+    case warning = 2
+    case error = 3
+    case critical = 4
+}
+```
+
+Severity guidance:
+
+- `information`: Normal state or completed check
+- `notice`: Minor condition that may matter later
+- `warning`: Partial degradation or recoverable issue
+- `error`: A requested function failed
+- `critical`: Security, safety, data integrity or broad platform failure
+
+Critical severity must be rare.
+
+A device being temporarily offline is not automatically critical.
+
+---
+
+# 10. Diagnostic Event Model
+
+```swift
+struct DiagnosticEvent: Sendable, Codable, Identifiable {
+    let id: UUID
+    let timestamp: Date
+    let source: DiagnosticSource
+    let scope: DiagnosticScope
+    let severity: DiagnosticSeverity
+    let code: DiagnosticCode
+    let summary: String
+    let technicalSummary: String?
+    let correlationID: UUID?
+    let deviceID: AuraDeviceID?
+    let integrationID: PluginIdentifier?
+    let recoveryState: RecoveryState?
+    let metadata: [String: DiagnosticValue]
+}
+```
+
+Rules:
+
+- `summary` must be safe for user-facing display
+- `technicalSummary` must not contain credentials or raw secrets
+- `metadata` must be bounded and typed
+- Raw payloads must not be stored by default
+- Correlation IDs must connect related events
+- Device names should be excluded from export unless explicitly included by the user
+
+---
+
+# 11. Diagnostic Provider Protocol
+
+```swift
+protocol AuraDiagnosticsProvider: Sendable {
+    var providerID: DiagnosticProviderID { get }
+    var supportedTests: Set<DiagnosticTestKind> { get }
+
+    func snapshot() async -> DiagnosticProviderSnapshot
+    func run(_ test: DiagnosticTestRequest) async -> DiagnosticTestResult
+    func recoveryActions(for issue: DiagnosticIssue) async -> [RecoveryAction]
+}
+```
+
+Provider snapshots should be lightweight and safe to request repeatedly.
+
+Long-running tests must be explicit, cancellable and progress-aware.
+
+---
+
+# 12. Diagnostic Snapshot
+
+```swift
+struct DiagnosticProviderSnapshot: Sendable, Equatable {
+    let providerID: DiagnosticProviderID
+    let health: AuraHealthState
+    let lastUpdatedAt: Date
+    let summaryMetrics: [DiagnosticMetric]
+    let activeIssues: [DiagnosticIssue]
+    let recentEvents: [DiagnosticEvent]
+}
+```
+
+A provider snapshot must not expose vendor framework objects.
+
+---
+
+# 13. Issue Model
+
+```swift
+struct DiagnosticIssue: Sendable, Identifiable, Equatable {
+    let id: UUID
+    let code: DiagnosticCode
+    let title: String
+    let explanation: String
+    let severity: DiagnosticSeverity
+    let affectedCapabilities: Set<AuraCapability>
+    let detectedAt: Date
+    let isTransient: Bool
+    let isUserActionRequired: Bool
+    let suggestedActions: [RecoveryActionDescriptor]
+}
+```
+
+An issue should describe impact.
+
+Example:
+
+Bad:
+
+`HTTP 403`
+
+Good:
+
+`Aura is no longer authorized to control this Hue Bridge.`
+
+---
+
+# 14. Diagnostic Test Model
+
+```swift
+enum DiagnosticTestKind: Sendable, Hashable {
+    case networkPath
+    case localNetworkPermission
+    case reachability
+    case authentication
+    case capabilityRefresh
+    case commandLatency
+    case eventStream
+    case stateRefresh
+    case discovery
+    case sceneExecution
+    case automationValidation
+    case persistence
+}
+```
+
+```swift
+struct DiagnosticTestRequest: Sendable {
+    let id: UUID
+    let kind: DiagnosticTestKind
+    let target: DiagnosticTarget
+    let initiatedBy: DiagnosticTestInitiator
+    let timeout: Duration
+}
+```
+
+Tests must not silently modify user settings or trigger destructive actions.
+
+---
+
+# 15. Test Lifecycle
+
+```mermaid
+stateDiagram-v2
+    [*] --> Queued
+    Queued --> Running
+    Running --> Passed
+    Running --> Warning
+    Running --> Failed
+    Running --> Cancelled
+    Running --> TimedOut
+    Passed --> [*]
+    Warning --> [*]
+    Failed --> [*]
+    Cancelled --> [*]
+    TimedOut --> [*]
+```
+
+```swift
+enum DiagnosticTestState: Sendable, Equatable {
+    case queued
+    case running(progress: Double?)
+    case passed
+    case warning(DiagnosticIssue)
+    case failed(DiagnosticIssue)
+    case cancelled
+    case timedOut
+}
+```
+
+---
+
+# 16. User-Facing Diagnostics Experience
+
+The Diagnostics screen should follow this order:
+
+1. Overall home health
+2. Current issues
+3. Recommended actions
+4. Device and integration health
+5. Recent scene and automation failures
+6. Advanced diagnostics
+7. Export options
+
+The first screen must answer:
+
+`Is my home working?`
+
+It must not begin with logs, IP addresses or API versions.
+
+---
+
+# 17. Overall Health Summary
+
+Suggested states:
+
+## Healthy
+
+Title: `Everything looks good`
+
+Body: `Aura can reach your connected services and no current problems need attention.`
+
+## Degraded
+
+Title: `Some features are limited`
+
+Body: `Most of Aura is working, but one or more devices are unavailable.`
+
+## Recovering
+
+Title: `Aura is reconnecting`
+
+Body: `A temporary connection problem was detected. Aura is trying to restore it.`
+
+## Unavailable
+
+Title: `Some devices cannot be reached`
+
+Body: `Check that your iPhone is connected to the same Wi-Fi network as your devices.`
+
+## Restricted
+
+Title: `Permission required`
+
+Body: `Aura needs access to your local network or Apple Home to continue.`
+
+---
+
+# 18. Integration Diagnostics
+
+## 18.1 Philips TV
+
+The provider may report:
+
+- Last known reachability
+- Authentication state
+- Model and firmware where available
+- Last successful command
+- Last state refresh
+- Current source and volume freshness
+- Wake capability status
+- API compatibility profile
+- Recent command latency
+
+Manual tests may include:
+
+- Find TV again
+- Test connection
+- Test authentication
+- Refresh capabilities
+- Read current state
+- Send non-destructive navigation test where appropriate
+
+Model-specific behavior for `65PUS7800/12` must be verified before implementation.
+
+## 18.2 Apple TV
+
+The provider must clearly distinguish:
+
+- Publicly supported capability
+- HomeKit-derived capability
+- Unavailable capability
+- Experimental or unsupported implementation path
+
+Diagnostics must not claim that a desired Apple TV feature is supported merely because it appears in the product specification.
+
+## 18.3 HomeKit
+
+The provider may report:
+
+- Authorization state
+- Home manager lifecycle state
+- Number of homes and accessories
+- Reachable accessory count
+- Event-subscription health
+- Last synchronization
+- Capability-resolution failures
+
+## 18.4 Hue Bridge
+
+The provider may report:
+
+- Bridge reachability
+- Authentication state
+- HTTPS connection health
+- Event-stream state
+- Last event time
+- Resource synchronization state
+- Command rate warnings
+- Unreachable-light count
+- Firmware version
+
+Credentials and application keys must always be redacted.
+
+---
+
+# 19. Discovery Diagnostics
+
+Discovery diagnostics should include:
+
+- Network path
+- Local-network permission readiness
+- Providers started and completed
+- Candidate count by source
+- Verification count
+- Duplicate merges
+- Session duration
+- Provider failures
+- Cancellation reason
+
+The normal UI should translate this into clear guidance.
+
+Example:
+
+`Aura found your Hue Bridge but could not verify it. Make sure the bridge is powered on and connected to the same router.`
+
+---
+
+# 20. Scene Diagnostics
+
+Every scene run should produce an execution report.
+
+```swift
+struct SceneDiagnosticReport: Sendable, Identifiable {
+    let id: UUID
+    let sceneID: AuraSceneID
+    let startedAt: Date
+    let completedAt: Date?
+    let result: SceneExecutionResult
+    let actionReports: [SceneActionDiagnosticReport]
+    let correlationID: UUID
+}
+```
+
+The UI should show:
+
+- Overall result
+- Which actions succeeded
+- Which actions failed
+- Which actions were skipped
+- Whether retry is safe
+- Whether the failure was partial
+
+Aura must not repeat non-idempotent actions blindly.
+
+---
+
+# 21. Automation Diagnostics
+
+Automation diagnostics should include:
+
+- Trigger received
+- Trigger source
+- Conditions evaluated
+- Conditions that passed or failed
+- Actions attempted
+- Actions skipped
+- Cooldown or deduplication decisions
+- Loop-prevention decisions
+- Execution duration
+- Final result
+
+Example user-facing explanation:
+
+`Good Night did not run because the living-room TV was already off and the motion condition was still active.`
+
+Advanced details may show the exact condition tree.
+
+---
+
+# 22. Recovery Model
+
+```swift
+enum RecoveryActionKind: Sendable, Equatable {
+    case retry
+    case reconnect
+    case rediscover
+    case refreshAuthorization
+    case openSettings
+    case reauthenticate
+    case refreshCapabilities
+    case restartIntegration
+    case openHelp
+    case exportDiagnostics
+}
+```
+
+```swift
+struct RecoveryAction: Sendable, Identifiable {
+    let id: UUID
+    let title: String
+    let explanation: String?
+    let kind: RecoveryActionKind
+    let safety: RecoverySafety
+    let requiresConfirmation: Bool
+}
+```
+
+---
+
+# 23. Recovery Safety
+
+```swift
+enum RecoverySafety: Sendable, Equatable {
+    case safe
+    case cautious
+    case destructive
+}
+```
+
+Examples:
+
+- Safe: refresh state, reconnect event stream, targeted rediscovery
+- Cautious: reauthenticate, restart integration
+- Destructive: forget device, clear pairing, reset local mappings
+
+Destructive actions must require explicit confirmation and describe what will be lost.
+
+---
+
+# 24. Automatic Recovery
+
+Aura may perform safe automatic recovery when:
+
+- The operation is idempotent
+- User intent is preserved
+- Duplicate side effects are unlikely
+- The action does not alter configuration
+- The retry count is bounded
+
+Automatic recovery must stop when:
+
+- Authentication is rejected
+- Permission is denied
+- The device identity is uncertain
+- Repeated retries fail
+- The operation may already have succeeded with side effects
+
+---
+
+# 25. Recovery Sequence
+
+```mermaid
+flowchart TD
+    Detect[Issue detected] --> Classify[Classify issue]
+    Classify --> Safe{Safe automatic recovery?}
+    Safe -->|Yes| Recover[Attempt bounded recovery]
+    Recover --> Verify[Verify result]
+    Verify -->|Success| Resolved[Mark resolved]
+    Verify -->|Failure| Suggest[Present next action]
+    Safe -->|No| Suggest
+    Suggest --> User[User chooses action]
+    User --> Execute[Execute recovery]
+    Execute --> Verify
+```
+
+---
+
+# 26. Correlation IDs
+
+Every important operation must use a correlation ID.
+
+Examples:
+
+- Scene execution
+- Automation execution
+- Pairing attempt
+- Discovery session
+- Manual diagnostic test
+- Device command
+
+Correlation IDs allow Aura to connect user intent, plugin behavior, recovery and final outcome without storing unnecessary personal data.
+
+---
+
+# 27. Diagnostic Event Store
+
+The event store should be actor-isolated.
+
+```swift
+actor DiagnosticEventStore {
+    private var events: [DiagnosticEvent] = []
+
+    func append(_ event: DiagnosticEvent)
+    func events(for query: DiagnosticQuery) -> [DiagnosticEvent]
+    func purgeExpiredEvents(now: Date)
+    func buildSnapshot() -> DiagnosticStoreSnapshot
+}
+```
+
+The store should remain bounded.
+
+Recommended defaults:
+
+- Maximum recent events: 2,000
+- Maximum critical/error events retained: 500
+- Standard retention: 7 days
+- Extended developer retention: opt-in only
+
+These values may be adjusted after performance testing.
+
+---
+
+# 28. Data Retention
+
+Retain only what is useful for recovery and debugging.
+
+May retain temporarily:
+
+- Timestamps
+- Integration identifiers
+- Internal device IDs
+- Sanitized error codes
+- Latency metrics
+- Recovery outcomes
+- Correlation IDs
+
+Do not retain by default:
+
+- Media titles
+- Viewing history
+- Room activity history
+- Presence history
+- Camera content
+- User-created names in analytics
+- Raw authorization tokens
+- Full local IP addresses in exports
+- HomeKit security-state history beyond immediate troubleshooting need
+
+---
+
+# 29. Logging Categories
+
+Suggested categories:
+
+- diagnostics.health
+- diagnostics.issue
+- diagnostics.test
+- diagnostics.recovery
+- diagnostics.export
+- diagnostics.performance
+- diagnostics.privacy
+- diagnostics.scene
+- diagnostics.automation
+- diagnostics.discovery
+- diagnostics.plugin
+
+Vendor modules may add subcategories.
+
+---
+
+# 30. Structured Logging
+
+Use structured fields instead of unbounded string messages.
+
+Example:
+
+```swift
+logger.notice(
+    "Device command failed",
+    metadata: [
+        "plugin": .string(pluginID.rawValue),
+        "command": .string(command.kind.rawValue),
+        "correlation": .string(correlationID.uuidString),
+        "error_code": .string(normalizedCode.rawValue)
+    ]
+)
+```
+
+Never log:
+
+- Passwords
+- Pairing keys
+- Authorization headers
+- HomeKit setup codes
+- Full raw device responses
+- Camera URLs containing credentials
+- Unredacted private identifiers
+
+---
+
+# 31. Exported Diagnostic Report
+
+Export is always user initiated.
+
+A sanitized package may include:
+
+```text
+Aura-Diagnostics/
+├── summary.txt
+├── app-environment.json
+├── integration-health.json
+├── recent-events.json
+├── scene-reports.json
+├── automation-reports.json
+└── privacy-manifest.txt
+```
+
+The package must not include secrets.
+
+Before export, Aura should show a clear summary of included categories.
+
+---
+
+# 32. Redaction
+
+Redaction rules must be centralized.
+
+```swift
+protocol DiagnosticRedacting: Sendable {
+    func redact(_ report: DiagnosticReport) -> RedactedDiagnosticReport
+}
+```
+
+Redact or pseudonymize:
+
+- IP addresses
+- MAC addresses
+- Serial numbers
+- Bridge identifiers
+- Accessory identifiers
+- Home names
+- Room names
+- Device names
+- User-generated scene names where appropriate
+
+Stable pseudonyms may be used within one report so related events remain understandable.
+
+---
+
+# 33. Privacy Levels
+
+Suggested export levels:
+
+## Standard
+
+Maximum privacy.
+
+Includes:
+
+- General health
+- Sanitized codes
+- Timing
+- Integration categories
+- Recovery outcomes
+
+## Detailed
+
+Requires explicit confirmation.
+
+May include:
+
+- Pseudonymized device-level relationships
+- Firmware versions
+- Capability lists
+- More detailed execution reports
+
+No export level may include credentials.
+
+---
+
+# 34. Security Requirements
+
+The Diagnostics System must:
+
+- Treat plugin-provided metadata as untrusted input
+- Enforce payload-size limits
+- Redact before persistence where possible
+- Redact again before export
+- Protect local diagnostic files with platform data protection
+- Avoid background uploads
+- Use temporary files for export
+- Delete temporary export files after sharing or cancellation
+- Never permit logs to execute markup or code
+- Escape user-controlled strings
+
+---
+
+# 35. Performance Metrics
+
+Diagnostics may measure:
+
+- Discovery latency
+- Command dispatch latency
+- Confirmed state latency
+- Scene completion duration
+- Automation execution duration
+- Event-stream reconnect time
+- HomeKit synchronization time
+- Cache load time
+- UI update delay
+- Memory pressure events
+
+Metrics must remain coarse enough to protect privacy.
+
+---
+
+# 36. Performance Budgets
+
+Targets:
+
+- Health summary from cached data: under 200 ms
+- Provider snapshot aggregation: under 500 ms
+- Standard reachability test: under 3 seconds
+- Full multi-provider test: under 10 seconds
+- Event append overhead: under 2 ms average
+- Main-thread blocking caused by diagnostics: 0 operations over 16 ms
+- Export generation for ordinary history: under 3 seconds
+- Diagnostic store memory target: under 15 MB
+
+---
+
+# 37. Concurrency Model
+
+Diagnostics must use Swift concurrency.
+
+Recommended types:
+
+```text
+DiagnosticsService
+DiagnosticsProviderRegistry
+DiagnosticEventStore
+DiagnosticHealthEvaluator
+DiagnosticTestCoordinator
+RecoveryCoordinator
+DiagnosticExportBuilder
+DiagnosticRedactor
+DiagnosticViewModel
+```
+
+```swift
+actor DiagnosticsService {
+    private let registry: DiagnosticsProviderRegistry
+    private let eventStore: DiagnosticEventStore
+    private let evaluator: DiagnosticHealthEvaluating
+
+    func currentSnapshot() async -> AuraDiagnosticsSnapshot
+    func run(_ request: DiagnosticTestRequest) async -> DiagnosticTestResult
+    func recover(_ action: RecoveryAction) async -> RecoveryResult
+    func export(_ request: DiagnosticExportRequest) async throws -> URL
+}
+```
+
+---
+
+# 38. Provider Registry
+
+```swift
+actor DiagnosticsProviderRegistry {
+    private var providers: [DiagnosticProviderID: AuraDiagnosticsProvider] = [:]
+
+    func register(_ provider: AuraDiagnosticsProvider)
+    func unregister(id: DiagnosticProviderID)
+    func provider(id: DiagnosticProviderID) -> AuraDiagnosticsProvider?
+    func allProviders() -> [AuraDiagnosticsProvider]
+}
+```
+
+Plugins register when activated and unregister when removed.
+
+---
+
+# 39. Snapshot Publication
+
+The UI should consume immutable snapshots.
+
+```swift
+struct AuraDiagnosticsSnapshot: Sendable, Equatable {
+    let overallHealth: AuraHealthState
+    let generatedAt: Date
+    let currentIssues: [DiagnosticIssue]
+    let providers: [DiagnosticProviderSnapshot]
+    let recentExecutions: [ExecutionDiagnosticSummary]
+}
+```
+
+Frequent low-value updates should be coalesced.
+
+---
+
+# 40. Diagnostics Screen States
+
+The screen must support:
+
+- Loading
+- Healthy
+- Degraded
+- Recovering
+- Restricted
+- Unavailable
+- Empty history
+- Exporting
+- Export failed
+
+The screen must never be blank.
+
+---
+
+# 41. Interaction and Motion
+
+Diagnostics should feel calm.
+
+Use:
+
+- Progressive disclosure
+- Inline progress
+- Subtle status transitions
+- One-time success or error haptics for user-initiated tests
+- No repeated shaking, flashing or alarm-like animation
+
+Automatic background health changes should not trigger haptics.
+
+---
+
+# 42. Accessibility
+
+Diagnostics must:
+
+- Support VoiceOver
+- Announce test completion
+- Preserve focus when results update
+- Explain health without relying on color
+- Support Dynamic Type
+- Respect Reduce Motion
+- Provide meaningful button labels
+- Expose test progress textually
+- Avoid rapidly changing live regions
+
+Example:
+
+- Label: `Hue Bridge health`
+- Value: `Degraded. Event updates are disconnected.`
+- Hint: `Double tap to view recovery options.`
+
+---
+
+# 43. User-Facing Error Copy
+
+Examples:
+
+| Situation | Title | Explanation | Primary action |
+|---|---|---|---|
+| No local network | `Home network unavailable` | `Connect this iPhone to the same Wi-Fi network as your devices.` | `Open Wi-Fi Settings` |
+| Hue authorization rejected | `Hue Bridge needs permission again` | `Aura can see the bridge but is no longer authorized to control it.` | `Reconnect Bridge` |
+| HomeKit denied | `Apple Home access is off` | `Allow Aura to access your Apple Home to show and control those devices.` | `Open Settings` |
+| TV unavailable | `Television is not responding` | `Aura could not reach the television on your home network.` | `Try Again` |
+| Scene partial failure | `Movie Night was only partly completed` | `The lights changed, but the television did not turn on.` | `View Details` |
+| Automation blocked | `Automation did not run` | `One of its required conditions was not met.` | `Review Automation` |
+
+---
+
+# 44. Failure Scenarios
+
+## Scenario A: Diagnostics provider crashes or throws unexpectedly
+
+Expected behavior:
+
+- Isolate the provider failure
+- Keep other providers available
+- Record a sanitized platform issue
+- Mark only the provider as unknown or unavailable
+
+## Scenario B: Export fails
+
+Expected behavior:
+
+- Preserve local diagnostic history
+- Delete incomplete temporary files
+- Show a retry option
+- Never upload automatically
+
+## Scenario C: Recovery succeeds after the user leaves the screen
+
+Expected behavior:
+
+- Update health state silently
+- Avoid unexpected navigation
+- Show a subtle resolved status when the user returns
+
+## Scenario D: Diagnostic test times out
+
+Expected behavior:
+
+- Cancel underlying work
+- Mark result as timed out
+- Offer a relevant next step
+- Avoid indefinite progress
+
+## Scenario E: Conflicting provider results
+
+Expected behavior:
+
+- Preserve both facts
+- Lower confidence in root-cause inference
+- Present a neutral explanation
+- Avoid claiming certainty
+
+---
+
+# 45. Testing Strategy
+
+## 45.1 Unit Tests
+
+Test:
+
+- Severity classification
+- Health aggregation
+- Issue deduplication
+- Correlation IDs
+- Redaction
+- Retention limits
+- Export manifests
+- Recovery safety classification
+- User-facing error translation
+- Snapshot coalescing
+- Provider isolation
+
+## 45.2 Integration Tests
+
+Test:
+
+- Multiple providers reporting simultaneously
+- One provider unavailable
+- Scene partial failure
+- Automation condition failure
+- Discovery timeout
+- Network-path loss and recovery
+- Permission denial
+- Event-stream reconnection
+- Export generation
+- Export cancellation
+
+## 45.3 Privacy Tests
+
+Automated tests must scan exports and logs for:
+
+- Authorization headers
+- Tokens
+- Keys
+- Setup codes
+- IP addresses where redaction is expected
+- Serial numbers
+- User-created names
+
+## 45.4 Performance Tests
+
+Measure:
+
+- Event append overhead
+- Snapshot generation
+- Provider aggregation
+- Large-history export
+- Memory retention
+- UI update frequency
+
+## 45.5 Hardware Tests
+
+Validate diagnostics against:
+
+- Philips TV 65PUS7800/12
+- Apple TV 4K first generation
+- Hue Bridge v2
+- HomePod mini and HomeKit environment
+- iPhone 16
+
+Simulate:
+
+- Device offline
+- Router restart
+- Bridge restart
+- Authorization invalidation
+- Local-network permission denied
+- Internet unavailable while LAN remains available
+
+---
+
+# 46. Acceptance Criteria
+
+The Diagnostics System is ready for initial release when:
+
+1. Aura can produce an overall health summary.
+2. Each active integration exposes a provider snapshot.
+3. Current issues are explained in user-friendly language.
+4. One provider failure does not break the diagnostics screen.
+5. Manual tests are cancellable and time-bounded.
+6. Safe recovery actions can be executed from diagnostics.
+7. Destructive recovery actions require confirmation.
+8. Scene partial failures show per-action outcomes.
+9. Automation failures show trigger, condition and action context.
+10. Discovery sessions expose useful sanitized summaries.
+11. Diagnostic history remains bounded.
+12. Exports are user initiated.
+13. Exports contain no credentials or secret values.
+14. Privacy redaction is covered by automated tests.
+15. Health updates do not block the main actor.
+16. Accessibility requirements are met.
+17. Real-hardware failure and recovery scenarios are validated.
+
+---
+
+# 47. Future Enhancements
+
+Potential future work:
+
+- Guided step-by-step recovery assistant
+- Network topology visualization
+- On-device root-cause ranking
+- Apple Support-style diagnostic bundles
+- Remote support session with explicit user consent
+- Automated regression comparison between app versions
+- Energy and reliability history
+- Matter and Thread fabric diagnostics
+- Router compatibility knowledge base
+- Smart suggestions based on repeated local failures
+- Developer diagnostics dashboard for internal builds
+
+Any AI-assisted diagnostic feature must remain local where possible, clearly label uncertainty and never invent unsupported causes.
+
+---
+
+# 48. Golden Rule
+
+Aura Diagnostics must reduce uncertainty.
+
+The user should leave knowing what happened, what still works and what to do next.
+
+Diagnostics should reveal complexity only when it helps solve the problem.
+
+---
+
+End of Document
