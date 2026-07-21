@@ -1,0 +1,499 @@
+# Aura
+## Apple TV Integration
+Version: 1.0
+Status: Draft
+Owner: Daniel Hagen
+Project: Aura Platform
+Document ID: AURA-13
+
+Dependencies
+
+• AURA-01 Product Requirements
+• AURA-05 Information Architecture
+• AURA-06 User Flows
+• AURA-12 Philips TV Integration
+• AURA-20 App Architecture
+
+---
+
+# Purpose
+
+The Apple TV Module enables Aura to interact with Apple TV as naturally as any Apple application while respecting Apple's platform limitations.
+
+Aura should never attempt to replace tvOS.
+
+Instead, Aura complements the Apple TV experience.
+
+---
+
+# Design Goals
+
+Native
+
+Reliable
+
+Private
+
+Fast
+
+Predictable
+
+Battery Efficient
+
+---
+
+# Responsibilities
+
+The module shall:
+
+• Discover Apple TVs
+• Authenticate securely
+• Read playback status
+• Wake and sleep Apple TV
+• Send remote commands
+• Synchronize playback state
+• Report diagnostics
+
+---
+
+# Architecture
+
+Aura
+
+↓
+
+Aura Core
+
+↓
+
+Apple TV Plugin
+
+↓
+
+Apple TV Communication Layer
+
+↓
+
+Apple TV
+
+All communication must pass through the Core Engine.
+
+---
+
+# Discovery
+
+Discovery begins automatically.
+
+Triggers
+
+• App Launch
+• Manual Refresh
+• Network Change
+• Device Reconnect
+• HomeKit Sync
+
+Known devices should appear immediately while discovery continues in the background.
+
+---
+
+# Pairing
+
+Flow
+
+Discover Apple TV
+
+↓
+
+Select Device
+
+↓
+
+Authentication
+
+↓
+
+Capabilities
+
+↓
+
+Assign Room
+
+↓
+
+Ready
+
+Authentication tokens are stored securely in Keychain.
+
+---
+
+# Supported Features
+
+Power
+
+Sleep
+
+Wake
+
+Remote Navigation
+
+Playback
+
+Play
+
+Pause
+
+Fast Forward
+
+Rewind
+
+Home
+
+Menu
+
+Select
+
+Directional Navigation
+
+Volume (where supported)
+
+Now Playing
+
+Artwork (when available)
+
+Application Name
+
+Playback Position
+
+Media State
+
+---
+
+# TV States
+
+Unknown
+
+Connecting
+
+Ready
+
+Playing
+
+Paused
+
+Idle
+
+Sleeping
+
+Offline
+
+Error
+
+Each state has a dedicated UI representation.
+
+---
+
+# Remote Interface
+
+The remote should feel familiar to Apple users.
+
+Layout
+
+Directional Pad
+
+↓
+
+Center Button
+
+↓
+
+Play / Pause
+
+↓
+
+Home
+
+↓
+
+Back
+
+↓
+
+Mute (if supported)
+
+↓
+
+Volume
+
+The interface should adapt automatically to available capabilities.
+
+---
+
+# Playback
+
+Display
+
+Title
+
+Subtitle
+
+Artwork
+
+Elapsed Time
+
+Remaining Time
+
+Progress
+
+Playback State
+
+Playback updates should feel live without excessive polling.
+
+---
+
+# AirPlay Awareness
+
+Future versions may display:
+
+Current AirPlay Target
+
+AirPlay Status
+
+Suggested Speakers
+
+HomePod Availability
+
+Aura never replaces AirPlay.
+
+Aura simply exposes its current state.
+
+---
+
+# Power Management
+
+Supported
+
+Wake
+
+Sleep
+
+Status
+
+If wake is unavailable directly, Aura may coordinate with the connected television where appropriate.
+
+---
+
+# Polling Strategy
+
+Preferred
+
+Event-driven updates
+
+Fallback
+
+Foreground
+
+2 seconds
+
+Background
+
+15 seconds
+
+Polling pauses when the application is inactive.
+
+---
+
+# Caching
+
+Cached
+
+Device Name
+
+Model
+
+Capabilities
+
+Last Playback State
+
+Current Artwork
+
+Room Assignment
+
+Cache refresh occurs automatically after reconnect.
+
+---
+
+# Error Handling
+
+Examples
+
+Authentication expired
+
+Device unavailable
+
+Playback unavailable
+
+Timeout
+
+Unsupported feature
+
+Errors always include
+
+Explanation
+
+Suggested action
+
+Retry
+
+Diagnostics shortcut
+
+---
+
+# Diagnostics
+
+Connectivity
+
+Authentication
+
+Latency
+
+Playback State
+
+Capabilities
+
+Firmware Information (where available)
+
+Connection History
+
+Recovery Suggestions
+
+---
+
+# Security
+
+Authentication credentials are stored only in Keychain.
+
+No user media history is transmitted externally.
+
+Local communication is preferred whenever possible.
+
+---
+
+# Privacy
+
+Aura never uploads viewing history.
+
+Aura never tracks watched content.
+
+User activity remains local.
+
+---
+
+# Performance Targets
+
+Discovery
+
+<5 seconds
+
+Reconnect
+
+<3 seconds
+
+Remote Response
+
+<200ms target
+
+Playback Refresh
+
+<500ms
+
+---
+
+# Developer Guidelines
+
+Never block the main thread.
+
+Use asynchronous communication.
+
+Avoid unnecessary polling.
+
+Respect Apple platform limitations.
+
+Mock all communication layers.
+
+Separate UI from networking.
+
+---
+
+# Testing
+
+Discovery
+
+Pairing
+
+Wake
+
+Sleep
+
+Playback
+
+Remote Navigation
+
+Artwork
+
+Reconnect
+
+Offline Recovery
+
+Background Resume
+
+Real Hardware Testing
+
+Simulator Testing
+
+---
+
+# Acceptance Criteria
+
+Apple TV is discovered automatically.
+
+Pairing completes without manual configuration.
+
+Remote controls respond reliably.
+
+Playback information remains synchronized.
+
+Network interruptions recover automatically.
+
+Unsupported features remain hidden.
+
+---
+
+# Future Enhancements
+
+Live Activities
+
+Dynamic Island Controls
+
+Apple Watch Remote
+
+Universal Search
+
+Siri Shortcuts
+
+HomePod Handoff
+
+Picture-in-Picture Awareness
+
+Media Queue
+
+---
+
+# Golden Rule
+
+Aura should feel like an extension of Apple TV.
+
+Never a replacement.
+
+---
+
+End of Document
