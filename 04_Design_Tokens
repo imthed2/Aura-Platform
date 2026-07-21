@@ -1,0 +1,889 @@
+# Aura
+## Design Tokens
+Version: 1.0
+Status: Draft
+Owner: Daniel Hagen
+Project: Aura Platform
+Document ID: AURA-04
+
+Dependencies
+
+• AURA-03 Aura Design Language
+
+---
+
+# Purpose
+
+Design Tokens define every measurable visual property used throughout Aura.
+
+All UI components must reference these tokens.
+
+Never hardcode colors, spacing, typography, corner radius or animation values.
+
+---
+
+# Color System
+
+Aura is built around a calm midnight palette.
+
+It should feel like ambient lighting in a modern Scandinavian home.
+
+Never pure black.
+
+Never pure white.
+
+---
+
+## Primary Colors
+
+Aura Midnight
+
+HEX #0D1B2A
+
+Purpose
+
+Primary background
+
+---
+
+Aura Ocean
+
+HEX #1B263B
+
+Purpose
+
+Secondary surfaces
+
+---
+
+Aura Slate
+
+HEX #2C3E50
+
+Purpose
+
+Cards
+
+---
+
+Aura Mist
+
+HEX #EAF2F8
+
+Purpose
+
+Primary text
+
+---
+
+Aura Fog
+
+HEX #B8C5D0
+
+Purpose
+
+Secondary text
+
+---
+
+Aura Steel
+
+HEX #738496
+
+Purpose
+
+Disabled elements
+
+---
+
+# Accent Colors
+
+Aura Blue
+
+HEX #3A86FF
+
+Purpose
+
+Primary interactions
+
+Buttons
+
+Links
+
+Selections
+
+---
+
+Aura Cyan
+
+HEX #4CC9F0
+
+Purpose
+
+Highlights
+
+Discovery
+
+Live Status
+
+---
+
+Aura Green
+
+HEX #52B788
+
+Purpose
+
+Success
+
+Online
+
+Completed
+
+---
+
+Aura Amber
+
+HEX #F4A261
+
+Purpose
+
+Warnings
+
+Attention
+
+---
+
+Aura Red
+
+HEX #E63946
+
+Purpose
+
+Errors
+
+Critical alerts
+
+Delete actions
+
+---
+
+# Background Layers
+
+Layer 0
+
+Main application background
+
+Aura Midnight
+
+---
+
+Layer 1
+
+Grouped backgrounds
+
+Aura Ocean
+
+---
+
+Layer 2
+
+Cards
+
+Aura Slate
+
+---
+
+Layer 3
+
+Modal sheets
+
+Ultra Thin Material
+
+---
+
+Layer 4
+
+Dialogs
+
+Regular Material
+
+---
+
+# Typography
+
+Font Family
+
+SF Pro Display
+
+SF Pro Text
+
+Never replace with custom fonts.
+
+---
+
+Display Large
+
+34pt
+
+Bold
+
+---
+
+Large Title
+
+32pt
+
+Bold
+
+---
+
+Title 1
+
+28pt
+
+Semibold
+
+---
+
+Title 2
+
+22pt
+
+Semibold
+
+---
+
+Headline
+
+17pt
+
+Semibold
+
+---
+
+Body
+
+17pt
+
+Regular
+
+---
+
+Callout
+
+16pt
+
+Regular
+
+---
+
+Subheadline
+
+15pt
+
+Regular
+
+---
+
+Footnote
+
+13pt
+
+Regular
+
+---
+
+Caption
+
+12pt
+
+Regular
+
+---
+
+# Spacing System
+
+Base Unit
+
+4pt
+
+Allowed values
+
+4
+
+8
+
+12
+
+16
+
+20
+
+24
+
+32
+
+40
+
+48
+
+64
+
+80
+
+96
+
+Never invent spacing values.
+
+---
+
+# Corner Radius
+
+Extra Small
+
+8pt
+
+---
+
+Small
+
+12pt
+
+---
+
+Medium
+
+16pt
+
+---
+
+Large
+
+24pt
+
+---
+
+Extra Large
+
+32pt
+
+---
+
+Pill
+
+999pt
+
+---
+
+# Card Sizes
+
+Compact
+
+96pt
+
+---
+
+Medium
+
+140pt
+
+---
+
+Large
+
+220pt
+
+---
+
+Hero
+
+320pt
+
+---
+
+# Icon Sizes
+
+Small
+
+16pt
+
+---
+
+Medium
+
+20pt
+
+---
+
+Standard
+
+24pt
+
+---
+
+Large
+
+32pt
+
+---
+
+Extra Large
+
+48pt
+
+---
+
+# Button Heights
+
+Small
+
+36pt
+
+---
+
+Medium
+
+44pt
+
+---
+
+Large
+
+52pt
+
+---
+
+Hero
+
+60pt
+
+---
+
+Minimum touch target
+
+44 × 44
+
+---
+
+# Shadows
+
+Elevation 1
+
+Opacity 8%
+
+Blur 8
+
+Y Offset 2
+
+---
+
+Elevation 2
+
+Opacity 12%
+
+Blur 16
+
+Y Offset 4
+
+---
+
+Elevation 3
+
+Opacity 18%
+
+Blur 28
+
+Y Offset 10
+
+---
+
+Never use harsh shadows.
+
+---
+
+# Borders
+
+Default
+
+1pt
+
+20% opacity
+
+---
+
+Strong
+
+2pt
+
+40% opacity
+
+---
+
+# Blur Materials
+
+Ultra Thin
+
+Navigation
+
+---
+
+Thin
+
+Cards
+
+---
+
+Regular
+
+Sheets
+
+---
+
+Thick
+
+Dialogs
+
+---
+
+Never use opaque overlays unless required.
+
+---
+
+# Opacity
+
+Disabled
+
+40%
+
+---
+
+Secondary
+
+70%
+
+---
+
+Primary
+
+100%
+
+---
+
+Loading
+
+60%
+
+---
+
+# Animation Duration
+
+Instant
+
+0.10s
+
+---
+
+Fast
+
+0.18s
+
+---
+
+Standard
+
+0.28s
+
+---
+
+Slow
+
+0.40s
+
+---
+
+Hero
+
+0.60s
+
+---
+
+Animations longer than 600ms require Product approval.
+
+---
+
+# Animation Curves
+
+Default
+
+.easeInOut
+
+---
+
+Interactive
+
+.spring
+
+---
+
+Dismiss
+
+.easeOut
+
+---
+
+Arrival
+
+.easeIn
+
+---
+
+Success
+
+.spring(response:0.4)
+
+---
+
+# Haptics
+
+Selection
+
+UISelectionFeedbackGenerator
+
+---
+
+Light
+
+Minor confirmations
+
+---
+
+Medium
+
+Scene activation
+
+---
+
+Heavy
+
+Critical actions
+
+---
+
+Success
+
+Notification.success
+
+---
+
+Warning
+
+Notification.warning
+
+---
+
+Error
+
+Notification.error
+
+---
+
+# Grid
+
+Columns
+
+4
+
+---
+
+Outer Margin
+
+24pt
+
+---
+
+Card Gap
+
+16pt
+
+---
+
+Section Gap
+
+32pt
+
+---
+
+Screen Padding
+
+24pt
+
+---
+
+# Navigation Bar
+
+Height
+
+Apple Native
+
+Large Title preferred
+
+Transparent background
+
+---
+
+# Tab Bar
+
+Maximum Tabs
+
+5
+
+Always visible
+
+Glass material
+
+---
+
+# Lists
+
+Row Height
+
+56pt
+
+---
+
+Large Rows
+
+72pt
+
+---
+
+Section Header
+
+32pt
+
+---
+
+# Progress Indicators
+
+Never use spinning wheels unless unavoidable.
+
+Preferred
+
+Skeletons
+
+Progress bars
+
+Animated placeholders
+
+---
+
+# Status Colors
+
+Online
+
+Aura Green
+
+---
+
+Offline
+
+Aura Steel
+
+---
+
+Busy
+
+Aura Amber
+
+---
+
+Error
+
+Aura Red
+
+---
+
+Unknown
+
+Aura Fog
+
+---
+
+# SF Symbols
+
+Preferred Weight
+
+Regular
+
+---
+
+Preferred Scale
+
+Medium
+
+---
+
+Filled variants only when emphasis is needed.
+
+---
+
+# SwiftUI Token Names
+
+AuraColor.midnight
+
+AuraColor.ocean
+
+AuraColor.slate
+
+AuraColor.blue
+
+AuraSpacing.sm
+
+AuraSpacing.md
+
+AuraSpacing.lg
+
+AuraRadius.medium
+
+AuraRadius.large
+
+AuraTypography.body
+
+AuraTypography.title
+
+AuraAnimation.standard
+
+AuraShadow.level1
+
+AuraMaterial.thin
+
+AuraMaterial.regular
+
+---
+
+# Design Rules
+
+Never hardcode values.
+
+Never use random spacing.
+
+Never invent colors.
+
+Never create new radii.
+
+Never bypass tokens.
+
+Every component must reference the Design Token library.
+
+---
+
+# Golden Rule
+
+If a value is used more than once,
+
+it belongs in Design Tokens.
+
+---
+
+End of Document
