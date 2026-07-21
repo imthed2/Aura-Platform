@@ -1,0 +1,685 @@
+# Aura
+## Philips TV Integration
+Version: 1.0
+Status: Draft
+Owner: Daniel Hagen
+Project: Aura Platform
+Document ID: AURA-12
+
+Dependencies
+
+• AURA-01 Product Requirements
+• AURA-05 Information Architecture
+• AURA-06 User Flows
+• AURA-20 App Architecture
+
+---
+
+# Purpose
+
+The Philips TV Module provides seamless integration between Aura and supported Philips Smart TVs.
+
+The module is responsible for discovery, authentication, communication, state synchronization and diagnostics.
+
+Users should never need to understand how Philips TVs work internally.
+
+Aura abstracts all complexity behind a simple, elegant interface.
+
+---
+
+# Design Goals
+
+Fast
+
+Reliable
+
+Local First
+
+Low Latency
+
+Privacy Focused
+
+Battery Efficient
+
+Recover Automatically
+
+---
+
+# Responsibilities
+
+The Philips TV Module shall:
+
+• Discover TVs automatically
+• Authenticate securely
+• Read TV status
+• Control TV functions
+• Synchronize state
+• Detect capabilities
+• Recover from failures
+• Report diagnostics
+
+---
+
+# Architecture
+
+Aura App
+
+↓
+
+Aura Core Engine
+
+↓
+
+Philips TV Module
+
+↓
+
+Network Layer
+
+↓
+
+Philips TV Local API
+
+↓
+
+Television
+
+The rest of Aura communicates only with Aura Core.
+
+Never directly with Philips APIs.
+
+---
+
+# Discovery
+
+Discovery begins automatically.
+
+Triggers
+
+Application Launch
+
+Pull to Refresh
+
+Manual Scan
+
+Network Change
+
+Reconnect
+
+Room Refresh
+
+---
+
+Discovery Methods
+
+Preferred
+
+Local Network Discovery
+
+Secondary
+
+Stored Devices
+
+Manual IP Entry
+
+Future
+
+mDNS
+
+SSDP improvements
+
+---
+
+# Discovery Requirements
+
+Discovery should complete within
+
+5 seconds.
+
+Already known devices should appear immediately while capability refresh continues in the background.
+
+---
+
+# Device Identification
+
+Store
+
+Friendly Name
+
+Model
+
+Model Number
+
+Firmware Version
+
+MAC Address (hashed internally where appropriate)
+
+Local IP Address
+
+Unique Identifier
+
+Supported Features
+
+Room Assignment
+
+Never expose unnecessary technical identifiers in the main interface.
+
+---
+
+# Pairing
+
+Pairing should require as few steps as possible.
+
+Flow
+
+Discover
+
+↓
+
+Select TV
+
+↓
+
+Request Permission
+
+↓
+
+Authenticate
+
+↓
+
+Read Capabilities
+
+↓
+
+Assign Room
+
+↓
+
+Finished
+
+Users should never manually configure ports or protocols.
+
+---
+
+# Capability Detection
+
+Aura automatically detects available features.
+
+Examples
+
+Power
+
+Standby
+
+Volume
+
+Mute
+
+Input Switching
+
+Remote Navigation
+
+Media Playback
+
+Keyboard Input
+
+Picture Modes
+
+Sound Modes
+
+Ambilight
+
+Apps
+
+Now Playing
+
+Screen Resolution
+
+HDR Support
+
+Capabilities are cached and refreshed periodically.
+
+---
+
+# TV States
+
+Unknown
+
+Discovering
+
+Connecting
+
+Online
+
+Busy
+
+Standby
+
+Playing
+
+Paused
+
+Offline
+
+Error
+
+Every state must have a visual representation.
+
+---
+
+# Power Management
+
+Supported Actions
+
+Wake
+
+Standby
+
+Shutdown (if supported)
+
+Power State Query
+
+Rules
+
+Never assume TV state.
+
+Always verify after sending commands.
+
+---
+
+# Input Management
+
+Supported Inputs
+
+HDMI 1
+
+HDMI 2
+
+HDMI 3
+
+HDMI 4
+
+TV
+
+Apps
+
+Other available sources
+
+Aura should display friendly input names whenever possible.
+
+---
+
+# Remote Control
+
+Navigation
+
+Up
+
+Down
+
+Left
+
+Right
+
+Select
+
+Back
+
+Home
+
+Options
+
+Volume
+
+Mute
+
+Channel
+
+Playback
+
+Play
+
+Pause
+
+Stop
+
+Forward
+
+Rewind
+
+The layout should resemble Apple's Remote rather than a traditional plastic remote.
+
+---
+
+# Volume
+
+Read current volume.
+
+Adjust continuously.
+
+Mute.
+
+Display current level.
+
+Changes should update within 250ms whenever possible.
+
+---
+
+# Now Playing
+
+When available
+
+Title
+
+Subtitle
+
+Artwork
+
+Playback Status
+
+Progress
+
+Application Name
+
+Duration
+
+Current Position
+
+Unavailable information should simply be omitted.
+
+---
+
+# Ambilight (Future)
+
+If supported
+
+Power
+
+Brightness
+
+Color
+
+Mode
+
+Dynamic Effects
+
+This functionality should appear automatically only on compatible models.
+
+---
+
+# Polling Strategy
+
+Aura prefers event-driven updates.
+
+When unavailable
+
+Polling Frequency
+
+Foreground
+
+Every 2 seconds
+
+Background
+
+Every 15 seconds
+
+Polling pauses while the application is inactive.
+
+---
+
+# Caching
+
+Cached
+
+Capabilities
+
+Device Name
+
+Model
+
+Firmware
+
+Last State
+
+Input
+
+Volume
+
+Artwork
+
+Scene Compatibility
+
+Cache invalidation occurs automatically after reconnect.
+
+---
+
+# Network Recovery
+
+If communication fails
+
+Retry silently
+
+↓
+
+Reconnect
+
+↓
+
+Refresh State
+
+↓
+
+Notify User only if recovery fails
+
+Users should rarely notice network interruptions.
+
+---
+
+# Error Handling
+
+Examples
+
+TV unreachable
+
+Authentication expired
+
+API unavailable
+
+Timeout
+
+Unsupported feature
+
+Every error includes
+
+Description
+
+Recovery Suggestion
+
+Retry
+
+Diagnostics Shortcut
+
+Never expose raw API responses.
+
+---
+
+# Diagnostics
+
+Tests
+
+Reachability
+
+Authentication
+
+Latency
+
+Capability Detection
+
+Current State
+
+Response Time
+
+Firmware Version
+
+Connection History
+
+Recommended Fixes
+
+---
+
+# Security
+
+All communication occurs over the local network whenever possible.
+
+No unnecessary cloud communication.
+
+Credentials stored securely.
+
+Authentication tokens stored in Keychain.
+
+Never store passwords.
+
+---
+
+# Privacy
+
+Aura never transmits viewing history externally.
+
+Aura never uploads device information.
+
+All device metadata remains local.
+
+Privacy is a core feature.
+
+---
+
+# Performance Targets
+
+Discovery
+
+<5 seconds
+
+Reconnect
+
+<3 seconds
+
+Command Response
+
+<250ms target
+
+Dashboard Update
+
+<500ms
+
+Memory
+
+Minimal background footprint
+
+---
+
+# Developer Guidelines
+
+Never block the main thread.
+
+All networking must be asynchronous.
+
+Retry gracefully.
+
+Never spam the TV with repeated requests.
+
+Respect rate limits.
+
+Use dependency injection.
+
+Separate networking from UI.
+
+Mock every API endpoint for testing.
+
+---
+
+# Testing Requirements
+
+Discovery
+
+Authentication
+
+Reconnect
+
+Power
+
+Standby
+
+Volume
+
+Mute
+
+Navigation
+
+Input Switching
+
+Capability Detection
+
+Offline Recovery
+
+Timeout Handling
+
+Firmware Compatibility
+
+Background Resume
+
+Real Device Testing
+
+Simulator Testing
+
+---
+
+# Acceptance Criteria
+
+Aura automatically discovers compatible Philips TVs.
+
+Users can pair the TV without reading documentation.
+
+Power, volume, input switching and remote navigation function reliably.
+
+State remains synchronized.
+
+Network interruptions recover automatically.
+
+Unsupported features are hidden rather than disabled.
+
+Latency remains within performance targets.
+
+---
+
+# Future Enhancements
+
+Ambilight Control
+
+Installed Apps
+
+Launch Apps
+
+Now Playing Artwork
+
+Voice Control
+
+TV Screenshot Support (if API allows)
+
+Multiple Philips TVs
+
+Picture Calibration
+
+Firmware Update Notifications
+
+---
+
+# Golden Rule
+
+Users should feel as though Aura is built into the television.
+
+Not communicating with it.
+
+---
+
+End of Document
