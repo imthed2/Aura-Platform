@@ -1,0 +1,1827 @@
+# Aura
+## Automation Engine
+
+Version: 1.0  
+Status: Draft  
+Owner: Daniel Hagen  
+Project: Aura Platform  
+Document ID: AURA-18
+
+## Dependencies
+
+- AURA-01 Product Requirements
+- AURA-05 Information Architecture
+- AURA-05.5 Navigation System
+- AURA-06 User Flows
+- AURA-07 Screen Specifications
+- AURA-08 Component Library
+- AURA-09 Interaction Guidelines
+- AURA-11 Haptics
+- AURA-14 HomeKit Integration
+- AURA-15 Philips Hue Bridge Integration
+- AURA-16 Device Discovery
+- AURA-17 Scene Engine
+- AURA-19 Diagnostics
+- AURA-20 App Architecture
+
+---
+
+# 1. Purpose
+
+The Automation Engine enables Aura to perform useful actions automatically when defined triggers and conditions are satisfied.
+
+Automations must feel dependable, understandable and calm.
+
+The user should be able to create workflows such as:
+
+- Start Good Night at 23:00.
+- Turn on hallway lights when motion is detected after sunset.
+- Start Gaming when the television changes to the PlayStation input.
+- Notify the user when an important device becomes unavailable.
+- Run Movie Night when the user arrives home during the evening.
+
+The Automation Engine coordinates trigger observation, condition evaluation, execution scheduling, Scene Engine handoff, loop prevention, persistence, diagnostics and user-facing history.
+
+It must never behave like an unpredictable black box.
+
+---
+
+# 2. Product Goals
+
+The Automation Engine shall:
+
+- Allow users to create automations without technical terminology.
+- Support time, solar, device, sensor, presence and scene-related triggers.
+- Evaluate multiple conditions consistently.
+- Execute Aura scenes and normalized device actions.
+- Remain local-first whenever technically possible.
+- Explain why an automation did or did not run.
+- Prevent duplicate, recursive or rapidly repeated executions.
+- Handle unavailable devices and partial failures gracefully.
+- Preserve automation definitions while integrations are offline.
+- Provide clear execution history and diagnostics.
+- Respect iOS, HomeKit and background-execution limitations.
+- Avoid excessive network, battery and background activity.
+- Support future expansion without changing the core data model.
+
+---
+
+# 3. Non-Goals
+
+Version 1 does not aim to:
+
+- Replace Apple Home automations.
+- Replace advanced home-automation servers such as Home Assistant.
+- Provide unrestricted scripting or arbitrary code execution.
+- Guarantee continuous background execution outside platform allowances.
+- Run cloud-dependent automations without an explicitly designed cloud service.
+- Expose raw vendor events to users.
+- Provide complex variables, loops or programming constructs in the first release.
+- Silently modify automations created in other ecosystems.
+- Infer safety-critical actions without explicit user configuration.
+
+Aura automations are intended for reliable everyday experiences, not unrestricted programming.
+
+---
+
+# 4. Core Principles
+
+## 4.1 Explainable
+
+Every run must have an understandable reason.
+
+Aura should be able to answer:
+
+- What triggered this automation?
+- Which conditions passed or failed?
+- What actions were attempted?
+- What succeeded?
+- What failed?
+- Why was a run skipped?
+
+## 4.2 Deterministic
+
+Given the same trigger event, state snapshot and automation version, evaluation should produce the same decision.
+
+Time-sensitive or changing values must be captured in an evaluation snapshot.
+
+## 4.3 Local First
+
+Triggers, conditions and actions should be processed locally whenever platform capabilities permit.
+
+Aura must not claim offline or background reliability that iOS cannot provide.
+
+## 4.4 Safe by Default
+
+Security-sensitive and destructive actions require stronger validation than ordinary lighting or media actions.
+
+## 4.5 Idempotent Where Possible
+
+Repeated delivery of the same trigger must not cause uncontrolled repeated execution.
+
+## 4.6 User Control
+
+Users can disable, edit, test, duplicate and delete their automations.
+
+Automatic behavior must never remove the user’s ability to act manually.
+
+## 4.7 Partial Failure
+
+One failed action must not erase successful actions or make the execution history ambiguous.
+
+---
+
+# 5. High-Level Architecture
+
+```mermaid
+flowchart TD
+    Sources[Trigger Sources] --> Ingest[Event Ingestion]
+    Ingest --> Normalize[Event Normalizer]
+    Normalize --> Dedupe[Deduplication and Debounce]
+    Dedupe --> Matcher[Automation Matcher]
+    Matcher --> Evaluator[Condition Evaluator]
+    Evaluator --> Scheduler[Execution Scheduler]
+    Scheduler --> Executor[Automation Executor]
+    Executor --> Scenes[Scene Engine]
+    Executor --> Commands[Unified Command Bus]
+    Scenes --> Plugins[Device Plugins]
+    Commands --> Plugins
+    Executor --> History[Execution History]
+    Executor --> Diagnostics[Diagnostics]
+    Store[Automation Store] --> Matcher
+    Store --> Evaluator
+    Store --> Scheduler
+```
+
+The UI must not listen directly to vendor events or execute device commands.
+
+All automation activity passes through normalized platform boundaries.
+
+---
+
+# 6. System Responsibilities
+
+The Automation Engine owns:
+
+- Automation definition persistence.
+- Trigger registration.
+- Event normalization.
+- Event deduplication.
+- Debounce and cooldown behavior.
+- Condition evaluation.
+- Execution eligibility.
+- Run scheduling.
+- Scene Engine handoff.
+- Direct normalized action execution.
+- Correlation IDs and recursion prevention.
+- Execution history.
+- Automation health state.
+- Diagnostics and user-facing explanations.
+
+The Automation Engine does not own:
+
+- Vendor-specific networking.
+- Device discovery.
+- Pairing credentials.
+- Device capability detection.
+- Scene action internals.
+- HomeKit database ownership.
+- Operating-system background scheduling guarantees.
+
+---
+
+# 7. Automation Domain Model
+
+```swift
+struct AuraAutomation: Identifiable, Codable, Sendable, Equatable {
+    let id: AutomationID
+    var name: String
+    var icon: AuraIconReference?
+    var isEnabled: Bool
+    var trigger: AutomationTrigger
+    var conditions: [AutomationCondition]
+    var conditionMode: ConditionMode
+    var actions: [AutomationAction]
+    var executionPolicy: AutomationExecutionPolicy
+    var metadata: AutomationMetadata
+    var version: Int
+}
+```
+
+```swift
+enum ConditionMode: String, Codable, Sendable {
+    case all
+    case any
+}
+```
+
+```swift
+struct AutomationMetadata: Codable, Sendable, Equatable {
+    let createdAt: Date
+    var updatedAt: Date
+    var lastEnabledAt: Date?
+    var lastDisabledAt: Date?
+    var lastRunAt: Date?
+    var lastSuccessfulRunAt: Date?
+    var source: AutomationSource
+}
+```
+
+```swift
+enum AutomationSource: String, Codable, Sendable {
+    case aura
+    case importedReference
+    case template
+}
+```
+
+Automation definitions must be versioned so future migrations remain possible.
+
+---
+
+# 8. Trigger Model
+
+```swift
+enum AutomationTrigger: Codable, Sendable, Equatable {
+    case time(TimeTrigger)
+    case sunrise(SolarTrigger)
+    case sunset(SolarTrigger)
+    case deviceState(DeviceStateTrigger)
+    case deviceAvailability(DeviceAvailabilityTrigger)
+    case sensor(SensorTrigger)
+    case presence(PresenceTrigger)
+    case sceneCompleted(SceneCompletionTrigger)
+    case appEvent(AppEventTrigger)
+    case manual(ManualTrigger)
+}
+```
+
+Each automation has one primary trigger in version 1.
+
+Multiple trigger support may be introduced later through compound trigger groups.
+
+---
+
+# 9. Time Triggers
+
+Time triggers support:
+
+- Exact local time.
+- Selected weekdays.
+- Every day.
+- One-time dates.
+- Time-zone-aware scheduling.
+- Daylight-saving changes.
+
+```swift
+struct TimeTrigger: Codable, Sendable, Equatable {
+    let hour: Int
+    let minute: Int
+    let weekdays: Set<Weekday>
+    let timeZonePolicy: TimeZonePolicy
+}
+```
+
+```swift
+enum TimeZonePolicy: String, Codable, Sendable {
+    case currentDeviceTimeZone
+    case fixedHomeTimeZone
+}
+```
+
+Rules:
+
+- Invalid calendar dates must not crash scheduling.
+- Daylight-saving transitions must produce predictable behavior.
+- A skipped local time should run at the next valid instant unless the user selects strict behavior in a future advanced setting.
+- A repeated local time should run at most once per intended schedule occurrence.
+- Significant clock changes must trigger schedule recalculation.
+
+---
+
+# 10. Sunrise and Sunset Triggers
+
+Solar triggers are calculated from the selected home location and calendar date.
+
+Supported offsets:
+
+- Before sunrise.
+- After sunrise.
+- Before sunset.
+- After sunset.
+
+```swift
+struct SolarTrigger: Codable, Sendable, Equatable {
+    let offsetMinutes: Int
+    let weekdays: Set<Weekday>
+    let locationPolicy: SolarLocationPolicy
+}
+```
+
+Location must be obtained through an explicit, documented user choice.
+
+Aura may use:
+
+- A manually selected home location.
+- A permitted HomeKit home location if reliably available.
+- The device’s current location only with appropriate permission and clear user intent.
+
+Solar calculations should be performed locally.
+
+If location is unavailable, the automation must show a configuration problem rather than silently guessing.
+
+---
+
+# 11. Device-State Triggers
+
+Device-state triggers react to normalized capability changes.
+
+Examples:
+
+- TV power becomes on.
+- HDMI input changes to PlayStation.
+- Light power becomes off.
+- Brightness rises above 70 percent.
+- Contact sensor opens.
+- Temperature falls below a threshold.
+
+```swift
+struct DeviceStateTrigger: Codable, Sendable, Equatable {
+    let deviceID: AuraDeviceID
+    let capability: AuraCapabilityID
+    let comparison: TriggerComparison
+    let value: AuraValue
+    let edge: TriggerEdge
+}
+```
+
+```swift
+enum TriggerEdge: String, Codable, Sendable {
+    case entersMatchingState
+    case exitsMatchingState
+    case anyChange
+}
+```
+
+The default should be `entersMatchingState` to avoid repeated runs while a state remains true.
+
+---
+
+# 12. Availability Triggers
+
+Availability triggers include:
+
+- Device became online.
+- Device became offline.
+- Bridge became unreachable.
+- Integration authentication became invalid.
+
+These triggers must include stability windows.
+
+A device should not trigger an offline automation because of one short timeout.
+
+Recommended default stability window:
+
+- Offline: 30 seconds.
+- Online recovery: 5 seconds.
+
+Plugins may provide integration-specific recommendations.
+
+---
+
+# 13. Sensor Triggers
+
+Sensor triggers may include:
+
+- Motion detected.
+- No motion for a defined duration.
+- Contact opened or closed.
+- Button pressed.
+- Long press.
+- Rotary input.
+- Temperature threshold.
+- Light-level threshold.
+- Battery below threshold.
+
+Sensor events must be normalized before reaching the Automation Engine.
+
+```swift
+struct SensorTrigger: Codable, Sendable, Equatable {
+    let deviceID: AuraDeviceID
+    let event: NormalizedSensorEventDescriptor
+    let holdDuration: Duration?
+}
+```
+
+“No motion” is a duration-based state trigger, not a single event.
+
+It requires a timer that is cancelled when motion returns.
+
+---
+
+# 14. Presence Triggers
+
+Presence triggers may include:
+
+- User arrives.
+- User leaves.
+- First household member arrives.
+- Last household member leaves.
+
+Version 1 must remain conservative.
+
+Requirements:
+
+- Explicit location permission.
+- Clear explanation of location use.
+- User-visible enablement.
+- No hidden continuous location tracking beyond approved platform mechanisms.
+- Honest treatment of delayed or unavailable background events.
+
+Presence data must not be uploaded unless a separately documented feature explicitly requires it.
+
+Security-sensitive actions triggered by presence require additional safeguards.
+
+---
+
+# 15. Scene Completion Triggers
+
+An automation may respond to a completed Aura scene.
+
+Examples:
+
+- After Good Night completes, verify that key devices are off.
+- After Movie Night completes, start a temporary hallway-light timer.
+
+```swift
+struct SceneCompletionTrigger: Codable, Sendable, Equatable {
+    let sceneID: SceneID
+    let acceptedResults: Set<SceneResultCategory>
+}
+```
+
+Scene-triggered automations must use correlation IDs to prevent recursive loops.
+
+---
+
+# 16. Manual Triggers
+
+Manual triggers allow an automation to behave like an advanced reusable workflow.
+
+They may be launched from:
+
+- Automation detail.
+- Home dashboard shortcut.
+- Search.
+- App Intent in a future release.
+- Diagnostic test mode.
+
+Manual runs still evaluate conditions unless the user explicitly selects a test mode that explains any bypass.
+
+---
+
+# 17. Event Envelope
+
+All incoming trigger events shall use a normalized envelope.
+
+```swift
+struct AutomationEvent: Sendable, Equatable, Identifiable {
+    let id: EventID
+    let source: EventSource
+    let kind: AutomationEventKind
+    let subjectID: String?
+    let value: AuraValue?
+    let occurredAt: Date
+    let receivedAt: Date
+    let correlationID: CorrelationID?
+    let causationID: String?
+    let quality: EventQuality
+}
+```
+
+```swift
+enum EventQuality: String, Sendable {
+    case confirmed
+    case inferred
+    case stale
+    case recovered
+}
+```
+
+Stale events must not trigger normal automations unless the automation explicitly supports them.
+
+---
+
+# 18. Event Ingestion
+
+```mermaid
+sequenceDiagram
+    participant Source as Plugin or System Source
+    participant Bus as Event Bus
+    participant Engine as Automation Engine
+    participant Store as Automation Store
+    participant Executor as Executor
+
+    Source->>Bus: Publish normalized event
+    Bus->>Engine: Deliver event envelope
+    Engine->>Engine: Validate and deduplicate
+    Engine->>Store: Find matching automations
+    Store-->>Engine: Candidate automations
+    Engine->>Engine: Evaluate conditions
+    Engine->>Executor: Schedule eligible runs
+```
+
+Requirements:
+
+- Events must be immutable.
+- Invalid events must be rejected safely.
+- Delivery may be at least once.
+- The engine must tolerate duplicate delivery.
+- Event processing must support cancellation during shutdown.
+- Event timestamps and receipt timestamps must remain distinct.
+
+---
+
+# 19. Deduplication
+
+The engine must prevent repeated processing of the same event.
+
+Deduplication may use:
+
+- Exact event ID.
+- Source sequence number.
+- Correlation ID.
+- Device, capability, value and bounded time window.
+
+Recommended deduplication retention:
+
+- Exact event IDs: 24 hours locally.
+- High-frequency state events: short rolling window.
+
+Deduplication must not suppress a real later state transition merely because the value is equal.
+
+---
+
+# 20. Debounce, Throttle and Cooldown
+
+These concepts must remain distinct.
+
+## Debounce
+
+Waits for a state to remain stable before evaluation.
+
+Example: device remains offline for 30 seconds.
+
+## Throttle
+
+Limits how often a source event may be evaluated.
+
+Example: temperature sensor sends many updates.
+
+## Cooldown
+
+Prevents an automation from running again for a defined period after execution.
+
+```swift
+struct AutomationExecutionPolicy: Codable, Sendable, Equatable {
+    let cooldown: Duration?
+    let concurrency: AutomationConcurrencyPolicy
+    let failurePolicy: AutomationFailurePolicy
+    let maximumRuntime: Duration
+}
+```
+
+---
+
+# 21. Conditions
+
+```swift
+enum AutomationCondition: Codable, Sendable, Equatable {
+    case timeWindow(TimeWindowCondition)
+    case weekday(WeekdayCondition)
+    case deviceState(DeviceStateCondition)
+    case deviceAvailability(DeviceAvailabilityCondition)
+    case sensorState(SensorStateCondition)
+    case presence(PresenceCondition)
+    case sceneState(SceneStateCondition)
+    case automationState(AutomationStateCondition)
+}
+```
+
+Conditions are evaluated after the trigger matches and immediately before execution.
+
+The engine must capture one evaluation snapshot so conditions do not observe inconsistent moments.
+
+---
+
+# 22. Condition Evaluation
+
+```swift
+struct ConditionEvaluation: Sendable, Equatable {
+    let conditionID: ConditionID
+    let result: ConditionResult
+    let observedValue: AuraValue?
+    let evaluatedAt: Date
+    let explanation: String
+}
+```
+
+```swift
+enum ConditionResult: String, Sendable {
+    case passed
+    case failed
+    case unknown
+    case unavailable
+}
+```
+
+Default behavior:
+
+- `all` mode requires every condition to pass.
+- `any` mode requires at least one condition to pass.
+- `unknown` and `unavailable` do not count as passed.
+- Security-sensitive workflows should fail closed.
+
+The user-facing history should explain failed conditions in plain language.
+
+---
+
+# 23. Time-Window Conditions
+
+Time windows may cross midnight.
+
+Example:
+
+```text
+22:00 → 06:00
+```
+
+The condition evaluator must treat this as one continuous window.
+
+Time-window evaluation must use the automation’s selected time-zone policy.
+
+---
+
+# 24. State Freshness
+
+Conditions must define acceptable state freshness.
+
+Examples:
+
+- A light’s power state may tolerate a few seconds of age.
+- A door-lock state must be recently confirmed.
+- Presence may be delayed by the operating system.
+
+```swift
+struct StateFreshnessRequirement: Codable, Sendable, Equatable {
+    let maximumAge: Duration
+    let requireConfirmed: Bool
+}
+```
+
+If a required state is stale, the engine may request a bounded refresh before evaluation.
+
+It must not block indefinitely.
+
+---
+
+# 25. Automation Actions
+
+```swift
+enum AutomationAction: Codable, Sendable, Equatable {
+    case runScene(SceneActionReference)
+    case deviceCommand(DeviceCommandAction)
+    case wait(WaitAction)
+    case notification(NotificationAction)
+    case conditionalBranch(ConditionalBranchAction)
+}
+```
+
+Version 1 should prefer scene execution for multi-device experiences.
+
+Direct device commands are appropriate for small, focused changes.
+
+---
+
+# 26. Scene Actions
+
+A scene action delegates execution to the Scene Engine.
+
+```swift
+struct SceneActionReference: Codable, Sendable, Equatable {
+    let sceneID: SceneID
+    let executionMode: SceneExecutionMode
+}
+```
+
+The Automation Engine must not duplicate Scene Engine planning, retry or vendor-command logic.
+
+It records the returned Scene Engine result as part of the automation run.
+
+---
+
+# 27. Direct Device Commands
+
+Direct commands use the unified capability model.
+
+Examples:
+
+- Turn one light on.
+- Set one room’s grouped brightness.
+- Mute the television.
+- Send a notification when a sensor is triggered.
+
+The Automation Engine must validate that the device and capability still exist before execution.
+
+Missing devices should produce a clear configuration issue.
+
+---
+
+# 28. Wait Actions
+
+Wait actions pause the current run for a bounded duration.
+
+```swift
+struct WaitAction: Codable, Sendable, Equatable {
+    let duration: Duration
+}
+```
+
+Version 1 maximum recommended wait duration:
+
+- 30 minutes for in-process runs.
+
+Longer delays should normally be modeled as a separate scheduled automation because iOS may suspend the application.
+
+A wait must be cancellable.
+
+---
+
+# 29. Conditional Branches
+
+Version 1 may support one-level conditional branches.
+
+```swift
+struct ConditionalBranchAction: Codable, Sendable, Equatable {
+    let conditions: [AutomationCondition]
+    let conditionMode: ConditionMode
+    let ifActions: [AutomationAction]
+    let elseActions: [AutomationAction]
+}
+```
+
+Deeply nested branches should be prohibited initially.
+
+Recommended maximum nesting depth:
+
+- 1 in version 1.
+
+This preserves explainability and avoids turning the editor into a programming environment.
+
+---
+
+# 30. Notifications
+
+Automation notifications must be meaningful and configurable.
+
+Examples:
+
+- `Movie Night could not start because the television is offline.`
+- `The front-door sensor has been open for 10 minutes.`
+- `Good Night completed with one warning.`
+
+Aura must not send promotional notifications.
+
+Notification permission is separate from automation enablement.
+
+An automation should remain enabled if notification permission is denied, but notification actions must report that they were skipped.
+
+---
+
+# 31. Execution Lifecycle
+
+```mermaid
+stateDiagram-v2
+    [*] --> Received
+    Received --> Matched
+    Matched --> Evaluating
+    Evaluating --> Skipped: conditions fail
+    Evaluating --> Scheduled: eligible
+    Scheduled --> Running
+    Running --> Succeeded
+    Running --> PartialSuccess
+    Running --> Failed
+    Running --> Cancelled
+    Skipped --> [*]
+    Succeeded --> [*]
+    PartialSuccess --> [*]
+    Failed --> [*]
+    Cancelled --> [*]
+```
+
+```swift
+enum AutomationRunState: Sendable, Equatable {
+    case received
+    case evaluating
+    case skipped(AutomationSkipReason)
+    case scheduled
+    case running(progress: AutomationProgress)
+    case succeeded
+    case partialSuccess
+    case failed(AutomationRunError)
+    case cancelled
+}
+```
+
+---
+
+# 32. Execution Record
+
+```swift
+struct AutomationRunRecord: Codable, Sendable, Identifiable {
+    let id: AutomationRunID
+    let automationID: AutomationID
+    let automationVersion: Int
+    let triggerEventID: EventID?
+    let correlationID: CorrelationID
+    let startedAt: Date
+    let completedAt: Date?
+    let result: AutomationRunResult
+    let conditionEvaluations: [ConditionEvaluation]
+    let actionResults: [AutomationActionResult]
+    let explanation: String
+}
+```
+
+The execution record must contain enough information to explain the run without storing secrets or excessive personal data.
+
+---
+
+# 33. Concurrency Policies
+
+```swift
+enum AutomationConcurrencyPolicy: String, Codable, Sendable {
+    case skipIfRunning
+    case restart
+    case queueOne
+}
+```
+
+Default:
+
+- `skipIfRunning`
+
+Behavior:
+
+## Skip If Running
+
+A second trigger is recorded as skipped while the current run continues.
+
+## Restart
+
+The current run is cancelled safely and a new run begins.
+
+Use only for actions known to be cancellation-safe.
+
+## Queue One
+
+One pending run may wait behind the current run.
+
+Additional triggers are coalesced.
+
+Unlimited queues are not permitted.
+
+---
+
+# 34. Cooldown Behavior
+
+Cooldown begins when a run starts unless a future advanced option specifies completion-based cooldown.
+
+A trigger received during cooldown should produce a lightweight skipped record.
+
+Suggested user copy:
+
+`Skipped because this automation ran recently.`
+
+---
+
+# 35. Loop and Recursion Prevention
+
+Automation loops are a critical failure mode.
+
+Example:
+
+```text
+Automation A turns TV on
+TV-on event triggers Automation B
+Automation B runs Scene X
+Scene X turns TV off
+TV-off event triggers Automation A
+```
+
+Aura shall use:
+
+- Correlation IDs.
+- Causation IDs.
+- Execution ancestry.
+- Maximum chain depth.
+- Rapid-cycle detection.
+- Per-automation cooldown.
+
+Recommended maximum automation chain depth:
+
+- 8
+
+If the limit is reached, the next run must be blocked and diagnostics must explain the cycle.
+
+---
+
+# 36. Correlation Model
+
+```swift
+struct AutomationExecutionContext: Sendable {
+    let correlationID: CorrelationID
+    let causationID: String?
+    let ancestorAutomationIDs: [AutomationID]
+    let initiatedBy: ExecutionInitiator
+}
+```
+
+Every command and scene run started by an automation should carry the same correlation ID where platform boundaries permit.
+
+Reflected device events should retain causation metadata when possible.
+
+When metadata cannot cross a vendor boundary, bounded heuristic loop detection remains necessary.
+
+---
+
+# 37. Scheduling
+
+The scheduler manages:
+
+- Next fire date for time triggers.
+- Daily solar recalculation.
+- Debounce timers.
+- No-motion timers.
+- Cooldown expiration.
+- Queued runs.
+- Bounded retries.
+
+```swift
+actor AutomationScheduler {
+    func register(_ automation: AuraAutomation) async
+    func unregister(id: AutomationID) async
+    func rebuildSchedule() async
+    func handleSignificantTimeChange() async
+    func nextFireDate(for id: AutomationID) async -> Date?
+}
+```
+
+Scheduling must use an injectable clock for testing.
+
+---
+
+# 38. iOS Background Constraints
+
+Aura must distinguish between desired automation behavior and what iOS can reliably execute.
+
+Rules:
+
+- Foreground event processing can be immediate.
+- HomeKit-managed automations may run through Apple’s home infrastructure when configured there, but Aura must not claim ownership of that execution.
+- Local Aura-only automation execution cannot assume unrestricted background runtime.
+- Background tasks are opportunistic, not exact schedulers.
+- Notifications may be scheduled by the operating system where appropriate.
+- Long-running waits must not rely on the app remaining active.
+
+Automations whose reliability depends on continuous execution should clearly indicate the requirement or be moved to a future persistent home-runtime architecture.
+
+---
+
+# 39. Automation Reliability Classification
+
+Aura should classify automations internally:
+
+```swift
+enum AutomationReliabilityClass: String, Codable, Sendable {
+    case foregroundReliable
+    case systemScheduled
+    case homeInfrastructureDependent
+    case opportunisticBackground
+    case unavailable
+}
+```
+
+The normal UI should use friendly explanations rather than these technical names.
+
+Example:
+
+`This automation works while Aura can receive updates from your home.`
+
+---
+
+# 40. Persistence
+
+Automation definitions must persist locally.
+
+Recommended storage characteristics:
+
+- Structured schema.
+- Versioned migrations.
+- Atomic writes.
+- Corruption recovery.
+- Optional encrypted fields where needed.
+- No credentials inside automation definitions.
+
+Persist:
+
+- Automation definitions.
+- Enablement state.
+- Scheduling metadata.
+- Limited execution history.
+- Health issues.
+
+Do not persist:
+
+- Vendor tokens.
+- Raw sensor payloads.
+- Unbounded presence history.
+- Full private device event streams.
+
+---
+
+# 41. Schema Versioning
+
+```swift
+struct StoredAutomationEnvelope: Codable, Sendable {
+    let schemaVersion: Int
+    let automation: AuraAutomation
+}
+```
+
+Migration requirements:
+
+- Never silently discard an automation.
+- Preserve a backup of the previous store before destructive migration.
+- Disable only the affected automation if migration fails.
+- Present a recoverable configuration warning.
+
+---
+
+# 42. Automation Health
+
+```swift
+enum AutomationHealth: Sendable, Equatable {
+    case healthy
+    case warning([AutomationIssue])
+    case invalid([AutomationIssue])
+    case temporarilyUnavailable([AutomationIssue])
+}
+```
+
+Issues may include:
+
+- Referenced device removed.
+- Referenced scene missing.
+- Capability no longer supported.
+- Permission denied.
+- Location unavailable.
+- Notification permission denied.
+- Integration authentication expired.
+- Background reliability limitation.
+
+Invalid automations must not execute.
+
+Warnings may allow execution when safe.
+
+---
+
+# 43. Validation
+
+Validation occurs:
+
+- During creation.
+- Before saving.
+- After device registry changes.
+- After scene edits.
+- After permission changes.
+- Before every run.
+
+```swift
+protocol AutomationValidating: Sendable {
+    func validate(_ automation: AuraAutomation) async -> AutomationValidationResult
+}
+```
+
+Validation must confirm:
+
+- Trigger is complete.
+- Conditions reference available types.
+- Actions are valid.
+- Referenced devices or scenes exist.
+- Required capabilities remain supported.
+- No prohibited recursive reference exists.
+- Runtime limits are respected.
+
+---
+
+# 44. Error Model
+
+```swift
+enum AutomationEngineError: Error, Sendable, Equatable {
+    case automationNotFound
+    case automationDisabled
+    case invalidDefinition
+    case triggerUnavailable
+    case conditionEvaluationFailed
+    case referencedDeviceMissing
+    case referencedSceneMissing
+    case capabilityUnavailable
+    case permissionDenied
+    case scheduleUnavailable
+    case executionAlreadyRunning
+    case cooldownActive
+    case recursiveExecutionBlocked
+    case chainDepthExceeded
+    case actionTimedOut
+    case operationCancelled
+    case persistenceFailure
+    case systemLimitation
+    case unknown
+}
+```
+
+Raw plugin errors should be preserved in sanitized diagnostics and converted into platform-level action results.
+
+---
+
+# 45. Skip Reasons
+
+Skipping is not the same as failure.
+
+```swift
+enum AutomationSkipReason: Sendable, Equatable {
+    case disabled
+    case conditionsNotMet
+    case cooldownActive
+    case alreadyRunning
+    case duplicateEvent
+    case staleEvent
+    case automationInvalid
+    case recursionBlocked
+    case insufficientStateFreshness
+    case platformUnavailable
+}
+```
+
+The history UI should distinguish skipped runs from failed runs.
+
+---
+
+# 46. Failure Policy
+
+```swift
+enum AutomationFailurePolicy: String, Codable, Sendable {
+    case continueRemainingActions
+    case stopOnFailure
+}
+```
+
+Default behavior:
+
+- Continue remaining independent low-risk actions.
+- Stop dependent or security-sensitive sequences.
+
+The Scene Engine remains responsible for detailed scene action dependencies.
+
+---
+
+# 47. Retry Policy
+
+Retries must be bounded and operation-aware.
+
+Rules:
+
+- Retry only transient failures.
+- Retry only idempotent actions unless the plugin confirms safe replay.
+- Do not retry permission denial.
+- Do not retry missing device definitions.
+- Use backoff.
+- Respect automation maximum runtime.
+
+Recommended default:
+
+- One retry after a short delay for safe transient device commands.
+
+---
+
+# 48. Security-Sensitive Actions
+
+Examples:
+
+- Unlocking a door.
+- Opening a garage.
+- Disarming an alarm.
+- Granting access.
+
+Version 1 should not allow these actions through ordinary Aura automations unless a separate security design explicitly approves them.
+
+Safer actions such as locking a door may still require confirmed state and stricter audit history.
+
+Security behavior must fail closed.
+
+---
+
+# 49. Privacy
+
+Aura should not upload:
+
+- Automation definitions.
+- Presence events.
+- Motion history.
+- Device-state history.
+- Room activity.
+- User-created names.
+
+A future synchronization service requires separate consent, encryption and documentation.
+
+Execution history should be retained only as long as useful.
+
+Suggested default local history:
+
+- 30 days or 500 records, whichever is reached first.
+
+The user should be able to clear history.
+
+---
+
+# 50. Logging
+
+Structured categories:
+
+- automation.trigger
+- automation.event
+- automation.match
+- automation.condition
+- automation.schedule
+- automation.execution
+- automation.action
+- automation.loop
+- automation.persistence
+- automation.diagnostics
+
+Logs must not include:
+
+- Credentials.
+- Authorization headers.
+- Exact location coordinates in exported reports.
+- Unredacted personal device names in analytics.
+- Full presence history.
+
+---
+
+# 51. Diagnostics
+
+The Automation Diagnostics service should report:
+
+- Number of automations.
+- Enabled and disabled counts.
+- Invalid automation count.
+- Active trigger registrations.
+- Scheduler state.
+- Next scheduled run.
+- Recent matched events.
+- Recent skipped runs.
+- Recent failures.
+- Average evaluation time.
+- Average execution time.
+- Loop-prevention events.
+- Background reliability warnings.
+- Persistence health.
+
+User-facing diagnostics should begin with actionable explanations.
+
+---
+
+# 52. Execution History UI
+
+Each history item should show:
+
+- Automation name.
+- Time.
+- Trigger reason.
+- Result.
+- Duration.
+- Short explanation.
+
+Expanded detail may show:
+
+- Condition results.
+- Action timeline.
+- Device-specific failures.
+- Retry attempts.
+- Correlation chain.
+- Suggested fix.
+
+Avoid exposing raw error codes by default.
+
+---
+
+# 53. Automation Editor Flow
+
+```text
+Choose Trigger
+↓
+Add Conditions
+↓
+Choose Actions
+↓
+Review
+↓
+Save and Enable
+```
+
+The editor should use natural language summaries.
+
+Example:
+
+```text
+When motion is detected in the hallway
+and it is after sunset,
+turn the hallway lights on at 30%.
+```
+
+Users must be able to return to previous steps without losing progress.
+
+Drafts should persist locally.
+
+---
+
+# 54. Editor Requirements
+
+The editor must:
+
+- Hide unsupported triggers and actions.
+- Filter devices by capability.
+- Explain permission requirements before requesting them.
+- Validate continuously.
+- Show a live natural-language summary.
+- Warn about likely loops.
+- Warn about unreliable background behavior.
+- Allow testing before enabling.
+- Preserve unfinished drafts.
+
+---
+
+# 55. Test Automation
+
+The user may test an automation from the review screen.
+
+Test mode must:
+
+- Show which trigger is being simulated.
+- Evaluate real conditions by default.
+- Clearly indicate any bypassed condition.
+- Execute actions with a test correlation ID.
+- Record the result as a test, not a normal run.
+- Allow cancellation.
+
+Security-sensitive actions must not be simulated deceptively.
+
+---
+
+# 56. User-Facing Status
+
+Automation states:
+
+- Enabled.
+- Disabled.
+- Needs Attention.
+- Temporarily Unavailable.
+- Running.
+
+Do not use technical labels such as:
+
+- Listener disconnected.
+- Predicate invalid.
+- Event bus unavailable.
+
+Use plain language:
+
+- `This automation needs a device that is no longer available.`
+- `Location access is required for arrival and departure.`
+- `Aura could not confirm the current state of the television.`
+
+---
+
+# 57. Haptics and Feedback
+
+- Selection haptic when choosing a trigger or action.
+- Light feedback when toggling automation enablement.
+- Success feedback after saving.
+- Medium feedback when manually running.
+- Success or error feedback after a user-initiated test.
+- No haptic for background automatic execution.
+
+Automatic runs should use subtle banners or history updates, not intrusive modal alerts.
+
+---
+
+# 58. Accessibility
+
+The Automation experience must:
+
+- Support VoiceOver.
+- Provide natural-language summaries.
+- Avoid relying on connector lines or color alone.
+- Preserve logical focus order as steps are inserted.
+- Support Dynamic Type.
+- Provide large touch targets.
+- Respect Reduce Motion.
+- Announce validation errors near the affected field.
+- Make run history understandable without visual timelines.
+
+---
+
+# 59. Performance Budgets
+
+Target performance:
+
+- Event ingestion to match decision: under 100 ms.
+- Condition evaluation for a normal automation: under 150 ms excluding required device refresh.
+- Eligible run scheduling: under 50 ms.
+- Manual automation launch acknowledgment: under 100 ms.
+- History write after completion: under 100 ms.
+- Editor validation update: under 100 ms.
+- Main-thread blocking caused by Automation Engine: 0 operations over 16 ms.
+
+Device and network response time is outside the engine’s direct control, but must be measured.
+
+---
+
+# 60. Swift Architecture
+
+Recommended types:
+
+```text
+AutomationEngine
+AutomationStore
+AutomationValidator
+AutomationEventBus
+AutomationEventNormalizer
+AutomationEventDeduplicator
+AutomationMatcher
+AutomationConditionEvaluator
+AutomationScheduler
+AutomationExecutor
+AutomationActionExecutor
+AutomationLoopGuard
+AutomationHistoryStore
+AutomationDiagnosticsService
+AutomationEditorViewModel
+AutomationDetailViewModel
+```
+
+---
+
+# 61. Core Protocol
+
+```swift
+protocol AutomationEngineProviding: Sendable {
+    func start() async throws
+    func stop() async
+    func automations() async -> [AuraAutomation]
+    func save(_ automation: AuraAutomation) async throws
+    func delete(id: AutomationID) async throws
+    func setEnabled(_ enabled: Bool, id: AutomationID) async throws
+    func process(_ event: AutomationEvent) async
+    func runManually(id: AutomationID, mode: ManualRunMode) async throws -> AutomationRunRecord
+    func history(for id: AutomationID) async -> [AutomationRunRecord]
+}
+```
+
+---
+
+# 62. Engine Actor
+
+```swift
+actor AutomationEngine: AutomationEngineProviding {
+    private let store: AutomationStoring
+    private let matcher: AutomationMatching
+    private let evaluator: AutomationConditionEvaluating
+    private let scheduler: AutomationScheduling
+    private let executor: AutomationExecuting
+    private let loopGuard: AutomationLoopGuarding
+    private let history: AutomationHistoryStoring
+
+    func process(_ event: AutomationEvent) async {
+        // Validate, deduplicate, match, evaluate and schedule.
+    }
+}
+```
+
+Mutable engine state must remain actor-isolated.
+
+SwiftUI observes immutable snapshots through a dedicated view model.
+
+---
+
+# 63. Trigger Providers
+
+```swift
+protocol AutomationTriggerProvider: Sendable {
+    var supportedTriggerKinds: Set<AutomationTriggerKind> { get }
+    func startPublishing(to sink: AutomationEventSink) async throws
+    func stopPublishing() async
+}
+```
+
+Potential providers:
+
+- ClockTriggerProvider.
+- SolarTriggerProvider.
+- DeviceEventTriggerProvider.
+- HomeKitTriggerProvider.
+- HueSensorTriggerProvider.
+- PresenceTriggerProvider.
+- SceneEventTriggerProvider.
+
+Providers publish normalized events only.
+
+---
+
+# 64. State Repository Boundary
+
+Condition evaluation should use a unified state repository.
+
+```swift
+protocol AuraStateReading: Sendable {
+    func snapshot(
+        requirements: Set<StateRequirement>
+    ) async -> AuraStateSnapshot
+}
+```
+
+The evaluator must not query vendor APIs directly.
+
+The state layer decides whether cached state is fresh enough or whether a bounded refresh is required.
+
+---
+
+# 65. Dependency Injection
+
+```swift
+struct AutomationDependencies: Sendable {
+    let store: AutomationStoring
+    let historyStore: AutomationHistoryStoring
+    let stateReader: AuraStateReading
+    let sceneEngine: SceneEngineProviding
+    let commandBus: AuraCommandExecuting
+    let scheduler: AutomationScheduling
+    let notificationService: AuraNotificationProviding
+    let clock: AuraClock
+    let logger: AuraLogging
+    let diagnostics: AutomationDiagnosticsRecording
+}
+```
+
+Every dependency must be replaceable for tests.
+
+---
+
+# 66. Testing Strategy
+
+## 66.1 Unit Tests
+
+Required areas:
+
+- Trigger matching.
+- Edge detection.
+- Time-window evaluation.
+- Cross-midnight windows.
+- Weekday logic.
+- Daylight-saving behavior.
+- Solar offset calculation.
+- Condition `all` and `any` logic.
+- State freshness.
+- Event deduplication.
+- Debounce.
+- Throttle.
+- Cooldown.
+- Concurrency policies.
+- Loop prevention.
+- Chain-depth enforcement.
+- Validation.
+- Schema migration.
+- Error translation.
+
+## 66.2 Integration Tests
+
+Test:
+
+- Hue motion event to light action.
+- TV input event to Gaming scene.
+- Time trigger to Good Night scene.
+- Scene completion trigger.
+- Device offline stability window.
+- HomeKit state used as a condition.
+- Duplicate vendor events.
+- Automation disabled during pending execution.
+- Device removed after automation creation.
+- Notification permission denied.
+- App background and foreground transitions.
+
+## 66.3 Clock Tests
+
+Use a deterministic test clock.
+
+Test:
+
+- Time jumps forward.
+- Time moves backward.
+- Time-zone changes.
+- Daylight-saving start.
+- Daylight-saving end.
+- Device restart before scheduled time.
+- Missed schedule occurrence.
+
+## 66.4 Loop Tests
+
+Fixtures must include:
+
+- Direct self-trigger.
+- Two-automation cycle.
+- Scene and automation cycle.
+- Reflected vendor event without correlation metadata.
+- Rapid alternating device state.
+
+## 66.5 Persistence Tests
+
+Test:
+
+- Atomic save.
+- Store corruption.
+- Failed migration.
+- Unknown future fields.
+- History pruning.
+- Deleted device references.
+
+---
+
+# 67. Hardware Test Scenarios
+
+Use the project’s known hardware where applicable:
+
+- Philips TV 65PUS7800/12.
+- Apple TV 4K first generation.
+- Philips Hue Bridge v2.
+- Hue motion or button sensor where available.
+- HomePod mini and HomeKit environment.
+- iPhone 16 as the primary runtime device.
+
+Scenarios:
+
+- Movie Night from a time trigger.
+- Gaming from HDMI input state.
+- Hallway light from motion after sunset.
+- Good Night from a manual automation.
+- Offline notification after bridge stability window.
+- Recovery without duplicate execution after network reconnect.
+
+---
+
+# 68. Failure Scenarios
+
+## Scenario A: Trigger source disconnects
+
+Expected behavior:
+
+- Mark affected automations temporarily unavailable.
+- Keep definitions enabled.
+- Attempt bounded recovery through the source integration.
+- Avoid pretending the automation remains reliable.
+- Show a diagnostic explanation.
+
+## Scenario B: Condition state is stale
+
+Expected behavior:
+
+- Request bounded refresh if appropriate.
+- Skip if the required state cannot be confirmed.
+- Explain the skipped run.
+
+## Scenario C: Action device is offline
+
+Expected behavior:
+
+- Apply the configured failure policy.
+- Continue independent actions when safe.
+- Record the failed device action.
+- Offer diagnostics.
+
+## Scenario D: Duplicate event arrives
+
+Expected behavior:
+
+- Process once.
+- Record no noisy user-facing error.
+- Increment a diagnostic deduplication counter.
+
+## Scenario E: Automation triggers itself
+
+Expected behavior:
+
+- Block recursive execution.
+- Preserve the original run.
+- Mark the blocked run in diagnostics.
+- Suggest editing the trigger or actions.
+
+## Scenario F: App cannot run in background
+
+Expected behavior:
+
+- Do not claim successful execution.
+- Reconcile state when the app returns.
+- Explain platform reliability limitations where relevant.
+
+## Scenario G: Automation definition becomes invalid
+
+Expected behavior:
+
+- Stop new runs.
+- Preserve the definition.
+- Mark it `Needs Attention`.
+- Highlight the missing device, scene or permission.
+
+---
+
+# 69. Acceptance Criteria
+
+The Automation Engine is ready for initial release when:
+
+1. Users can create an automation through a guided flow.
+2. Time triggers support selected weekdays and time-zone changes.
+3. Sunrise and sunset triggers support offsets when a valid home location exists.
+4. Device-state and sensor events are normalized before evaluation.
+5. Conditions support both `all` and `any` modes.
+6. Conditions use a consistent state snapshot.
+7. Stale security-relevant state never counts as confirmed.
+8. Automations can run Aura scenes.
+9. Automations can execute supported normalized device commands.
+10. Wait and one-level conditional actions work within documented limits.
+11. Duplicate events do not cause duplicate execution.
+12. Cooldown and concurrency policies work predictably.
+13. Direct and indirect automation loops are blocked.
+14. Every run receives a correlation ID.
+15. Skipped, successful, partial and failed runs are distinguished.
+16. Execution history explains triggers, conditions and actions.
+17. Invalid automations are preserved and marked `Needs Attention`.
+18. Device removal or capability changes trigger revalidation.
+19. Notification actions handle denied permission honestly.
+20. The engine does not promise unsupported iOS background reliability.
+21. Automation definitions and history remain local by default.
+22. No vendor API object is exposed to the Automation Engine or SwiftUI layer.
+23. Core scheduling, evaluation and loop protection are covered by automated tests.
+24. Real-hardware scenarios pass for the initial supported setup.
+
+---
+
+# 70. Future Enhancements
+
+Potential future work:
+
+- Multiple trigger groups.
+- Nested conditional branches.
+- Variables.
+- Reusable condition groups.
+- Nested automation calls.
+- Household member presence.
+- Weather triggers.
+- Energy-price triggers.
+- Device-energy conditions.
+- Persistent home runtime.
+- Secure cloud synchronization.
+- Shared household automations.
+- Automation templates.
+- AI-assisted suggestions.
+- Natural-language automation creation.
+- App Intents and Siri integration.
+- Apple Watch controls.
+- Matter subscription events.
+- Advanced audit and simulation tools.
+
+Each enhancement must preserve explainability, privacy and deterministic behavior.
+
+---
+
+# 71. Golden Rule
+
+Aura automations should feel like the home quietly remembering what the user prefers.
+
+They must never feel mysterious, noisy or out of control.
+
+When Aura acts automatically, the result should be understandable, reversible and trustworthy.
+
+---
+
+End of Document
