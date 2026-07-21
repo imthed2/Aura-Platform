@@ -3,6 +3,7 @@ import SwiftUI
 struct DevicesView: View {
     @Bindable var pairingModel: AppleTVPairingModel
     @Bindable var controlModel: AppleTVControlModel
+    let haptics: any HapticProviding
 
     var body: some View {
         AuraSurface {
@@ -166,7 +167,7 @@ struct DevicesView: View {
     private var remoteTestCard: some View {
         AuraCard(accessibilityLabel: "Experimental Apple TV remote") {
             VStack(alignment: .leading, spacing: AuraSpacing.md) {
-                Text("Encrypted remote test")
+                Text("Apple TV Remote")
                     .font(AuraTypography.title)
 
                 switch controlModel.phase {
@@ -181,32 +182,30 @@ struct DevicesView: View {
                     .task { await controlModel.connect() }
 
                 case .ready:
-                    Text("Connected securely. Keep the Apple TV interface visible, then send one test command.")
-                        .font(AuraTypography.body)
-                        .foregroundStyle(AuraColor.fog)
-                    AuraButton(title: "Move focus up", systemImage: "arrow.up") {
-                        Task { await controlModel.sendUp() }
-                    }
-                    .accessibilityIdentifier("appleTVMoveFocusUp")
-
-                case .sending:
-                    HStack(spacing: AuraSpacing.md) {
-                        ProgressView()
-                            .tint(AuraColor.cyan)
-                        Text("Waiting for Apple TV confirmation…")
-                            .font(AuraTypography.body)
-                            .foregroundStyle(AuraColor.fog)
-                    }
-
-                case .confirmed:
-                    AuraBanner(
-                        kind: .success,
-                        title: "Command confirmed",
-                        message: "Apple TV acknowledged both the button-down and button-up messages."
+                    commandStatus(
+                        title: "Remote ready",
+                        message: "Each control waits for Apple TV acknowledgement.",
+                        systemImage: "lock.shield.fill",
+                        tint: AuraColor.cyan
                     )
-                    AuraButton(title: "Move focus up again", systemImage: "arrow.up") {
-                        Task { await controlModel.sendUp() }
-                    }
+                    remoteControls(isEnabled: true)
+
+                case .sending(let command):
+                    commandStatus(
+                        title: "Sending \(command.accessibilityLabel)",
+                        message: "Waiting for encrypted confirmation.",
+                        showsProgress: true
+                    )
+                    remoteControls(isEnabled: false)
+
+                case .confirmed(let command):
+                    commandStatus(
+                        title: "\(command.accessibilityLabel) confirmed",
+                        message: "Apple TV acknowledged both button messages.",
+                        systemImage: "checkmark.circle.fill",
+                        tint: AuraColor.success
+                    )
+                    remoteControls(isEnabled: true)
 
                 case .failed(let message):
                     AuraBanner(kind: .error, title: "Remote unavailable", message: message)
@@ -216,6 +215,43 @@ struct DevicesView: View {
                 }
             }
         }
+    }
+
+    private func remoteControls(isEnabled: Bool) -> some View {
+        AppleTVRemoteControl(isEnabled: isEnabled) { command in
+            Task {
+                guard await controlModel.send(command) else { return }
+                haptics.play(command.hapticEvent)
+            }
+        }
+    }
+
+    private func commandStatus(
+        title: String,
+        message: String,
+        systemImage: String? = nil,
+        tint: Color = AuraColor.cyan,
+        showsProgress: Bool = false
+    ) -> some View {
+        HStack(spacing: AuraSpacing.md) {
+            if showsProgress {
+                ProgressView()
+                    .tint(tint)
+            } else if let systemImage {
+                Image(systemName: systemImage)
+                    .font(AuraTypography.title)
+                    .foregroundStyle(tint)
+                    .frame(width: AuraSize.iconLarge)
+            }
+            VStack(alignment: .leading, spacing: AuraSpacing.xs) {
+                Text(title)
+                    .font(AuraTypography.headline)
+                Text(message)
+                    .font(AuraTypography.subheadline)
+                    .foregroundStyle(AuraColor.fog)
+            }
+        }
+        .accessibilityElement(children: .combine)
     }
 
     private func statusCard(

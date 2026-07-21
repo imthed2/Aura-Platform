@@ -58,7 +58,8 @@ struct RootView: View {
         case .devices:
             DevicesView(
                 pairingModel: environment.appleTVPairingModel,
-                controlModel: environment.appleTVControlModel
+                controlModel: environment.appleTVControlModel,
+                haptics: environment.haptics
             )
         case .settings:
             FoundationTabView(
