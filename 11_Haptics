@@ -1,0 +1,535 @@
+# Aura
+## Haptics
+Version: 1.0
+Status: Draft
+Owner: Daniel Hagen
+Project: Aura Platform
+Document ID: AURA-11
+
+Dependencies
+
+• AURA-03 Aura Design Language
+• AURA-09 Interaction Guidelines
+• AURA-10 Motion System
+
+---
+
+# Purpose
+
+Haptics are an invisible layer of communication.
+
+Users should rarely notice haptic feedback consciously.
+
+Instead they should feel confidence.
+
+A haptic should reinforce an interaction.
+
+Never replace visual feedback.
+
+Never become repetitive.
+
+---
+
+# Philosophy
+
+Aura should feel physical.
+
+Buttons should feel pressable.
+
+Cards should feel tangible.
+
+Scenes should feel powerful.
+
+Errors should feel unmistakable.
+
+Every vibration has meaning.
+
+---
+
+# Principles
+
+Subtle
+
+Purposeful
+
+Predictable
+
+Consistent
+
+Immediate
+
+Minimal
+
+---
+
+# Haptic Categories
+
+Selection
+
+Confirmation
+
+Navigation
+
+State Change
+
+Warning
+
+Failure
+
+Success
+
+Immersion
+
+---
+
+==================================================
+Selection
+==================================================
+
+Purpose
+
+Light confirmation that an element has been selected.
+
+Examples
+
+Select Room
+
+Choose Device
+
+Select Scene
+
+Choose Input
+
+Generator
+
+UISelectionFeedbackGenerator
+
+Intensity
+
+Very Light
+
+---
+
+==================================================
+Primary Actions
+==================================================
+
+Examples
+
+Run Scene
+
+Power TV
+
+Turn Lights On
+
+Activate Gaming
+
+Generator
+
+UIImpactFeedbackGenerator(.medium)
+
+Purpose
+
+Communicate commitment.
+
+---
+
+==================================================
+Secondary Actions
+==================================================
+
+Examples
+
+Rename
+
+Favorite
+
+Expand Card
+
+Collapse Card
+
+Intensity
+
+Light
+
+---
+
+==================================================
+Dangerous Actions
+==================================================
+
+Examples
+
+Delete Automation
+
+Forget Device
+
+Factory Reset
+
+Generator
+
+NotificationFeedbackGenerator(.warning)
+
+Confirmation dialog required.
+
+---
+
+==================================================
+Success
+==================================================
+
+Examples
+
+Scene Finished
+
+Device Added
+
+Automation Saved
+
+Diagnostics Passed
+
+Generator
+
+NotificationFeedbackGenerator(.success)
+
+One pulse only.
+
+---
+
+==================================================
+Failure
+==================================================
+
+Examples
+
+Connection Failed
+
+Authentication Failed
+
+Scene Failed
+
+Network Error
+
+Generator
+
+NotificationFeedbackGenerator(.error)
+
+Never repeat automatically.
+
+---
+
+==================================================
+Warnings
+==================================================
+
+Examples
+
+Low Battery
+
+Bridge Offline
+
+TV Sleeping
+
+Generator
+
+NotificationFeedbackGenerator(.warning)
+
+Should encourage attention.
+
+Not panic.
+
+---
+
+# Scene Haptics
+
+Movie Night
+
+Medium Impact
+
+↓
+
+Lights Respond
+
+↓
+
+Success Notification
+
+Gaming
+
+Medium Impact
+
+↓
+
+TV Ready
+
+↓
+
+Success
+
+Good Night
+
+Soft Medium Impact
+
+↓
+
+Completion Success
+
+Scenes should feel coordinated.
+
+---
+
+# Slider Feedback
+
+Brightness
+
+Gentle detents.
+
+Volume
+
+Gentle detents.
+
+Temperature
+
+Soft detents.
+
+Continuous movement should not generate continuous vibration.
+
+Instead
+
+Small threshold intervals.
+
+---
+
+# Toggle Feedback
+
+OFF
+
+↓
+
+ON
+
+↓
+
+Light Selection
+
+Immediate.
+
+No delay.
+
+---
+
+# Navigation
+
+Tab Change
+
+None
+
+Push Navigation
+
+None
+
+Sheet Presentation
+
+None
+
+Critical Navigation
+
+Optional Light
+
+Navigation should remain visually driven.
+
+---
+
+# Lists
+
+Selecting a row
+
+Selection Feedback
+
+Swipe
+
+None
+
+Delete
+
+Warning
+
+Archive
+
+Selection
+
+---
+
+# Search
+
+Typing
+
+No feedback.
+
+Selecting result
+
+Selection Feedback.
+
+---
+
+# Pairing
+
+Device Found
+
+Selection
+
+Authentication Complete
+
+Success
+
+Setup Finished
+
+Success
+
+---
+
+# Diagnostics
+
+Test Started
+
+Light
+
+Test Passed
+
+Success
+
+Test Failed
+
+Error
+
+Reconnect Successful
+
+Success
+
+---
+
+# Hero Card
+
+Expanding
+
+Light
+
+Launching Scene
+
+Medium
+
+Scene Completed
+
+Success
+
+Hero interactions should feel premium.
+
+---
+
+# Background Events
+
+Automatic updates
+
+No haptic.
+
+Device reconnect
+
+No haptic.
+
+Background sync
+
+No haptic.
+
+Only user initiated actions deserve feedback.
+
+---
+
+# Accessibility
+
+Users may disable haptics.
+
+Aura must continue functioning perfectly.
+
+Reduce Motion does not disable haptics.
+
+Separate settings should exist.
+
+---
+
+# Performance
+
+Haptic feedback begins within
+
+30 milliseconds
+
+after user interaction.
+
+Never wait for network responses before triggering touch feedback.
+
+---
+
+# Anti Patterns
+
+Never vibrate continuously.
+
+Never stack multiple haptics.
+
+Never vibrate during scrolling.
+
+Never vibrate every tap.
+
+Never use heavy impact for normal actions.
+
+Never celebrate routine interactions.
+
+---
+
+# Haptic Matrix
+
+Selection
+
+↓
+
+UISelectionFeedbackGenerator
+
+Expand Card
+
+↓
+
+Light Impact
+
+Run Scene
+
+↓
+
+Medium Impact
+
+Delete
+
+↓
+
+Warning
+
+Completed
+
+↓
+
+Success
+
+Failed
+
+↓
+
+Error
+
+---
+
+# Golden Rule
+
+Users should remember that Aura feels satisfying.
+
+Not that it vibrates.
+
+---
+
+End of Document
