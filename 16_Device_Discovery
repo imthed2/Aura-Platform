@@ -1,0 +1,1254 @@
+# Aura
+## Device Discovery System
+
+Version: 1.0  
+Status: Draft  
+Owner: Daniel Hagen  
+Project: Aura Platform  
+Document ID: AURA-16
+
+## Dependencies
+
+- AURA-01 Product Requirements
+- AURA-05 Information Architecture
+- AURA-05.5 Navigation System
+- AURA-06 User Flows
+- AURA-07 Screen Specifications
+- AURA-08 Component Library
+- AURA-12 Philips TV Integration
+- AURA-13 Apple TV Integration
+- AURA-14 HomeKit Integration
+- AURA-15 Philips Hue Bridge Integration
+- AURA-19 Diagnostics
+- AURA-20 App Architecture
+
+---
+
+# 1. Purpose
+
+The Device Discovery System enables Aura to find, identify, classify, verify and prepare compatible devices and services on the user’s local network and connected Apple Home environment.
+
+Discovery is a platform-level capability shared by all device plugins.
+
+The system must present a calm and understandable user experience while coordinating multiple technical discovery strategies such as cached-device restoration, Bonjour, mDNS, SSDP, HomeKit enumeration, targeted probing and manual network entry.
+
+The user should experience one coherent “Add Device” flow.
+
+The user should not need to understand network protocols, service types, ports, IP addresses, bridge identifiers or vendor APIs.
+
+---
+
+# 2. Product Goals
+
+The Device Discovery System shall:
+
+- Find supported devices automatically where technically possible.
+- Show previously paired devices immediately.
+- Merge duplicate results from multiple discovery sources.
+- Avoid presenting the same physical device more than once.
+- Delegate vendor-specific verification to the correct plugin.
+- Support local-first operation.
+- Recover when IP addresses change.
+- Respect iOS local-network privacy requirements.
+- Remain responsive during partial network failure.
+- Provide clear manual fallback paths.
+- Expose useful diagnostics without exposing unnecessary technical detail.
+- Scale from one device to large multi-room homes.
+- Avoid unnecessary battery and network usage.
+
+---
+
+# 3. Non-Goals
+
+Version 1 does not aim to:
+
+- Perform unrestricted network scanning across all ports.
+- Discover unsupported devices merely because they respond on the network.
+- Replace vendor onboarding applications for hardware that requires proprietary setup.
+- Circumvent pairing, authorization or ownership requirements.
+- Guarantee discovery across isolated VLANs, guest Wi-Fi or routed subnets.
+- Depend on cloud discovery as the primary path.
+- Continuously scan the network while the application is inactive.
+- Expose raw discovery packets or network identifiers to normal users.
+- Treat an unverified network response as a trusted device.
+
+---
+
+# 4. Core Principles
+
+## 4.1 Local First
+
+Aura should discover and control supported devices locally whenever possible.
+
+Cloud-assisted discovery may be introduced only as an optional fallback for integrations where it is necessary and privacy-safe.
+
+## 4.2 Progressive Results
+
+Discovery must not wait for every source to finish before showing useful results.
+
+Cached paired devices should appear first.
+
+Verified local candidates should appear as soon as they are available.
+
+Slower discovery sources may continue in the background while the screen is visible.
+
+## 4.3 Verification Before Trust
+
+A network candidate is not considered a supported device until the responsible plugin verifies it.
+
+For example:
+
+- A generic HTTP server is not automatically a Philips TV.
+- A Bonjour service is not automatically an Apple TV.
+- An IP address responding on a Hue-related port is not automatically a trusted Hue Bridge.
+
+## 4.4 Stable Identity Over Network Address
+
+IP addresses and ports are connection details, not permanent identity.
+
+Aura must prefer stable identifiers such as:
+
+- Vendor device identifiers
+- Bridge identifiers
+- HomeKit accessory identifiers
+- Serial numbers where legally and technically available
+- Persistent plugin-defined identifiers
+
+## 4.5 Capability-Based Presentation
+
+Discovery identifies candidates.
+
+Plugin verification identifies capabilities.
+
+The UI must present what a device can actually do, not what Aura assumes from its product name.
+
+## 4.6 Privacy by Design
+
+Discovery shall collect only data required to identify and connect supported devices.
+
+Network metadata must remain local unless a separately documented feature explicitly requires otherwise.
+
+---
+
+# 5. High-Level Architecture
+
+```mermaid
+flowchart TD
+    UI[Add Device UI] --> Coordinator[Discovery Coordinator]
+    Coordinator --> Cache[Known Device Store]
+    Coordinator --> Network[Network Discovery Engine]
+    Coordinator --> HomeKit[HomeKit Source]
+    Coordinator --> Plugins[Plugin Discovery Providers]
+    Network --> Bonjour[Bonjour / mDNS]
+    Network --> SSDP[SSDP when required]
+    Network --> Probe[Targeted Verification Probes]
+    Plugins --> Philips[Philips TV Plugin]
+    Plugins --> AppleTV[Apple TV Plugin]
+    Plugins --> Hue[Hue Bridge Plugin]
+    Plugins --> Future[Future Plugins]
+    Coordinator --> Merger[Candidate Merger]
+    Merger --> Verifier[Plugin Verification]
+    Verifier --> Registry[Unified Device Registry]
+    Registry --> UI
+    Coordinator --> Diagnostics[Discovery Diagnostics]
+```
+
+The UI must never manage network browsers, sockets, service records or vendor-specific verification directly.
+
+The Discovery Coordinator owns the lifecycle of a discovery session and publishes normalized state to the UI.
+
+---
+
+# 6. System Responsibilities
+
+The discovery platform owns:
+
+- Discovery session lifecycle
+- Local-network permission readiness
+- Network-path awareness
+- Aggregating results from discovery providers
+- Candidate normalization
+- Duplicate candidate merging
+- Session timeout handling
+- Cancellation
+- Progress reporting
+- Manual entry routing
+- Diagnostics metadata
+- Delegation to plugin-specific verification
+
+The discovery platform does not own:
+
+- Vendor pairing credentials
+- Device command execution
+- Device state synchronization after onboarding
+- Plugin-specific authentication
+- Scene execution
+- Automation execution
+- Long-term device capability logic
+
+Those responsibilities belong to the relevant plugin and platform services.
+
+---
+
+# 7. Discovery Sources
+
+Aura may use several discovery sources in parallel.
+
+## 7.1 Known Device Store
+
+Previously paired devices should be loaded from local persistence before active network discovery begins.
+
+Known-device records may include:
+
+```swift
+struct KnownDeviceRecord: Sendable, Codable, Identifiable {
+    let id: AuraDeviceID
+    let pluginID: PluginIdentifier
+    let stableExternalIdentifier: String
+    let displayName: String
+    let lastKnownHost: String?
+    let lastKnownPort: Int?
+    let lastKnownRoomID: AuraRoomID?
+    let lastSeenAt: Date?
+    let credentialReference: String?
+}
+```
+
+Sensitive credentials must not be stored in this record.
+
+Credential references should point to Keychain-managed secrets where applicable.
+
+## 7.2 Bonjour and mDNS
+
+Bonjour discovery should be used when an integration exposes a documented local service type suitable for discovery.
+
+The network layer should use Apple-supported APIs such as Network.framework where appropriate.
+
+Bonjour results must be treated as candidates until verified.
+
+## 7.3 SSDP
+
+SSDP may be used only for plugins that require or explicitly support it.
+
+It must not become a generic unrestricted network scanner.
+
+SSDP responses must be validated, rate-limited and delegated to plugin-specific parsing.
+
+## 7.4 HomeKit Enumeration
+
+HomeKit devices are discovered through the HomeKit framework and shared HomeKit database rather than ordinary LAN scanning.
+
+HomeKit discovery results enter the same unified registry but retain HomeKit as their source.
+
+## 7.5 Targeted Probing
+
+A plugin may perform a targeted verification request against a candidate host discovered through a supported source.
+
+Targeted probing must:
+
+- Use short timeouts
+- Avoid broad port ranges
+- Avoid blocking the main actor
+- Validate response shape
+- Respect cancellation
+- Avoid sending credentials to an unverified endpoint
+
+## 7.6 Manual Entry
+
+Manual entry is a fallback for cases where automatic discovery fails.
+
+Version 1 may support:
+
+- IP address
+- Host name
+- Device-specific setup code where applicable
+
+The user should first select the device type or integration so the correct plugin validates the entry.
+
+Aura must never ask users to guess a port unless no safer integration-specific alternative exists.
+
+## 7.7 Future Sources
+
+Potential future sources include:
+
+- Matter commissioning
+- Bluetooth-assisted onboarding
+- QR-code setup payloads
+- NFC setup payloads
+- Vendor account import
+- Optional cloud-assisted discovery
+
+Each future source requires a separate security and privacy review.
+
+---
+
+# 8. Discovery Session Model
+
+A discovery session represents one bounded attempt to find devices.
+
+```swift
+struct DiscoverySession: Sendable, Identifiable {
+    let id: UUID
+    let startedAt: Date
+    let trigger: DiscoveryTrigger
+    let requestedPluginIDs: Set<PluginIdentifier>?
+    let timeout: Duration
+}
+
+enum DiscoveryTrigger: Sendable, Equatable {
+    case appLaunch
+    case addDeviceScreen
+    case userRefresh
+    case networkChanged
+    case reconnectKnownDevice
+    case manualEntry
+    case diagnostics
+}
+```
+
+Only one foreground full-scan session should normally run at a time.
+
+Targeted reconnect sessions may run independently for known devices when safely coordinated.
+
+---
+
+# 9. Discovery Lifecycle
+
+```mermaid
+stateDiagram-v2
+    [*] --> Idle
+    Idle --> Preparing: start session
+    Preparing --> PermissionRequired: local access unresolved
+    PermissionRequired --> Discovering: permission allowed
+    PermissionRequired --> Restricted: permission denied
+    Preparing --> Discovering: permission already allowed
+    Discovering --> Verifying: candidates found
+    Discovering --> Completed: timeout with no candidates
+    Verifying --> Presenting: verified results available
+    Presenting --> Verifying: more candidates arrive
+    Presenting --> Completed: session ends
+    Discovering --> Cancelled: user leaves
+    Verifying --> Cancelled: user leaves
+    Discovering --> Failed: fatal system error
+    Verifying --> Failed: fatal system error
+    Completed --> [*]
+    Cancelled --> [*]
+    Failed --> [*]
+    Restricted --> [*]
+```
+
+Recommended internal state:
+
+```swift
+enum DiscoverySessionState: Sendable, Equatable {
+    case idle
+    case preparing
+    case permissionRequired
+    case discovering(progress: DiscoveryProgress)
+    case verifying(candidateCount: Int)
+    case presenting(resultCount: Int, isStillSearching: Bool)
+    case completed(resultCount: Int)
+    case restricted(DiscoveryRestriction)
+    case cancelled
+    case failed(DiscoveryError)
+}
+```
+
+---
+
+# 10. Candidate Model
+
+All discovery providers shall emit a normalized candidate envelope.
+
+```swift
+struct DiscoveryCandidate: Sendable, Identifiable, Hashable {
+    let id: DiscoveryCandidateID
+    let source: DiscoverySource
+    let pluginHint: PluginIdentifier?
+    let serviceType: String?
+    let host: String?
+    let port: Int?
+    let stableIdentifierHint: String?
+    let displayNameHint: String?
+    let manufacturerHint: String?
+    let modelHint: String?
+    let metadata: [String: String]
+    let discoveredAt: Date
+}
+```
+
+Candidate metadata must contain only non-secret values.
+
+Raw packets should not be retained longer than necessary for parsing and diagnostics.
+
+---
+
+# 11. Verification Model
+
+Each plugin may expose a discovery provider and verifier.
+
+```swift
+protocol AuraDiscoveryProvider: Sendable {
+    var pluginID: PluginIdentifier { get }
+
+    func discoveryRequests(
+        for context: DiscoveryContext
+    ) -> [DiscoveryRequest]
+
+    func verify(
+        candidate: DiscoveryCandidate,
+        context: DiscoveryContext
+    ) async -> VerificationResult
+}
+```
+
+Verification result:
+
+```swift
+enum VerificationResult: Sendable {
+    case verified(VerifiedDeviceCandidate)
+    case notSupported
+    case requiresPairing(VerifiedDeviceCandidate)
+    case temporarilyUnavailable(DiscoveryIssue)
+    case failed(DiscoveryIssue)
+}
+```
+
+A candidate may be checked by more than one plugin when the discovery source does not provide a reliable plugin hint.
+
+The coordinator should minimize unnecessary verification requests by using service types, headers and stable identifier formats.
+
+---
+
+# 12. Verified Device Candidate
+
+```swift
+struct VerifiedDeviceCandidate: Sendable, Identifiable {
+    let id: AuraDeviceID
+    let pluginID: PluginIdentifier
+    let stableExternalIdentifier: String
+    let displayName: String
+    let manufacturer: String?
+    let model: String?
+    let firmwareVersion: String?
+    let host: String?
+    let port: Int?
+    let capabilities: Set<AuraCapability>
+    let pairingState: PairingRequirement
+    let connectionState: CandidateConnectionState
+    let confidence: VerificationConfidence
+    let sourceCandidates: Set<DiscoveryCandidateID>
+}
+```
+
+The user-facing Add Device screen should display only verified candidates or clearly marked known devices awaiting reconnection.
+
+---
+
+# 13. Duplicate Detection and Merging
+
+Duplicate handling is a central platform responsibility.
+
+The same physical device may appear through:
+
+- Cached records
+- Bonjour
+- SSDP
+- HomeKit
+- Hue Bridge resources
+- Manual entry
+- Multiple network interfaces
+
+## 13.1 Identity Priority
+
+Preferred identity order:
+
+1. Exact plugin-defined stable identifier
+2. Vendor bridge or accessory identifier
+3. Trusted serial number
+4. Previously stored pairing relationship
+5. Strong multi-field match
+6. User confirmation
+
+IP address alone must never be treated as sufficient proof of identity.
+
+## 13.2 Merge Confidence
+
+```swift
+enum MergeConfidence: Sendable, Comparable {
+    case none
+    case weak
+    case probable
+    case strong
+    case exact
+}
+```
+
+Automatic merge is allowed only for strong or exact matches.
+
+Probable matches may be merged internally only when the user-facing result remains reversible and diagnostics preserve the source routes.
+
+Weak matches must remain separate unless the user confirms they represent the same device.
+
+## 13.3 Multiple Control Routes
+
+Aura may retain multiple internal routes to the same logical device.
+
+Example:
+
+```text
+Logical Hue Light
+├── Direct Hue Bridge route
+└── HomeKit route
+```
+
+The Unified Device Registry should select a preferred route according to reliability, latency, capability completeness and user configuration.
+
+The user should normally see one device.
+
+---
+
+# 14. Network Path Awareness
+
+Aura should use Network.framework path monitoring to understand major connectivity changes.
+
+Relevant conditions include:
+
+- Wi-Fi connected
+- Wi-Fi disconnected
+- Cellular only
+- Local network unavailable
+- Interface changed
+- Network became constrained
+- Network became expensive
+
+Discovery should normally require a supported local network path.
+
+When only cellular is available:
+
+- Cached devices may remain visible as unavailable.
+- Local discovery should not run.
+- Aura should explain that the user must join the same Wi-Fi network.
+
+A path change may trigger targeted rediscovery for known devices, but repeated rapid network changes must be debounced.
+
+---
+
+# 15. Local Network Permission
+
+Aura must provide a clear pre-permission explanation before local discovery first requires access.
+
+Suggested copy:
+
+> Aura uses your local network to find and control compatible devices in your home. Device information stays on your network and on this iPhone.
+
+If local-network permission is denied:
+
+- HomeKit-only functionality may remain available where technically possible.
+- Direct LAN integrations must be marked unavailable.
+- The Add Device flow must explain the limitation.
+- Aura should provide a Settings shortcut.
+- Aura must not repeatedly trigger artificial permission prompts.
+
+The exact iOS permission behavior must be verified during implementation on the project’s deployment target.
+
+---
+
+# 16. Discovery Timing and Performance Budgets
+
+Target performance under normal local Wi-Fi conditions:
+
+- Known devices loaded from cache: under 250 ms
+- Add Device screen interactive: under 300 ms
+- First verified local result: under 2 seconds where supported
+- Normal multi-provider scan: 5 seconds
+- Extended scan with fallback: maximum 10 seconds
+- Candidate-to-verification dispatch: under 100 ms
+- Duplicate merge after verification: under 50 ms
+- Cancellation response: under 200 ms
+
+These values are engineering targets, not guarantees under unstable or segmented networks.
+
+The UI must remain usable while discovery continues.
+
+---
+
+# 17. Scan Strategy
+
+## 17.1 Fast Phase
+
+The fast phase begins immediately:
+
+1. Load known devices
+2. Check current network path
+3. Start high-confidence Bonjour browsers
+4. Load HomeKit inventory if authorized
+5. Start plugin-specific low-cost discovery
+
+## 17.2 Verification Phase
+
+As candidates arrive:
+
+1. Normalize candidate
+2. Check duplicate cache
+3. Route to likely plugins
+4. Verify with bounded concurrency
+5. Merge verified identity
+6. Publish result
+
+## 17.3 Fallback Phase
+
+If no results appear after the normal scan window:
+
+- Offer Try Again
+- Offer manual IP or host entry for supported integrations
+- Explain same-network requirements
+- Offer diagnostics
+- Avoid automatically starting aggressive broad scans
+
+---
+
+# 18. Concurrency and Rate Limiting
+
+Discovery requires controlled concurrency.
+
+Recommended limits:
+
+- Maximum simultaneous plugin verifications: 4
+- Maximum simultaneous requests per candidate host: 1 unless the plugin explicitly permits more
+- Maximum full discovery sessions: 1 foreground session
+- Targeted known-device reconnects: plugin-controlled and rate-limited
+
+```swift
+actor DiscoveryCoordinator {
+    private var activeSession: DiscoverySession?
+    private var candidates: [DiscoveryCandidateID: DiscoveryCandidate] = [:]
+    private var verifiedDevices: [AuraDeviceID: VerifiedDeviceCandidate] = [:]
+    private var verificationTasks: [DiscoveryCandidateID: Task<Void, Never>] = [:]
+
+    func start(_ request: DiscoveryRequest) async
+    func cancelCurrentSession() async
+    func ingest(_ candidate: DiscoveryCandidate) async
+    func snapshot() -> DiscoverySnapshot
+}
+```
+
+All discovery tasks must support cancellation.
+
+No network operation may block the main actor.
+
+---
+
+# 19. Result Ordering
+
+Verified results should be ordered using user relevance rather than arrival time alone.
+
+Suggested priority:
+
+1. Previously paired and currently reachable
+2. Previously paired but currently unavailable
+3. Verified devices in the current room context
+4. Verified unpaired devices requiring one simple action
+5. Verified devices requiring more complex setup
+6. Manual fallback options
+
+Within a category, prefer:
+
+- Stronger verification confidence
+- Faster local route
+- Friendlier name
+- Stable alphabetical ordering
+
+Results should not jump around excessively while the user is reading the screen.
+
+---
+
+# 20. Add Device User Experience
+
+## 20.1 Initial State
+
+Display:
+
+- Title: `Add Device`
+- Short explanation
+- Search activity indicator
+- Known devices immediately
+- Device categories or integrations where useful
+
+## 20.2 Searching State
+
+The UI should communicate progress without exposing protocols.
+
+Preferred copy:
+
+- `Looking for devices nearby…`
+- `Checking your home network…`
+- `Verifying compatible devices…`
+
+Avoid:
+
+- `Scanning ports`
+- `Sending SSDP M-SEARCH`
+- `Resolving mDNS records`
+
+## 20.3 Result Card
+
+A discovery result may show:
+
+- Device name
+- Device type
+- Manufacturer
+- Room hint where available
+- Connection status
+- Setup requirement
+- Primary action
+
+## 20.4 Empty State
+
+Suggested copy:
+
+Title: `No devices found`
+
+Body: `Make sure your iPhone and device are connected to the same Wi-Fi network, then try again.`
+
+Actions:
+
+- `Try Again`
+- `Add Manually`
+- `Open Diagnostics`
+
+## 20.5 Partial Results
+
+If some providers fail but others succeed, show successful results normally.
+
+A subtle informational message may explain that not every integration could be checked.
+
+The entire screen must not fail because one plugin failed.
+
+---
+
+# 21. Pairing Handoff
+
+Discovery ends when the user selects a verified candidate.
+
+The coordinator then transfers control to the responsible plugin’s pairing flow.
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant UI
+    participant Discovery
+    participant Plugin
+    participant Registry
+
+    User->>UI: Select device
+    UI->>Discovery: Request onboarding handoff
+    Discovery->>Plugin: Open pairing context
+    Plugin-->>UI: Present plugin-specific pairing steps
+    User->>Plugin: Complete authorization
+    Plugin->>Registry: Register paired device
+    Registry-->>UI: Device ready
+```
+
+The discovery system should preserve session context so the user can return to results after cancelling a pairing flow.
+
+---
+
+# 22. Manual Entry Flow
+
+Manual entry must remain integration-specific.
+
+Recommended flow:
+
+1. User selects `Add Manually`
+2. Aura asks which device or integration type
+3. Aura presents the minimum required fields
+4. Plugin validates input locally
+5. Verified device information is shown
+6. Pairing continues through the normal plugin flow
+
+Validation requirements:
+
+- Normalize host names
+- Validate IPv4 and IPv6 formats where supported
+- Reject malformed input before networking
+- Use integration-specific default ports internally
+- Avoid storing failed manual entries permanently
+- Never send credentials before endpoint verification
+
+---
+
+# 23. Reconnection Discovery
+
+Known-device reconnection differs from new-device discovery.
+
+When a paired device becomes unreachable:
+
+1. Try last known host once with a short timeout
+2. Check network path
+3. Run targeted discovery for the responsible plugin
+4. Match the stable identifier
+5. Update connection details
+6. Reconnect state synchronization
+7. Notify the user only if recovery fails
+
+Targeted rediscovery must not create a duplicate device record.
+
+---
+
+# 24. Background Behavior
+
+Aura must not perform continuous unrestricted discovery in the background.
+
+When the app becomes inactive:
+
+- Foreground discovery sessions should cancel or suspend safely.
+- Bonjour browsers should stop unless a documented background mode permits continued use.
+- Verification tasks should cancel unless completing an important bounded onboarding operation.
+- Current progress should be preserved when reasonable.
+
+When the app returns to foreground:
+
+- Re-evaluate the network path
+- Refresh stale known-device reachability
+- Resume only the discovery flow the user was actively using
+
+Background execution behavior must comply with current iOS platform rules.
+
+---
+
+# 25. Error Model
+
+```swift
+enum DiscoveryError: Error, Sendable, Equatable {
+    case localNetworkPermissionDenied
+    case noSupportedNetwork
+    case networkChanged
+    case providerUnavailable(pluginID: PluginIdentifier)
+    case providerFailed(pluginID: PluginIdentifier)
+    case verificationTimedOut
+    case invalidManualAddress
+    case candidateRejected
+    case sessionTimedOut
+    case cancelled
+    case systemFailure
+}
+```
+
+Errors must be translated into Aura-friendly messages before presentation.
+
+Raw socket errors, HTTP response bodies and framework-specific error descriptions must remain in sanitized diagnostics only.
+
+---
+
+# 26. Failure Handling
+
+## Scenario A: No Wi-Fi
+
+Expected behavior:
+
+- Do not begin local network discovery
+- Show cached devices as unavailable
+- Explain that the user must join the same Wi-Fi network
+- Keep HomeKit-derived content available where the framework permits
+
+## Scenario B: Local Network Permission Denied
+
+Expected behavior:
+
+- Stop direct LAN discovery
+- Explain the permission requirement
+- Offer Settings shortcut
+- Do not repeatedly prompt
+
+## Scenario C: One Discovery Provider Fails
+
+Expected behavior:
+
+- Continue other providers
+- Record failure in diagnostics
+- Show successful results
+- Offer retry if the failed provider is relevant
+
+## Scenario D: Duplicate Candidates Arrive
+
+Expected behavior:
+
+- Merge source records
+- Verify only as needed
+- Preserve strongest identity data
+- Show one stable result card
+
+## Scenario E: Device IP Address Changed
+
+Expected behavior:
+
+- Match by stable identifier
+- Update host and port
+- Reuse existing pairing credentials
+- Avoid creating a duplicate
+
+## Scenario F: User Leaves Screen
+
+Expected behavior:
+
+- Cancel foreground discovery tasks quickly
+- Stop publishing UI updates
+- Preserve known-device store
+- Avoid leaking network browser resources
+
+## Scenario G: Guest or Isolated Wi-Fi
+
+Expected behavior:
+
+- Complete the normal scan window
+- Explain that some networks block device-to-device communication
+- Offer manual entry and diagnostics
+- Avoid claiming the device is defective
+
+---
+
+# 27. Security Requirements
+
+The discovery system must:
+
+- Treat all network responses as untrusted input
+- Use strict parsing and bounded payload sizes
+- Use short request timeouts
+- Avoid generic port scanning
+- Avoid executing content from device-provided names or metadata
+- Sanitize strings before logging or rendering
+- Avoid sending credentials to unverified endpoints
+- Validate plugin identity before pairing
+- Store secrets only in approved credential storage
+- Redact sensitive identifiers in exported diagnostics
+- Cancel stale tasks after network changes
+
+Device names may contain arbitrary user-controlled text and must never be interpreted as markup or code.
+
+---
+
+# 28. Privacy Requirements
+
+Aura must not upload ordinary discovery data.
+
+The following should remain local:
+
+- Device names
+- Local IP addresses
+- Host names
+- MAC-derived identifiers
+- Serial numbers
+- Room names
+- Service records
+- Discovery history
+
+Analytics, if introduced later, should record only coarse events such as:
+
+- Discovery started
+- Discovery completed
+- Number of verified results in broad ranges
+- Pairing succeeded or failed by integration category
+
+Analytics must never include raw network identifiers or user-created device names.
+
+---
+
+# 29. Diagnostics
+
+The discovery diagnostics service should report:
+
+- Current network path type
+- Local-network permission readiness
+- Active discovery session state
+- Session duration
+- Providers started
+- Providers completed
+- Candidate count by source
+- Verification count by plugin
+- Verified result count
+- Duplicate merges
+- Provider errors
+- Verification latency
+- Cancellation reason
+- Last successful discovery time
+
+Example sanitized report:
+
+```text
+Discovery session: completed
+Duration: 4.3 seconds
+Network: Wi-Fi
+Providers: 4 started, 4 completed
+Candidates: 7
+Verified devices: 3
+Duplicates merged: 2
+Provider warnings: 1
+```
+
+The normal user interface should show only actionable information.
+
+---
+
+# 30. Logging
+
+Structured categories:
+
+- discovery.session
+- discovery.network
+- discovery.permission
+- discovery.cache
+- discovery.bonjour
+- discovery.ssdp
+- discovery.manual
+- discovery.verification
+- discovery.merge
+- discovery.reconnect
+- discovery.diagnostics
+
+Logs must not contain:
+
+- Pairing credentials
+- Authorization headers
+- Full raw packets
+- Full serial numbers in release builds
+- Unredacted IP addresses in exported reports
+- User-created names in analytics
+
+---
+
+# 31. Swift Architecture
+
+Recommended types:
+
+```text
+DiscoveryCoordinator
+DiscoverySessionController
+DiscoveryProviderRegistry
+NetworkPathService
+LocalNetworkPermissionService
+BonjourDiscoveryService
+SSDPDiscoveryService
+ManualDiscoveryService
+KnownDeviceStore
+DiscoveryCandidateStore
+CandidateVerificationService
+CandidateMergeService
+DiscoveryDiagnosticsService
+DiscoveryViewModel
+```
+
+## 31.1 Provider Registry
+
+```swift
+actor DiscoveryProviderRegistry {
+    private var providers: [PluginIdentifier: AuraDiscoveryProvider] = [:]
+
+    func register(_ provider: AuraDiscoveryProvider)
+    func provider(for id: PluginIdentifier) -> AuraDiscoveryProvider?
+    func allProviders() -> [AuraDiscoveryProvider]
+}
+```
+
+## 31.2 Async Result Stream
+
+```swift
+protocol DeviceDiscovering: Sendable {
+    func startDiscovery(
+        request: DiscoveryRequest
+    ) -> AsyncStream<DiscoverySnapshot>
+
+    func cancelDiscovery(sessionID: UUID) async
+}
+```
+
+## 31.3 Snapshot Model
+
+```swift
+struct DiscoverySnapshot: Sendable, Equatable {
+    let sessionID: UUID
+    let state: DiscoverySessionState
+    let results: [VerifiedDeviceCandidate]
+    let issues: [DiscoveryIssue]
+    let updatedAt: Date
+}
+```
+
+The UI should consume immutable snapshots rather than observing mutable socket or service objects.
+
+---
+
+# 32. Dependency Injection
+
+```swift
+struct DiscoveryDependencies: Sendable {
+    let knownDeviceStore: KnownDeviceStoring
+    let networkPathService: NetworkPathProviding
+    let permissionService: LocalNetworkPermissionProviding
+    let providerRegistry: DiscoveryProviderRegistering
+    let candidateMerger: CandidateMerging
+    let diagnostics: DiscoveryDiagnosticsRecording
+    let clock: AuraClock
+    let logger: AuraLogging
+}
+```
+
+All discovery sources must be replaceable with mocks for tests.
+
+Time and timeout behavior should use an injectable clock.
+
+---
+
+# 33. Accessibility Requirements
+
+The Add Device experience must:
+
+- Support VoiceOver
+- Announce when new verified devices appear
+- Avoid repeated announcements for duplicate candidate updates
+- Support Dynamic Type
+- Use large touch targets
+- Explain progress with text, not animation alone
+- Respect Reduce Motion
+- Preserve focus when results update
+- Avoid reordering the focused result unexpectedly
+- Provide accessible labels for device type and setup state
+
+Discovery progress must not trap assistive technology users in an indefinite loading state.
+
+---
+
+# 34. Testing Strategy
+
+## 34.1 Unit Tests
+
+Required areas:
+
+- Candidate normalization
+- Stable identity matching
+- Duplicate merge confidence
+- Result ordering
+- Session state transitions
+- Timeout behavior
+- Cancellation
+- Error translation
+- Manual address validation
+- Known-device loading
+- Network-path decisions
+- Provider routing
+- Verification result handling
+
+## 34.2 Integration Tests
+
+Test:
+
+- Known device plus active discovery
+- Multiple providers in parallel
+- Candidate verified by one plugin
+- Candidate rejected by all plugins
+- Duplicate results from Bonjour and SSDP
+- HomeKit and direct integration duplicates
+- Network path changes during discovery
+- Permission denied
+- Manual IP success
+- Manual IP failure
+- Session cancellation
+- Targeted reconnection
+
+## 34.3 Mock Network Fixtures
+
+Fixtures should include:
+
+- One Philips TV
+- One Apple TV
+- One Hue Bridge
+- Duplicate Hue Bridge announcements
+- Unsupported smart TV
+- Malformed Bonjour record
+- Slow verifier
+- Timed-out host
+- Host changing IP address
+- Guest network with no peer visibility
+- Large network with many irrelevant services
+
+## 34.4 Hardware Tests
+
+Real-device testing should include the project’s known hardware:
+
+- Philips TV 65PUS7800/12
+- Apple TV 4K first generation
+- Philips Hue Bridge v2
+- HomeKit environment with HomePod mini
+- iPhone 16 as the primary test device
+
+## 34.5 Performance Tests
+
+Measure:
+
+- Time to first cached result
+- Time to first verified result
+- Total scan duration
+- CPU usage
+- Memory usage
+- Network request count
+- Cancellation latency
+- Duplicate merge latency
+- UI update frequency
+
+---
+
+# 35. Acceptance Criteria
+
+The Device Discovery System is ready for initial release when:
+
+- Known paired devices appear immediately from local storage
+- Supported local devices can be discovered without manual configuration where the integration permits it
+- Discovery results appear progressively
+- The same device is not shown repeatedly when found by multiple sources
+- Stable identifiers are used instead of IP addresses for long-term identity
+- Local-network permission denial is handled clearly
+- No broad unrestricted port scan is performed
+- Vendor-specific candidates are verified by the responsible plugin
+- One provider failure does not stop other discovery sources
+- Discovery can be cancelled without leaked tasks or browsers
+- Network changes trigger safe targeted recovery
+- Manual entry works for supported integrations
+- Cached devices remain available as offline records when the network is unavailable
+- Add Device UI remains responsive throughout discovery
+- Diagnostics expose useful session information without secrets
+- Core discovery behavior is covered by automated tests
+- Real hardware discovery passes for the initial supported device set
+
+---
+
+# 36. Future Enhancements
+
+Potential future work:
+
+- Matter commissioning
+- QR-code setup scanning
+- NFC setup payloads
+- Bluetooth onboarding
+- Cross-subnet discovery with explicit user configuration
+- Optional vendor account import
+- Shared household discovery profiles
+- Device-location suggestions
+- Machine-assisted duplicate detection
+- Discovery history timeline
+- Apple Watch-assisted proximity setup
+- Nearby Interaction where supported
+- Network topology diagnostics
+
+---
+
+# 37. Golden Rule
+
+Aura should make finding a device feel immediate, safe and obvious.
+
+The user should see familiar products ready to add.
+
+The user should never feel as though Aura is scanning, probing or reverse-engineering their home network.
+
+---
+
+End of Document
