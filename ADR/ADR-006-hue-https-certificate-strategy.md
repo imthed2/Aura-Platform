@@ -61,6 +61,7 @@ Evidence should include sanitized test output and firmware versions. A single ob
 A read-only inspection of one Hue Bridge v2 produced the following evidence. No API request, pairing request, application key, device command, or state mutation was made.
 
 - Local mDNS advertised one `_hue._tcp` service on port 443 with model `BSB002`.
+- The official Hue iPhone app reported the bridge connected on software version `1.78.1978074000`. This firmware value is user-reported evidence and was not retrieved through an Aura API request.
 - The advertised stable bridge identifier matched the physical label and the leaf certificate's common name and serial number. Exact identifiers are intentionally omitted.
 - The discovered host name used a shorter hardware-address form and did not equal the full stable bridge identifier.
 - The bridge sent one leaf certificate. Its subject organization was Philips Hue and its issuer common name was `root-bridge`; the issuer certificate was not included in the handshake.
@@ -70,7 +71,7 @@ A read-only inspection of one Hue Bridge v2 produced the following evidence. No 
 - OpenSSL could not build the certificate chain from its default trust store, and macOS Security.framework reported the certificate as not trusted. This is expected evidence that Aura needs the vendor-supported Hue trust anchor and policy; it is not justification to bypass validation.
 - No exact bridge identifier, address, certificate fingerprint, certificate bytes, QR payload, or setup data was committed.
 
-This partially satisfies the hardware gate by establishing the observed certificate shape and identity relationship. The gate remains open until the authorized Hue documentation supplies the supported root material and policy, and until Aura verifies trusted evaluation, negative identity cases, firmware version, restart, address change, certificate rotation, and pre-credential failure behavior.
+This partially satisfies the hardware gate by establishing the observed certificate shape, identity relationship, and reported firmware version. The gate remains open until the authorized Hue documentation supplies the supported root material and policy, and until Aura verifies trusted evaluation, negative identity cases, restart, address change, firmware-update and certificate-rotation behavior, and pre-credential failure behavior.
 
 ## Required automated tests
 
