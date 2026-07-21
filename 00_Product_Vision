@@ -1,0 +1,399 @@
+# Aura
+## Product Vision
+Version 1.0
+Status: Draft
+Owner: Daniel Hagen
+Project: Aura
+Document ID: AURA-00
+Last Updated: July 2026
+
+---
+
+# Vision Statement
+
+Aura exists to make technology disappear.
+
+Smart homes have become increasingly powerful, but also increasingly fragmented. Every manufacturer provides its own application, interface and workflow, forcing users to constantly switch between apps to complete even the simplest tasks.
+
+Aura changes that.
+
+Aura is not another remote control.
+
+Aura is a unified experience that transforms a collection of smart devices into one intelligent home.
+
+Instead of controlling products, Aura controls moments.
+
+---
+
+# Mission
+
+Create the most beautiful, intelligent and effortless smart home control experience available on iPhone.
+
+Aura should become the single application users instinctively open whenever they interact with their home.
+
+---
+
+# Product Philosophy
+
+Technology should never be the focus.
+
+The home should be.
+
+Users should never think:
+
+"I need to open the Philips app."
+
+or
+
+"I need the Apple TV remote."
+
+Instead they should simply think:
+
+"I want to watch a movie."
+
+Aura handles everything else.
+
+---
+
+# Core Idea
+
+Every interaction inside Aura should answer one simple question:
+
+"What is the user trying to experience?"
+
+Never:
+
+"What device are they trying to control?"
+
+Aura controls experiences.
+
+Not hardware.
+
+---
+
+# Product Principles
+
+## 1. Invisible Technology
+
+The best interface is the one the user never notices.
+
+Technology should quietly work in the background while the experience stays in focus.
+
+---
+
+## 2. One Touch
+
+The most common actions should require one tap.
+
+If a task regularly needs three or more taps, the experience should be redesigned.
+
+---
+
+## 3. Context First
+
+Aura should always understand context.
+
+Examples:
+
+• Which room is currently active
+
+• Which TV input is selected
+
+• Whether someone is watching a movie
+
+• Time of day
+
+• Current lighting
+
+• Previous behaviour
+
+The interface adapts accordingly.
+
+---
+
+## 4. Calm Design
+
+Aura should never feel stressful.
+
+No flashing elements.
+
+No unnecessary notifications.
+
+No aggressive colors.
+
+No visual clutter.
+
+The interface should feel calm, premium and timeless.
+
+---
+
+## 5. Local First
+
+Whenever technically possible:
+
+Everything happens locally.
+
+No cloud dependency.
+
+No unnecessary user data leaves the home.
+
+Privacy is a feature.
+
+---
+
+## 6. Intelligent Automation
+
+Automation should feel invisible.
+
+Aura never forces automation.
+
+Aura simply makes intelligent suggestions.
+
+Examples:
+
+"Movie Night?"
+
+"Continue Gaming?"
+
+"Good Night?"
+
+The user always remains in control.
+
+---
+
+# Product Goals
+
+Aura should become the fastest way to control:
+
+• Philips TVs
+
+• Apple TV
+
+• Philips Hue
+
+• Apple Home
+
+• HomePods
+
+• Cameras
+
+• Smart Home Scenes
+
+• Automations
+
+Future versions will include:
+
+• Matter
+
+• Thread
+
+• Sonos
+
+• Smart Locks
+
+• Robot Vacuums
+
+• EV Chargers
+
+• Energy Monitoring
+
+---
+
+# Design Vision
+
+Aura should feel like a product designed by Apple with the emotional warmth of Scandinavian interior design.
+
+Not futuristic.
+
+Not playful.
+
+Not technical.
+
+Elegant.
+
+Minimal.
+
+Timeless.
+
+---
+
+# Emotional Goals
+
+When opening Aura the user should feel:
+
+• Calm
+
+• In control
+
+• Comfortable
+
+• Confident
+
+• Relaxed
+
+Aura should reduce friction.
+
+Never increase it.
+
+---
+
+# User Experience Goals
+
+The interface should feel:
+
+Fast enough to disappear.
+
+Beautiful enough to enjoy.
+
+Simple enough to teach itself.
+
+Powerful enough for enthusiasts.
+
+---
+
+# Target Audience
+
+Primary Users
+
+• Apple ecosystem users
+
+• Philips Hue owners
+
+• Apple TV owners
+
+• Premium Smart Home enthusiasts
+
+• Users who appreciate minimal design
+
+Secondary Users
+
+• Families
+
+• Interior design enthusiasts
+
+• Home automation users
+
+• Technology professionals
+
+---
+
+# What Aura Is Not
+
+Aura is NOT:
+
+• another Philips TV app
+
+• another HomeKit clone
+
+• another Hue app
+
+• another remote control
+
+• another automation platform
+
+Aura combines the strengths of all of them into one coherent experience.
+
+---
+
+# Experience Before Devices
+
+Traditional Smart Home
+
+Device
+↓
+
+Action
+↓
+
+Another Device
+↓
+
+Another App
+
+Aura
+
+Intent
+↓
+
+Experience
+↓
+
+Devices respond automatically
+
+---
+
+# Product Personality
+
+If Aura were a person:
+
+Calm
+
+Elegant
+
+Intelligent
+
+Reliable
+
+Patient
+
+Confident
+
+Helpful
+
+Never loud.
+
+Never childish.
+
+Never distracting.
+
+---
+
+# Long-Term Vision
+
+Aura should eventually become the operating layer of the modern home.
+
+Not replacing Apple Home.
+
+Not replacing Philips Hue.
+
+Not replacing manufacturers.
+
+Instead...
+
+Connecting them together through one beautiful experience.
+
+---
+
+# Success Criteria
+
+Aura succeeds when users stop thinking about which device they own.
+
+Instead they simply enjoy their home.
+
+---
+
+# Product Motto
+
+Control Less.
+
+Experience More.
+
+---
+
+# Internal Vision Statement
+
+Every design decision.
+
+Every animation.
+
+Every line of code.
+
+Every new feature.
+
+Must answer one question:
+
+"Does this make the home feel simpler?"
+
+If the answer is no,
+
+the feature does not belong in Aura.
