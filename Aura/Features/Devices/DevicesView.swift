@@ -2,6 +2,7 @@ import SwiftUI
 
 struct DevicesView: View {
     @Bindable var pairingModel: AppleTVPairingModel
+    @Bindable var controlModel: AppleTVControlModel
 
     var body: some View {
         AuraSurface {
@@ -142,8 +143,12 @@ struct DevicesView: View {
                     title: "Apple TV paired",
                     message: "Credentials for \(deviceName) are protected in this iPhone's Keychain."
                 )
+                remoteTestCard
                 AuraButton(title: "Done", systemImage: "checkmark", variant: .secondary) {
-                    Task { await pairingModel.cancel() }
+                    Task {
+                        await controlModel.disconnect()
+                        await pairingModel.cancel()
+                    }
                 }
             }
 
@@ -152,6 +157,62 @@ struct DevicesView: View {
                 AuraBanner(kind: .error, title: "Pairing did not finish", message: message)
                 AuraButton(title: "Start again", systemImage: "arrow.clockwise") {
                     Task { await pairingModel.discover() }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var remoteTestCard: some View {
+        AuraCard(accessibilityLabel: "Experimental Apple TV remote") {
+            VStack(alignment: .leading, spacing: AuraSpacing.md) {
+                Text("Encrypted remote test")
+                    .font(AuraTypography.title)
+
+                switch controlModel.phase {
+                case .idle, .connecting:
+                    HStack(spacing: AuraSpacing.md) {
+                        ProgressView()
+                            .tint(AuraColor.cyan)
+                        Text("Opening a verified Companion session…")
+                            .font(AuraTypography.body)
+                            .foregroundStyle(AuraColor.fog)
+                    }
+                    .task { await controlModel.connect() }
+
+                case .ready:
+                    Text("Connected securely. Keep the Apple TV interface visible, then send one test command.")
+                        .font(AuraTypography.body)
+                        .foregroundStyle(AuraColor.fog)
+                    AuraButton(title: "Move focus up", systemImage: "arrow.up") {
+                        Task { await controlModel.sendUp() }
+                    }
+                    .accessibilityIdentifier("appleTVMoveFocusUp")
+
+                case .sending:
+                    HStack(spacing: AuraSpacing.md) {
+                        ProgressView()
+                            .tint(AuraColor.cyan)
+                        Text("Waiting for Apple TV confirmation…")
+                            .font(AuraTypography.body)
+                            .foregroundStyle(AuraColor.fog)
+                    }
+
+                case .confirmed:
+                    AuraBanner(
+                        kind: .success,
+                        title: "Command confirmed",
+                        message: "Apple TV acknowledged both the button-down and button-up messages."
+                    )
+                    AuraButton(title: "Move focus up again", systemImage: "arrow.up") {
+                        Task { await controlModel.sendUp() }
+                    }
+
+                case .failed(let message):
+                    AuraBanner(kind: .error, title: "Remote unavailable", message: message)
+                    AuraButton(title: "Reconnect", systemImage: "arrow.clockwise") {
+                        Task { await controlModel.connect() }
+                    }
                 }
             }
         }

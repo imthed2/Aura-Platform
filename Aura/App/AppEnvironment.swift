@@ -7,4 +7,5 @@ struct AppEnvironment {
     let logger: any AuraLogging
     let clock: any AuraClock
     let appleTVPairingModel: AppleTVPairingModel
+    let appleTVControlModel: AppleTVControlModel
 }

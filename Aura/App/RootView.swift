@@ -56,7 +56,10 @@ struct RootView: View {
                 message: "Create experiences that coordinate your home with one action."
             )
         case .devices:
-            DevicesView(pairingModel: environment.appleTVPairingModel)
+            DevicesView(
+                pairingModel: environment.appleTVPairingModel,
+                controlModel: environment.appleTVControlModel
+            )
         case .settings:
             FoundationTabView(
                 title: "Settings",
