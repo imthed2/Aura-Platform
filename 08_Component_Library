@@ -1,0 +1,859 @@
+# Aura
+## Component Library
+Version: 1.0
+Status: Draft
+Owner: Daniel Hagen
+Project: Aura Platform
+Document ID: AURA-08
+
+Dependencies
+
+• AURA-03 Aura Design Language
+• AURA-04 Design Tokens
+• AURA-07 Screen Specifications
+
+---
+
+# Purpose
+
+The Aura Component Library defines every reusable UI component used throughout the platform.
+
+Components must be:
+
+• Reusable
+• Accessible
+• Token-driven
+• Stateless whenever possible
+• Consistent across the entire application
+
+No screen may create custom UI components when an Aura component already exists.
+
+---
+
+# Component Philosophy
+
+Aura consists of a small number of highly polished components.
+
+Components should evolve.
+
+Not multiply.
+
+Whenever possible:
+
+Improve an existing component instead of creating a new one.
+
+---
+
+# Component Categories
+
+Foundation
+
+Layout
+
+Navigation
+
+Cards
+
+Controls
+
+Feedback
+
+Media
+
+Forms
+
+Overlays
+
+Diagnostics
+
+Developer
+
+---
+
+==================================================
+Foundation Components
+==================================================
+
+AuraSurface
+
+Purpose
+
+Primary background container.
+
+Uses
+
+Background colors
+
+Glass materials
+
+Blur
+
+Shadow tokens
+
+Never contains business logic.
+
+---
+
+AuraSection
+
+Purpose
+
+Creates vertical spacing between groups.
+
+Responsibilities
+
+Spacing
+
+Title
+
+Optional description
+
+Divider
+
+---
+
+AuraDivider
+
+Purpose
+
+Separates content.
+
+Uses token-based opacity.
+
+Never uses custom colors.
+
+---
+
+AuraSpacer
+
+Purpose
+
+Applies standard spacing.
+
+Uses AuraSpacing tokens only.
+
+---
+
+==================================================
+Navigation Components
+==================================================
+
+AuraNavigationBar
+
+Features
+
+Large Title
+
+Search
+
+Profile Button
+
+Context Menu
+
+Glass Background
+
+Collapsible
+
+---
+
+AuraTabBar
+
+Supports
+
+Five tabs maximum
+
+Blur material
+
+Animated selection
+
+State restoration
+
+Notification badges
+
+---
+
+AuraSearchBar
+
+Features
+
+Live Search
+
+Voice Search (Future)
+
+Recent Searches
+
+Suggestions
+
+Clear Button
+
+Loading State
+
+---
+
+==================================================
+Card Components
+==================================================
+
+AuraCard
+
+Base component.
+
+Every card inherits from AuraCard.
+
+Properties
+
+Title
+
+Subtitle
+
+Icon
+
+Content
+
+Status
+
+Actions
+
+Footer
+
+Supports
+
+Loading
+
+Empty
+
+Disabled
+
+Offline
+
+Expanded
+
+Collapsed
+
+---
+
+AuraHeroCard
+
+Purpose
+
+Highlights the primary action on a screen.
+
+Examples
+
+Movie Night
+
+Gaming
+
+Continue Watching
+
+Characteristics
+
+Large artwork
+
+Large button
+
+Prominent typography
+
+---
+
+AuraDeviceCard
+
+Displays
+
+Device name
+
+Status
+
+Icon
+
+Battery
+
+Connection
+
+Quick actions
+
+States
+
+Online
+
+Offline
+
+Updating
+
+Unavailable
+
+Error
+
+---
+
+AuraRoomCard
+
+Displays
+
+Room name
+
+Current activity
+
+Number of devices
+
+Current scene
+
+Environment summary
+
+---
+
+AuraSceneCard
+
+Displays
+
+Scene
+
+Preview
+
+Affected devices
+
+Run button
+
+Status
+
+Schedule
+
+---
+
+AuraAutomationCard
+
+Displays
+
+Trigger
+
+Conditions
+
+Last execution
+
+Status
+
+Enable switch
+
+---
+
+AuraMediaCard
+
+Displays
+
+Album artwork
+
+TV artwork
+
+Playback controls
+
+Progress
+
+Volume
+
+Now Playing
+
+---
+
+==================================================
+Control Components
+==================================================
+
+AuraButton
+
+Variants
+
+Primary
+
+Secondary
+
+Tertiary
+
+Destructive
+
+Sizes
+
+Small
+
+Medium
+
+Large
+
+Hero
+
+States
+
+Normal
+
+Pressed
+
+Loading
+
+Disabled
+
+Success
+
+---
+
+AuraToggle
+
+Supports
+
+Animated thumb
+
+Icons
+
+Labels
+
+Accessibility
+
+---
+
+AuraSlider
+
+Used for
+
+Volume
+
+Brightness
+
+Temperature
+
+Progress
+
+Supports
+
+Haptic detents
+
+Live updates
+
+---
+
+AuraSegmentedControl
+
+Purpose
+
+Quick switching.
+
+Examples
+
+Inputs
+
+Rooms
+
+Views
+
+Scenes
+
+---
+
+AuraPicker
+
+Supports
+
+Lists
+
+Icons
+
+Search
+
+Grouping
+
+---
+
+==================================================
+Feedback Components
+==================================================
+
+AuraBanner
+
+Types
+
+Success
+
+Warning
+
+Error
+
+Information
+
+Dismissible
+
+---
+
+AuraToast
+
+Short-lived confirmations.
+
+Maximum duration
+
+2 seconds.
+
+Never blocks interaction.
+
+---
+
+AuraProgressView
+
+Supports
+
+Linear
+
+Circular
+
+Determinate
+
+Indeterminate
+
+Skeleton replacement
+
+---
+
+AuraLoadingSkeleton
+
+Purpose
+
+Replace loading spinners.
+
+Animated shimmer.
+
+Matches final layout.
+
+---
+
+==================================================
+Status Components
+==================================================
+
+AuraStatusBadge
+
+Values
+
+Online
+
+Offline
+
+Busy
+
+Updating
+
+Unknown
+
+Low Battery
+
+Error
+
+---
+
+AuraConnectionIndicator
+
+Shows
+
+Wi-Fi
+
+Bluetooth
+
+Thread
+
+Matter
+
+Cloud
+
+Local
+
+---
+
+==================================================
+Empty States
+==================================================
+
+AuraEmptyState
+
+Contains
+
+Illustration
+
+Title
+
+Description
+
+Primary Action
+
+Optional Secondary Action
+
+Never display empty lists without guidance.
+
+---
+
+==================================================
+Error Components
+==================================================
+
+AuraErrorView
+
+Contains
+
+Friendly title
+
+Explanation
+
+Recovery steps
+
+Retry
+
+Diagnostics
+
+Never display raw error codes.
+
+---
+
+AuraOfflineBanner
+
+Displayed when network connectivity changes.
+
+Automatically hides after recovery.
+
+---
+
+==================================================
+Overlay Components
+==================================================
+
+AuraSheet
+
+Uses
+
+Apple sheet presentation.
+
+Supports
+
+Medium
+
+Large
+
+Dynamic heights
+
+---
+
+AuraDialog
+
+Purpose
+
+Critical confirmation.
+
+Examples
+
+Delete
+
+Reset
+
+Remove Device
+
+Never overused.
+
+---
+
+AuraContextMenu
+
+Provides advanced actions.
+
+Primary actions must never be hidden here.
+
+---
+
+==================================================
+Media Components
+==================================================
+
+AuraRemoteControl
+
+Dynamic remote interface.
+
+Changes layout depending on device.
+
+Supports
+
+TV
+
+Apple TV
+
+Media Center
+
+---
+
+AuraVolumeControl
+
+Horizontal slider
+
+Mute button
+
+Volume feedback
+
+Haptic steps
+
+---
+
+AuraNowPlaying
+
+Artwork
+
+Title
+
+Subtitle
+
+Progress
+
+Controls
+
+AirPlay status
+
+---
+
+==================================================
+Developer Components
+==================================================
+
+AuraDebugOverlay
+
+Visible only in Developer Mode.
+
+Displays
+
+FPS
+
+Memory
+
+Latency
+
+Connection status
+
+---
+
+AuraLoggerView
+
+Displays
+
+Recent logs
+
+Export
+
+Filter
+
+Search
+
+---
+
+# Component Lifecycle
+
+Every component supports
+
+Initialization
+
+Loading
+
+Ready
+
+Updating
+
+Disabled
+
+Disposed
+
+---
+
+# Accessibility
+
+Every component must support
+
+VoiceOver
+
+Dynamic Type
+
+Reduce Motion
+
+Switch Control
+
+Keyboard navigation
+
+Minimum touch target
+
+44 × 44 points
+
+---
+
+# Animation Rules
+
+Every interactive component provides
+
+Touch feedback
+
+Visual transition
+
+Optional haptic
+
+State animation
+
+Animations must never delay interaction.
+
+---
+
+# SwiftUI Naming Convention
+
+AuraButton
+
+AuraCard
+
+AuraDeviceCard
+
+AuraSceneCard
+
+AuraRoomCard
+
+AuraStatusBadge
+
+AuraBanner
+
+AuraToast
+
+AuraSheet
+
+AuraNavigationBar
+
+AuraSearchBar
+
+AuraProgressView
+
+AuraLoadingSkeleton
+
+No abbreviations.
+
+No prefixes other than Aura.
+
+---
+
+# Component Development Rules
+
+One responsibility per component.
+
+No duplicated logic.
+
+No hardcoded colors.
+
+No hardcoded spacing.
+
+No direct networking.
+
+No business logic inside UI components.
+
+Every visual value must come from Design Tokens.
+
+---
+
+# Golden Rule
+
+If three screens use the same UI pattern,
+
+it becomes a reusable Aura component.
+
+---
+
+End of Document
