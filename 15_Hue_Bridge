@@ -1,0 +1,1289 @@
+# Aura
+## Philips Hue Bridge Integration
+
+Version: 1.0  
+Status: Draft  
+Owner: Daniel Hagen  
+Project: Aura Platform  
+Document ID: AURA-15
+
+Dependencies
+
+- AURA-01 Product Requirements
+- AURA-05 Information Architecture
+- AURA-06 User Flows
+- AURA-08 Component Library
+- AURA-14 HomeKit Integration
+- AURA-16 Device Discovery
+- AURA-17 Scene Engine
+- AURA-19 Diagnostics
+- AURA-20 App Architecture
+
+---
+
+# 1. Purpose
+
+The Philips Hue Bridge integration enables Aura to discover, pair with, control and monitor Philips Hue systems through the local network.
+
+The integration must make lighting feel like a native part of Aura rather than a separate third-party subsystem.
+
+Users should be able to control individual lights, rooms, zones, scenes, accessories and supported dynamic lighting features without understanding Hue API concepts.
+
+Aura should translate Hue resources into Aura’s unified device, room, capability, scene and diagnostics models.
+
+---
+
+# 2. Product Goals
+
+The Hue integration shall be:
+
+- Local-first
+- Low latency
+- Reliable
+- Secure
+- Event-driven
+- Capability-aware
+- Battery efficient
+- Recoverable after network changes
+- Scalable to large Hue installations
+- Compatible with Aura Scenes and Automations
+
+The user experience should remain calm and simple even when the underlying Hue system contains many bridges, rooms, zones, lights and accessories.
+
+---
+
+# 3. Non-Goals
+
+Version 1 does not aim to:
+
+- Replace the official Philips Hue application
+- Recreate advanced bridge administration
+- Manage firmware updates directly
+- Expose raw Hue API resources to users
+- Support cloud-only operation
+- Provide professional architectural lighting calibration
+- Implement real-time Hue Entertainment streaming in the first release
+- Duplicate every manufacturer-specific effect immediately
+
+Unsupported functionality must remain hidden rather than shown as disabled controls.
+
+---
+
+# 4. Supported Hardware
+
+Primary target:
+
+- Philips Hue Bridge v2
+
+Supported resource categories should include, where available:
+
+- Bridge
+- Lights
+- Rooms
+- Zones
+- Grouped lights
+- Scenes
+- Smart plugs
+- Motion sensors
+- Contact sensors
+- Temperature sensors
+- Light-level sensors
+- Wall switches
+- Dimmer switches
+- Smart buttons
+- Tap Dial devices
+- Device batteries
+- Entertainment configurations
+
+The plugin must detect actual bridge capabilities at runtime and must not rely only on product-name assumptions.
+
+---
+
+# 5. API Strategy
+
+Aura should prefer the current local Philips Hue API and treat legacy API support as a compatibility layer only where necessary.
+
+The Hue integration is divided into the following layers:
+
+```text
+Aura UI
+    ↓
+Aura Core
+    ↓
+Unified Capability Model
+    ↓
+HueBridgePlugin
+    ↓
+HueRepository
+    ↓
+HueAPIClient / HueEventStream
+    ↓
+Local Hue Bridge
+```
+
+No SwiftUI view may communicate directly with the bridge.
+
+No Hue-specific response model may leak into the general Aura UI layer.
+
+---
+
+# 6. High-Level Architecture
+
+```mermaid
+flowchart TD
+    UI[Aura UI] --> CORE[Aura Core]
+    CORE --> CAP[Unified Capability Model]
+    CAP --> PLUGIN[HueBridgePlugin]
+    PLUGIN --> REPO[HueRepository]
+    REPO --> API[HueAPIClient]
+    REPO --> EVENTS[HueEventStream]
+    API --> BRIDGE[Hue Bridge]
+    EVENTS --> BRIDGE
+    REPO --> CACHE[Local Cache]
+    PLUGIN --> DIAG[Hue Diagnostics]
+```
+
+The plugin must expose stable Aura entities even when the bridge changes IP address or returns resources in a different order.
+
+---
+
+# 7. Core Responsibilities
+
+The HueBridgePlugin shall:
+
+- Discover Hue bridges
+- Pair and authenticate
+- Store credentials securely
+- Load bridge resources
+- Map Hue resources to Aura entities
+- Read current device state
+- Send state-change commands
+- Subscribe to bridge events
+- Maintain local state consistency
+- Support scenes and grouped actions
+- Recover after network interruptions
+- Report diagnostics
+- Expose only supported capabilities
+
+---
+
+# 8. Discovery
+
+## 8.1 Discovery Sources
+
+Aura should use a layered discovery strategy:
+
+1. Previously paired bridges from local storage
+2. Local network service discovery
+3. SSDP or Hue-compatible discovery broadcasts where available
+4. Manual IP address entry
+5. Optional internet-assisted discovery only as a future fallback
+
+Previously paired bridges should appear immediately using cached metadata while Aura validates their current reachability in the background.
+
+## 8.2 Discovery Triggers
+
+Discovery may begin when:
+
+- Aura launches
+- The user opens Add Device
+- The user pulls to refresh
+- The network path changes
+- Wi-Fi reconnects
+- A stored bridge becomes unreachable
+- The user selects Retry
+
+## 8.3 Discovery Result
+
+A discovered bridge candidate should contain:
+
+```swift
+struct HueBridgeCandidate: Sendable, Identifiable {
+    let id: String
+    let name: String?
+    let host: String
+    let port: Int
+    let bridgeIdentifier: String?
+    let modelIdentifier: String?
+    let isPreviouslyPaired: Bool
+    let discoverySource: HueDiscoverySource
+}
+```
+
+## 8.4 Duplicate Detection
+
+Bridge identity should be based on a stable bridge identifier when available.
+
+IP address must not be treated as the permanent identity because DHCP may change it.
+
+If the same bridge is found by multiple discovery methods, Aura should merge the candidates.
+
+## 8.5 Discovery Performance Target
+
+- Cached bridge display: under 300 ms
+- First local candidate: under 2 seconds where network conditions permit
+- Normal scan completion: under 5 seconds
+- Manual scan timeout: 10 seconds maximum before presenting fallback options
+
+---
+
+# 9. Pairing and Authentication
+
+## 9.1 Pairing Experience
+
+The user flow should be:
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Aura
+    participant Bridge
+
+    User->>Aura: Select discovered bridge
+    Aura->>Bridge: Check bridge information
+    Aura->>User: Ask user to press link button
+    User->>Bridge: Press physical link button
+    User->>Aura: Tap Continue
+    Aura->>Bridge: Request application credential
+    Bridge-->>Aura: Return application key
+    Aura->>Aura: Store key in Keychain
+    Aura->>Bridge: Load resources
+    Aura-->>User: Pairing complete
+```
+
+The interface should explain the physical link button visually and avoid technical language such as API key, username or authentication token.
+
+## 9.2 Credential Storage
+
+Credentials must be stored in Keychain.
+
+Each credential should be associated with:
+
+- Stable bridge identifier
+- Aura installation identifier
+- Credential version
+- Creation date
+- Last successful authentication date
+
+Credentials must never be written to logs, analytics, crash reports or plain-text persistence.
+
+## 9.3 Pairing Timeout
+
+Aura should retry pairing requests for a limited window after the link button is pressed.
+
+Recommended behavior:
+
+- Poll every 1 second
+- Maximum pairing window: 30 seconds
+- Stop immediately after success
+- Allow cancellation
+- Avoid duplicate credential creation
+
+## 9.4 Authentication Failure
+
+When credentials are rejected:
+
+1. Confirm the bridge identity
+2. Retry once after a short delay
+3. Mark the credential as invalid if rejection persists
+4. Preserve non-sensitive bridge metadata
+5. Ask the user to pair again
+
+---
+
+# 10. Resource Synchronization
+
+## 10.1 Initial Synchronization
+
+After pairing, Aura should load all required bridge resources before marking the integration ready.
+
+Required initial data may include:
+
+- Bridge metadata
+- Devices
+- Lights
+- Grouped lights
+- Rooms
+- Zones
+- Scenes
+- Sensors
+- Buttons
+- Entertainment configurations
+
+## 10.2 Synchronization Stages
+
+```text
+Connecting
+↓
+Authenticating
+↓
+Loading bridge metadata
+↓
+Loading resources
+↓
+Mapping capabilities
+↓
+Subscribing to events
+↓
+Ready
+```
+
+## 10.3 Partial Synchronization
+
+A partial failure should not make the entire bridge unusable.
+
+For example, if entertainment configurations fail to load but lights succeed, standard lighting control should remain available.
+
+The repository should track synchronization state per resource category.
+
+## 10.4 Resource Identity
+
+Aura should preserve stable mappings between Hue resource IDs and Aura entity IDs.
+
+Suggested identity format:
+
+```text
+hue:<bridge-id>:<resource-type>:<resource-id>
+```
+
+This identifier is internal and should not be shown to users.
+
+---
+
+# 11. Unified Device Mapping
+
+Hue resources must be converted into Aura’s general device model.
+
+Example:
+
+```swift
+struct AuraDevice: Identifiable, Sendable {
+    let id: AuraDeviceID
+    let source: DeviceSource
+    let displayName: String
+    let roomID: AuraRoomID?
+    let capabilities: Set<AuraCapability>
+    let metadata: DeviceMetadata
+}
+```
+
+## 11.1 Capability Examples
+
+A Hue light may expose:
+
+- Power
+- Brightness
+- Color temperature
+- Color
+- Gradient
+- Effects
+- Reachability
+
+A Hue smart plug may expose:
+
+- Power
+- Reachability
+
+A motion sensor may expose:
+
+- Motion state
+- Battery
+- Temperature
+- Ambient light
+
+A switch may expose:
+
+- Button events
+- Battery
+
+The mapping layer must derive capabilities from the actual resource data.
+
+---
+
+# 12. Room and Zone Mapping
+
+## 12.1 Hue Rooms
+
+Hue Rooms should map naturally to Aura Rooms when possible.
+
+Aura must not automatically merge rooms only because names match.
+
+The first pairing flow should offer:
+
+- Use existing Aura room
+- Create a new Aura room
+- Leave unassigned
+
+## 12.2 Hue Zones
+
+Hue Zones should not automatically become Aura Rooms because zones can overlap and represent concepts such as downstairs, windows or entertainment area.
+
+Zones should map to Aura Groups or Collections.
+
+## 12.3 Conflict Handling
+
+When both HomeKit and Hue expose the same physical light, Aura must avoid duplicate user-facing devices.
+
+Duplicate resolution should use:
+
+- Manufacturer and model
+- Serial number where available
+- HomeKit unique identifier
+- Hue resource metadata
+- Room association
+- User confirmation when confidence is low
+
+Aura should preserve multiple control routes internally but present one logical device.
+
+---
+
+# 13. Light Control
+
+## 13.1 Required Controls
+
+Supported controls should include when available:
+
+- Turn on
+- Turn off
+- Toggle
+- Set brightness
+- Set color temperature
+- Set color
+- Set transition duration
+- Activate effect
+- Stop effect
+
+## 13.2 Optimistic Updates
+
+Aura may use optimistic UI updates for responsive control.
+
+The repository must reconcile optimistic state with the bridge response or event stream.
+
+If the bridge rejects a command, the UI should return to the confirmed state and show a discreet error.
+
+## 13.3 Command Coalescing
+
+Continuous controls such as brightness and color sliders must not send every raw touch event.
+
+Recommended strategy:
+
+- Update UI locally at screen refresh rate
+- Throttle network writes to approximately 10–20 commands per second maximum
+- Send the final value immediately when interaction ends
+- Cancel stale queued values
+
+## 13.4 Group Control
+
+Room and zone control should use grouped-light resources where possible rather than sending separate commands to every light.
+
+This improves synchronization and reduces bridge traffic.
+
+---
+
+# 14. Brightness Model
+
+Aura should represent brightness as a normalized value:
+
+```swift
+struct NormalizedBrightness: Sendable, Equatable {
+    let value: Double // 0.0 ... 1.0
+}
+```
+
+The Hue adapter is responsible for converting between Aura’s normalized representation and the bridge representation.
+
+Rules:
+
+- 0.0 with power off should remain visually distinct from very low brightness while on
+- Slider changes must preserve current color and color temperature
+- Turning on a light should restore its last meaningful brightness where supported
+- Scene activation may override brightness
+
+---
+
+# 15. Color Temperature
+
+Aura should expose human-readable temperature controls such as:
+
+- Warm
+- Neutral
+- Cool
+
+The internal model should use a normalized or Kelvin-based representation while preserving the bridge’s supported range.
+
+The UI must clamp values to each light’s actual limits.
+
+A device that does not support color temperature must not show the control.
+
+---
+
+# 16. Color Model
+
+## 16.1 Internal Representation
+
+Aura should use a device-independent color model in the UI and domain layer.
+
+Suggested representation:
+
+```swift
+struct AuraColor: Sendable, Equatable {
+    let red: Double
+    let green: Double
+    let blue: Double
+    let alpha: Double
+}
+```
+
+The Hue adapter converts Aura color values to the bridge’s supported color representation.
+
+## 16.2 Gamut Awareness
+
+Different Hue lights support different color gamuts.
+
+The conversion layer must:
+
+- Read the device’s supported color gamut
+- Convert requested color into the device gamut
+- Clamp out-of-gamut colors
+- Preserve brightness separately
+- Avoid sudden hue shifts during conversion
+
+## 16.3 UI Behavior
+
+The user should never see XY coordinates or gamut identifiers.
+
+Aura should show color presets, a color wheel and recent colors using Aura’s design language.
+
+---
+
+# 17. Gradient Lights
+
+When a device supports multiple color points, Aura may expose gradient control.
+
+Initial support may include:
+
+- Read current gradient
+- Apply predefined gradients
+- Apply scene-provided gradients
+- Set orientation when supported
+
+Freeform gradient editing may be scheduled for a later release.
+
+A gradient light should still support standard single-color control as a fallback.
+
+---
+
+# 18. Scenes
+
+## 18.1 Hue Scene Import
+
+Aura should import compatible Hue scenes as external scene actions.
+
+Imported scenes should include:
+
+- Scene name
+- Associated room or zone
+- Supported target lights
+- Dynamic capability where available
+- Last known availability
+
+## 18.2 Aura Scene Integration
+
+Hue actions should be first-class steps in Aura Scene Engine.
+
+Example:
+
+```text
+Movie Night
+├── Wake Apple TV
+├── Turn on Philips TV
+├── Select HDMI input
+├── Activate Hue scene “Cinema”
+├── Set hallway lights to 15%
+└── Set HomePod volume
+```
+
+The Hue plugin should provide scene actions such as:
+
+- Activate Hue scene
+- Set room state
+- Set zone state
+- Set individual light state
+- Start dynamic scene
+- Stop dynamic scene
+
+## 18.3 Scene Execution
+
+Grouped Hue commands should be executed as close together as possible.
+
+Aura Scene Engine should not serialize independent Hue commands unnecessarily.
+
+## 18.4 Scene Failure
+
+A partial Hue scene failure must be reported to the Scene Engine with per-action results.
+
+Example:
+
+```swift
+enum SceneActionResult {
+    case success
+    case partialSuccess(details: [ActionFailure])
+    case failure(AuraError)
+}
+```
+
+---
+
+# 19. Dynamic Scenes
+
+Where supported, Aura may expose dynamic scene controls:
+
+- Start
+- Pause
+- Resume
+- Stop
+- Adjust speed if supported
+
+Dynamic scene state should be event-driven where possible.
+
+If dynamic control is unavailable, Aura should still allow standard scene activation.
+
+---
+
+# 20. Entertainment Areas
+
+Entertainment configurations should be discovered and represented in Aura even if real-time streaming is not yet enabled.
+
+Version 1 may expose:
+
+- Entertainment area name
+- Assigned lights
+- Associated room
+- Availability
+- Suggested activity integration
+
+Future support may include:
+
+- TV light sync
+- Gaming sync
+- Music visualization
+- Low-latency streaming
+
+Entertainment streaming requires a separate performance and security design and should not be implemented as ordinary REST command traffic.
+
+---
+
+# 21. Sensors and Accessories
+
+## 21.1 Motion Sensors
+
+Aura should expose:
+
+- Motion detected
+- Last changed time
+- Battery level
+- Reachability
+- Optional temperature
+- Optional ambient light
+
+## 21.2 Buttons and Switches
+
+Button events may be used as automation triggers.
+
+Examples:
+
+- Initial press
+- Repeated press
+- Long press
+- Release
+- Rotary action
+
+Aura must normalize manufacturer-specific button events into a stable event model.
+
+## 21.3 Battery State
+
+Battery should be represented as percentage when available and as a general low-battery warning otherwise.
+
+Battery data should not be polled aggressively.
+
+---
+
+# 22. Event Stream
+
+## 22.1 Strategy
+
+The integration should prefer Hue’s local event stream for state changes.
+
+Polling is a fallback, not the primary synchronization mechanism.
+
+## 22.2 Event Pipeline
+
+```mermaid
+sequenceDiagram
+    participant Bridge
+    participant EventStream
+    participant Repository
+    participant AuraCore
+    participant UI
+
+    Bridge-->>EventStream: Resource update event
+    EventStream->>Repository: Decode and validate
+    Repository->>Repository: Merge into state store
+    Repository-->>AuraCore: Publish normalized update
+    AuraCore-->>UI: Refresh affected views
+```
+
+## 22.3 Event Requirements
+
+The event stream implementation must:
+
+- Reconnect automatically
+- Ignore malformed events safely
+- Deduplicate repeated updates
+- Preserve event ordering where relevant
+- Update only affected resources
+- Avoid blocking the main actor
+- Report connection health to diagnostics
+
+## 22.4 Reconnection Backoff
+
+Recommended reconnect schedule:
+
+- Immediate first retry
+- 1 second
+- 2 seconds
+- 5 seconds
+- 10 seconds
+- 30 seconds maximum
+
+The backoff should reset after a stable connection period.
+
+---
+
+# 23. Polling Fallback
+
+Polling should activate when:
+
+- The event stream cannot connect
+- The bridge firmware lacks required event support
+- The app resumes and state freshness is uncertain
+- A command acknowledgment is ambiguous
+
+Recommended polling behavior:
+
+- Active detail screen: every 2 seconds only when needed
+- Dashboard: every 5–10 seconds during fallback
+- Background: no continuous polling unless an approved system task requires it
+- Full resource refresh: only after reconnect, explicit refresh or detected inconsistency
+
+Polling must stop after event streaming is restored.
+
+---
+
+# 24. State Consistency
+
+The repository should maintain three conceptual states:
+
+- Confirmed bridge state
+- Pending optimistic state
+- Display state
+
+When a command is sent:
+
+1. Create pending state
+2. Update display state optimistically
+3. Send command
+4. Wait for response or event
+5. Confirm or roll back
+6. Clear pending state
+
+This logic belongs in the repository or command coordinator, not in SwiftUI views.
+
+---
+
+# 25. Network Behavior
+
+## 25.1 Local-First Requirement
+
+Standard Hue control must function without internet access when the phone and bridge are on the same supported local network.
+
+## 25.2 IP Address Changes
+
+Aura should resolve a paired bridge by stable identifier and update its cached host address after rediscovery.
+
+## 25.3 Multiple Networks
+
+When the user leaves the home network:
+
+- Mark the bridge as unavailable locally
+- Preserve cached state with a stale indicator where appropriate
+- Do not repeatedly retry at high frequency
+- Resume discovery after network path changes
+
+## 25.4 Local Network Permission
+
+Aura must clearly explain why local network access is needed before requesting system permission.
+
+If permission is denied, the app should provide a direct recovery explanation and Settings shortcut.
+
+---
+
+# 26. Error Model
+
+Suggested error categories:
+
+```swift
+enum HueIntegrationError: Error, Sendable {
+    case discoveryFailed
+    case bridgeUnreachable
+    case localNetworkPermissionDenied
+    case pairingRequired
+    case pairingTimedOut
+    case authenticationRejected
+    case unsupportedBridge
+    case unsupportedResource
+    case invalidResponse
+    case requestTimedOut
+    case rateLimited
+    case eventStreamDisconnected
+    case stateConflict
+    case commandRejected
+    case decodingFailed
+    case unknown
+}
+```
+
+Errors must be translated into user-friendly Aura messages before reaching the UI.
+
+Raw response bodies and credentials must never be displayed.
+
+---
+
+# 27. Recovery Strategy
+
+For transient failures:
+
+```text
+Command fails
+↓
+Check network path
+↓
+Retry once if safe
+↓
+Rediscover bridge if host may have changed
+↓
+Reconnect event stream
+↓
+Refresh affected resource
+↓
+Notify user only if recovery fails
+```
+
+Commands that may have already succeeded must not be repeated blindly.
+
+The command layer should classify operations as idempotent or non-idempotent.
+
+---
+
+# 28. Diagnostics
+
+The Hue diagnostics module should report:
+
+- Bridge identifier
+- Bridge model
+- Firmware version
+- Current host address
+- Reachability
+- Authentication status
+- API latency
+- Event stream state
+- Last event time
+- Last successful command
+- Last synchronization time
+- Number of resources
+- Number of unreachable devices
+- Recent recoverable errors
+- Suggested fixes
+
+Sensitive keys must be redacted.
+
+## 28.1 User-Facing Tests
+
+Diagnostics may offer:
+
+- Test bridge connection
+- Test authentication
+- Refresh resources
+- Test event stream
+- Find bridge again
+- Re-pair bridge
+- Export sanitized diagnostics
+
+---
+
+# 29. Security
+
+Security requirements:
+
+- Store application credentials in Keychain
+- Use secure local transport where supported
+- Validate the target bridge identity
+- Never log secrets
+- Redact network identifiers in exported diagnostics where appropriate
+- Treat bridge responses as untrusted input
+- Apply strict decoding
+- Set request timeouts
+- Limit resource sizes
+- Prevent command injection through names or metadata
+
+---
+
+# 30. Privacy
+
+Aura should not upload:
+
+- Light usage history
+- Motion history
+- Room activity
+- Button events
+- Device identifiers
+- Bridge credentials
+
+Any future cloud synchronization must be separately documented and explicitly opt-in.
+
+---
+
+# 31. Performance Budgets
+
+Target performance under normal local network conditions:
+
+- Cached bridge appearance: under 300 ms
+- Bridge discovery: under 5 seconds
+- Initial resource synchronization: under 5 seconds for a typical home
+- Standard command dispatch: under 100 ms from UI to network send
+- Visible command confirmation: under 300 ms
+- Event propagation to UI: under 250 ms
+- Scene command initiation: under 200 ms
+- Event-stream reconnect: under 3 seconds for the first retry
+
+Targets are not guarantees under congested or unstable networks, but regressions should be measured.
+
+---
+
+# 32. Swift Architecture
+
+Recommended types:
+
+```text
+HueBridgePlugin
+HueBridgeDiscoveryService
+HuePairingCoordinator
+HueAPIClient
+HueEventStreamClient
+HueRepository
+HueResourceStore
+HueDeviceMapper
+HueRoomMapper
+HueSceneAdapter
+HueCommandCoordinator
+HueColorConverter
+HueDiagnosticsService
+HueCredentialStore
+```
+
+## 32.1 Plugin Protocol
+
+```swift
+protocol AuraDevicePlugin: Sendable {
+    var identifier: String { get }
+
+    func discover() -> AsyncStream<DiscoveredDevice>
+    func pair(with candidate: DiscoveredDevice) async throws
+    func synchronize() async throws
+    func devices() async -> [AuraDevice]
+    func execute(_ command: AuraCommand) async throws -> CommandResult
+    func diagnostics() async -> PluginDiagnostics
+}
+```
+
+## 32.2 Repository Actor
+
+```swift
+actor HueRepository {
+    private var resources: [HueResourceID: HueResource] = [:]
+    private var pendingCommands: [CommandID: PendingCommand] = [:]
+
+    func synchronize() async throws
+    func apply(event: HueEvent) async
+    func execute(_ command: HueCommand) async throws -> CommandResult
+    func snapshot() -> HueRepositorySnapshot
+}
+```
+
+The actor should protect resource state and command coordination from data races.
+
+## 32.3 Dependency Injection
+
+The plugin should receive interfaces rather than constructing concrete dependencies internally.
+
+```swift
+struct HuePluginDependencies {
+    let discovery: HueBridgeDiscovering
+    let apiClientFactory: HueAPIClientFactory
+    let credentialStore: HueCredentialStoring
+    let clock: AuraClock
+    let logger: AuraLogging
+}
+```
+
+---
+
+# 33. Concurrency Rules
+
+- Networking must use Swift concurrency
+- No bridge request may block the main actor
+- UI updates must be delivered on the appropriate actor
+- Long-lived event streams must support cancellation
+- Pairing attempts must be cancellable
+- Slider command tasks must cancel stale values
+- Repository state must be isolated
+- Reconnect loops must stop when the plugin is deactivated
+
+---
+
+# 34. Logging
+
+Logs should use structured categories:
+
+- hue.discovery
+- hue.pairing
+- hue.api
+- hue.events
+- hue.mapping
+- hue.commands
+- hue.scenes
+- hue.diagnostics
+
+Logs must never include:
+
+- Application keys
+- Authorization headers
+- Full raw payloads containing sensitive identifiers
+- User-created room or scene names in analytics
+
+Debug builds may support deeper local logging with explicit developer controls.
+
+---
+
+# 35. Accessibility and UI Requirements
+
+Hue controls must:
+
+- Support VoiceOver
+- Expose meaningful control labels
+- Announce confirmed changes where appropriate
+- Use more than color alone to represent state
+- Respect Reduce Motion
+- Support Dynamic Type
+- Provide large touch targets
+- Maintain sufficient contrast
+
+A color control should announce a human-readable color approximation rather than raw RGB or XY values.
+
+---
+
+# 36. Testing Strategy
+
+## 36.1 Unit Tests
+
+Required unit-test areas:
+
+- Resource decoding
+- Capability detection
+- Device mapping
+- Room mapping
+- Duplicate detection
+- Brightness conversion
+- Color conversion
+- Gamut clamping
+- Color temperature conversion
+- Event merging
+- Command coalescing
+- Retry classification
+- Error translation
+- Credential key generation
+
+## 36.2 Integration Tests
+
+Integration tests should cover:
+
+- Discovery
+- Pairing
+- Authentication reuse
+- Initial synchronization
+- Event stream connection
+- Light control
+- Group control
+- Scene activation
+- Network interruption
+- Bridge IP change
+- Invalid credential
+- Partial resource failure
+
+## 36.3 Hardware Tests
+
+Real-device testing should include:
+
+- Hue Bridge v2
+- White-only light
+- White ambiance light
+- Color light
+- Gradient light where available
+- Smart plug
+- Motion sensor
+- Dimmer switch or Smart Button
+- Multiple rooms
+- At least one zone
+- Multiple Hue scenes
+
+## 36.4 Network Tests
+
+Test under:
+
+- Normal Wi-Fi
+- High latency
+- Packet loss
+- Bridge restart
+- Router restart
+- Phone switches Wi-Fi networks
+- Local network permission denied
+- Internet unavailable but LAN available
+
+## 36.5 Mocking
+
+Every API surface and event-stream behavior must be mockable.
+
+Fixtures should include:
+
+- Small home
+- Large home
+- Unsupported resource
+- Malformed event
+- Duplicate event
+- Out-of-order event
+- Partial API response
+- Authentication failure
+
+---
+
+# 37. Failure Scenarios
+
+## Scenario A: Bridge is offline
+
+Expected behavior:
+
+- Show cached bridge immediately
+- Mark it offline after reachability check
+- Retry with backoff
+- Avoid repeated banners
+- Provide diagnostics shortcut
+
+## Scenario B: Bridge IP changed
+
+Expected behavior:
+
+- Detect failed connection
+- Run targeted rediscovery
+- Match stable bridge identifier
+- Update host address
+- Reconnect automatically
+
+## Scenario C: Credential invalidated
+
+Expected behavior:
+
+- Stop unauthorized retries
+- Preserve device layout and room assignments
+- Ask the user to press the link button and pair again
+
+## Scenario D: One light is unreachable
+
+Expected behavior:
+
+- Keep the bridge online
+- Mark only the affected light unavailable
+- Allow other lights and scenes to function
+
+## Scenario E: Event stream disconnects
+
+Expected behavior:
+
+- Begin reconnect backoff
+- Enable limited polling fallback
+- Restore event-driven mode automatically
+
+---
+
+# 38. Acceptance Criteria
+
+The Hue integration is ready for initial release when all of the following are true:
+
+- Aura discovers a local Hue Bridge v2 automatically
+- A user can pair by pressing the physical bridge button
+- Credentials are stored securely in Keychain
+- Paired bridges reconnect after app relaunch
+- Bridge IP changes are recovered through rediscovery
+- Lights are mapped into Aura devices
+- Hue rooms can be mapped to Aura rooms
+- Zones are represented without incorrectly becoming rooms
+- Individual lights can be turned on and off
+- Brightness can be adjusted smoothly
+- Color temperature is supported where available
+- Color control is supported where available
+- Grouped room control uses grouped resources where possible
+- Hue scenes can be activated from Aura
+- Hue actions can be added to Aura Scenes
+- Event-stream updates refresh UI state
+- Polling fallback works after event-stream failure
+- Unreachable devices do not disable the entire bridge
+- Unsupported controls are hidden
+- Network and authentication errors are user-friendly
+- Diagnostics expose bridge health without exposing secrets
+- Core behavior is covered by automated tests
+- Real hardware tests pass on the target Hue Bridge
+
+---
+
+# 39. Future Enhancements
+
+Potential future work:
+
+- Hue Entertainment streaming
+- TV and gaming light sync
+- Music-reactive lighting
+- Advanced gradient editor
+- Dynamic scene speed control
+- Scene preview
+- Adaptive circadian lighting
+- Cross-bridge scene coordination
+- Bridge migration assistance
+- Firmware update awareness
+- HomeKit and Hue route reconciliation
+- Matter-aware duplicate handling
+- Apple Watch lighting controls
+- Siri and App Intent support
+- Live Activities for temporary lighting states
+
+---
+
+# 40. Golden Rule
+
+Aura should make an entire Hue installation feel like one coherent, immediate and calm lighting system.
+
+The user should experience light, rooms and scenes.
+
+The user should not experience bridge resources, API versions, network retries or color-space conversions.
+
+---
+
+End of Document
