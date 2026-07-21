@@ -1,0 +1,681 @@
+# Aura
+## Aura Design Language (ADL)
+Version: 1.0
+Status: Draft
+Owner: Daniel Hagen
+Project: Aura Platform
+Document ID: AURA-03
+
+Dependencies
+
+• AURA-00 Product Vision
+• AURA-01 Product Requirements
+• AURA-02 Brand Guidelines
+
+---
+
+# Purpose
+
+Aura Design Language (ADL) defines every visual, interactive and emotional rule of the Aura Platform.
+
+It is the single source of truth for designers, developers and AI-assisted development.
+
+No interface element may be created without following this document.
+
+---
+
+# Design Philosophy
+
+Aura is designed around one belief:
+
+Technology should disappear.
+
+Users should never feel like they are operating machines.
+
+They should feel like they are interacting with their home.
+
+Every screen should communicate calmness, confidence and clarity.
+
+---
+
+# Core Principles
+
+## Calm
+
+The interface never competes for attention.
+
+Information appears only when needed.
+
+Nothing flashes.
+
+Nothing blinks.
+
+Nothing moves without purpose.
+
+---
+
+## Clear
+
+Every screen answers one question.
+
+"What can I do here?"
+
+If the answer is not immediately obvious, the design has failed.
+
+---
+
+## Consistent
+
+Spacing.
+
+Typography.
+
+Animation.
+
+Colors.
+
+Corners.
+
+Everything follows predictable rules.
+
+Consistency builds confidence.
+
+---
+
+## Adaptive
+
+Aura adapts to:
+
+Current room
+
+Connected devices
+
+Time of day
+
+Current activity
+
+Lighting conditions
+
+Device availability
+
+Without requiring user configuration.
+
+---
+
+## Human
+
+Aura never feels mechanical.
+
+Animations are smooth.
+
+Language is natural.
+
+Controls feel physical.
+
+Transitions feel intentional.
+
+---
+
+# Visual Hierarchy
+
+Every screen follows this order.
+
+1 Primary Focus
+
+The most important action.
+
+Large.
+
+Clear.
+
+Immediate.
+
+---
+
+2 Supporting Information
+
+Status.
+
+Context.
+
+Secondary controls.
+
+---
+
+3 Details
+
+Technical information.
+
+Diagnostics.
+
+Advanced settings.
+
+Never compete with the primary content.
+
+---
+
+# Layout System
+
+Aura uses a strict grid.
+
+Large margins.
+
+Large spacing.
+
+Minimal visual noise.
+
+Everything aligns.
+
+Nothing floats randomly.
+
+Whitespace is intentional.
+
+---
+
+# Navigation Philosophy
+
+Maximum depth:
+
+Three levels.
+
+Example
+
+Home
+
+↓
+
+Living Room
+
+↓
+
+Television
+
+Never deeper.
+
+If additional depth is required, redesign the feature.
+
+---
+
+# Screen Structure
+
+Every screen follows the same structure.
+
+Navigation Bar
+
+↓
+
+Hero Content
+
+↓
+
+Primary Controls
+
+↓
+
+Secondary Controls
+
+↓
+
+Additional Information
+
+↓
+
+Context Actions
+
+This hierarchy never changes.
+
+---
+
+# Cards
+
+Cards are the primary interface element.
+
+Every card has one responsibility.
+
+A card should never attempt to solve multiple unrelated problems.
+
+Cards may expand but never become confusing.
+
+---
+
+Card Anatomy
+
+Header
+
+Status
+
+Primary Content
+
+Primary Action
+
+Optional Secondary Action
+
+Context Menu
+
+---
+
+# Floating Elements
+
+Floating controls should be rare.
+
+Allowed:
+
+Floating Scene Button
+
+Floating Search
+
+Floating Diagnostics
+
+Avoid floating menus.
+
+---
+
+# Buttons
+
+Primary
+
+Filled
+
+Largest emphasis
+
+One per screen whenever possible.
+
+---
+
+Secondary
+
+Outlined
+
+Less visual weight.
+
+---
+
+Tertiary
+
+Text only.
+
+---
+
+Danger
+
+Red.
+
+Only for destructive actions.
+
+---
+
+Never place two Primary buttons next to each other.
+
+---
+
+# Icons
+
+Use Apple's SF Symbols whenever possible.
+
+Icons should always support text.
+
+Never rely on icons alone.
+
+Size consistency is mandatory.
+
+---
+
+# Color Usage
+
+Color communicates meaning.
+
+Never decoration.
+
+Blue
+
+Interactive
+
+Green
+
+Success
+
+Orange
+
+Attention
+
+Red
+
+Problem
+
+Gray
+
+Inactive
+
+No other semantic colors should exist.
+
+---
+
+# Typography
+
+Hierarchy
+
+Large Title
+
+Screen Titles
+
+Title
+
+Sections
+
+Headline
+
+Cards
+
+Body
+
+Descriptions
+
+Caption
+
+Metadata
+
+Only these styles are permitted.
+
+---
+
+# Information Density
+
+Aura prefers showing less.
+
+Additional details appear only when requested.
+
+Examples
+
+Tap
+
+Expand
+
+Long Press
+
+Context Menu
+
+---
+
+# Interaction Rules
+
+Tap
+
+Primary interaction.
+
+Double Tap
+
+Never required.
+
+Long Press
+
+Reveal advanced actions.
+
+Swipe
+
+Navigation or card actions.
+
+Pinch
+
+Reserved for future interfaces.
+
+---
+
+# Gestures
+
+Never invent custom gestures.
+
+Follow iOS conventions.
+
+Users should never need instructions.
+
+---
+
+# Feedback
+
+Every action receives feedback.
+
+Visual
+
+Animation
+
+Haptic
+
+State Change
+
+Errors include explanation.
+
+Not codes.
+
+---
+
+# States
+
+Every interactive component supports:
+
+Default
+
+Focused
+
+Pressed
+
+Loading
+
+Disabled
+
+Success
+
+Warning
+
+Error
+
+Offline
+
+Unknown
+
+---
+
+# Loading
+
+Avoid spinners.
+
+Prefer:
+
+Skeleton placeholders.
+
+Progressive loading.
+
+Animated placeholders.
+
+Instant transitions.
+
+---
+
+# Empty States
+
+Empty screens should educate.
+
+Never simply display:
+
+"No Data"
+
+Instead
+
+"No scenes yet.
+
+Create your first scene to automate your home."
+
+---
+
+# Errors
+
+Errors should solve problems.
+
+Every error includes:
+
+What happened
+
+Why
+
+How to fix it
+
+Retry
+
+---
+
+# Motion
+
+Motion explains.
+
+Never decorates.
+
+Animation should communicate:
+
+Movement
+
+Hierarchy
+
+Focus
+
+Completion
+
+State Change
+
+---
+
+# Haptics
+
+Every important action receives tactile confirmation.
+
+Minor actions do not.
+
+The home should feel physical.
+
+---
+
+# Sound
+
+Optional.
+
+Minimal.
+
+Soft.
+
+Never distracting.
+
+---
+
+# Shadows
+
+Shadows communicate depth.
+
+Never realism.
+
+Soft.
+
+Wide.
+
+Subtle.
+
+---
+
+# Blur
+
+Blur separates layers.
+
+Never hides information.
+
+Glass should remain readable.
+
+---
+
+# Corners
+
+Aura uses one corner radius system.
+
+No arbitrary radii.
+
+Consistency is required.
+
+---
+
+# Accessibility
+
+Every feature must support:
+
+VoiceOver
+
+Dynamic Type
+
+Reduce Motion
+
+High Contrast
+
+Large Touch Targets
+
+One-handed operation
+
+Accessibility is a design requirement.
+
+Not an enhancement.
+
+---
+
+# Responsiveness
+
+The interface should always feel alive.
+
+Interactions begin immediately.
+
+Animations never block interaction.
+
+Content updates progressively.
+
+---
+
+# Design Checklist
+
+Before approving any screen ask:
+
+Does it feel calm?
+
+Can a first-time user understand it?
+
+Is there unnecessary information?
+
+Can one element be removed?
+
+Does every component have a purpose?
+
+Does it follow iOS conventions?
+
+Would this still look modern in five years?
+
+If any answer is "No"
+
+The screen is not finished.
+
+---
+
+# Golden Rule
+
+When in doubt...
+
+Remove.
+
+Simplify.
+
+Refine.
+
+Never add complexity unless it creates measurable value.
+
+---
+
+# ADL Motto
+
+Design less.
+
+Experience more.
+
+---
+
+End of Document
