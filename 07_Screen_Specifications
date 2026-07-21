@@ -1,0 +1,669 @@
+# Aura
+## Screen Specifications
+Version: 1.0
+Status: Draft
+Owner: Daniel Hagen
+Project: Aura Platform
+Document ID: AURA-07
+
+Dependencies
+
+• AURA-03 Aura Design Language
+• AURA-04 Design Tokens
+• AURA-05 Information Architecture
+• AURA-06 User Flows
+
+---
+
+# Purpose
+
+This document specifies every screen in the Aura Platform.
+
+Each screen includes:
+
+• Purpose
+• Layout
+• Components
+• Navigation
+• Data Sources
+• States
+• Animations
+• Haptics
+• Accessibility
+• Acceptance Criteria
+
+This document is the implementation blueprint for every SwiftUI screen.
+
+---
+
+==================================================
+SCREEN 01
+Home Dashboard
+==================================================
+
+Purpose
+
+The Home Dashboard is the heart of Aura.
+
+Users should immediately understand the current state of their home and complete the most common actions without navigating elsewhere.
+
+---
+
+Primary Goal
+
+Answer one question:
+
+"What do I want to do right now?"
+
+---
+
+Layout
+
+Navigation Bar
+
+↓
+
+Greeting / Home Name
+
+↓
+
+Suggested Activity
+
+↓
+
+Current Room
+
+↓
+
+Favorite Devices
+
+↓
+
+Scenes
+
+↓
+
+Recent Activity
+
+↓
+
+Status Cards
+
+---
+
+Components
+
+• Greeting Header
+• Home Status Card
+• Suggested Scene Card
+• Favorites Grid
+• Room Shortcut
+• Recent Activity Timeline
+• Device Status Indicators
+
+---
+
+Data Sources
+
+Aura Core
+
+↓
+
+Room Manager
+
+↓
+
+Scene Engine
+
+↓
+
+Device Engine
+
+↓
+
+Diagnostics
+
+---
+
+Animations
+
+Header fade-in
+
+Cards slide upward
+
+Status updates crossfade
+
+Suggestions gently animate
+
+---
+
+Haptics
+
+Light selection when tapping cards.
+
+Medium feedback when launching a Scene.
+
+---
+
+Loading State
+
+Skeleton cards
+
+Animated placeholders
+
+No spinner
+
+---
+
+Offline State
+
+Previously cached information remains visible.
+
+Offline badge displayed.
+
+Retry button available.
+
+---
+
+Accessibility
+
+VoiceOver support
+
+Dynamic Type
+
+Minimum touch target 44pt
+
+Reduce Motion support
+
+---
+
+Acceptance Criteria
+
+Dashboard loads in under 500ms.
+
+Most common actions require two taps or fewer.
+
+---
+
+==================================================
+SCREEN 02
+Room Detail
+==================================================
+
+Purpose
+
+Display everything related to one physical room.
+
+Example
+
+Living Room
+
+---
+
+Layout
+
+Navigation Bar
+
+↓
+
+Room Header
+
+↓
+
+Current Activity
+
+↓
+
+Device Grid
+
+↓
+
+Lighting Controls
+
+↓
+
+Media Controls
+
+↓
+
+Scenes
+
+↓
+
+Sensors
+
+↓
+
+Settings
+
+---
+
+Components
+
+Room Header
+
+Device Cards
+
+Light Group Card
+
+Media Card
+
+Sensor Card
+
+Scene List
+
+Room Settings
+
+---
+
+States
+
+Empty
+
+Loading
+
+Offline
+
+Normal
+
+Error
+
+---
+
+Animations
+
+Hero header expands.
+
+Cards appear with staggered animation.
+
+Device state changes crossfade.
+
+---
+
+Acceptance Criteria
+
+Every device in the room is visible without unnecessary scrolling.
+
+---
+
+==================================================
+SCREEN 03
+Device Detail
+==================================================
+
+Purpose
+
+Provide complete control of one device.
+
+---
+
+Layout
+
+Device Hero
+
+↓
+
+Current Status
+
+↓
+
+Primary Controls
+
+↓
+
+Advanced Controls
+
+↓
+
+Diagnostics
+
+↓
+
+Settings
+
+---
+
+Example
+
+Philips Television
+
+Power
+
+Volume
+
+Input
+
+Remote
+
+Picture
+
+Sound
+
+Information
+
+---
+
+Device Types
+
+Television
+
+Apple TV
+
+Hue Light
+
+Camera
+
+Speaker
+
+Sensor
+
+Smart Plug
+
+Each device type injects its own control panel while sharing the same overall layout.
+
+---
+
+==================================================
+SCREEN 04
+Scene Detail
+==================================================
+
+Purpose
+
+Allow users to inspect, run and edit a Scene.
+
+---
+
+Layout
+
+Hero Banner
+
+↓
+
+Scene Description
+
+↓
+
+Affected Devices
+
+↓
+
+Action Timeline
+
+↓
+
+Run Button
+
+↓
+
+Edit Button
+
+↓
+
+History
+
+---
+
+Components
+
+Large Run Button
+
+Preview Cards
+
+Device List
+
+Automation Summary
+
+History Timeline
+
+---
+
+States
+
+Running
+
+Completed
+
+Scheduled
+
+Disabled
+
+Failed
+
+---
+
+Acceptance Criteria
+
+Running a Scene should never require more than one tap.
+
+---
+
+==================================================
+SCREEN 05
+Automation Detail
+==================================================
+
+Purpose
+
+Configure and manage automated workflows.
+
+---
+
+Sections
+
+Trigger
+
+Conditions
+
+Actions
+
+Schedule
+
+History
+
+Logs
+
+---
+
+Users should understand an Automation without reading technical terminology.
+
+---
+
+==================================================
+SCREEN 06
+Device Discovery
+==================================================
+
+Purpose
+
+Help users add new devices.
+
+---
+
+Layout
+
+Search Animation
+
+↓
+
+Found Devices
+
+↓
+
+Recommended Devices
+
+↓
+
+Manual Setup
+
+---
+
+States
+
+Searching
+
+Found
+
+No Devices
+
+Failed
+
+---
+
+Acceptance Criteria
+
+Discovery starts automatically.
+
+Progress is always visible.
+
+---
+
+==================================================
+SCREEN 07
+Diagnostics
+==================================================
+
+Purpose
+
+Explain problems.
+
+Not expose them.
+
+---
+
+Layout
+
+Device Health
+
+↓
+
+Current Problems
+
+↓
+
+Suggested Solutions
+
+↓
+
+Advanced Diagnostics
+
+↓
+
+Logs
+
+---
+
+Priority
+
+Simple explanation first.
+
+Technical details second.
+
+---
+
+==================================================
+SCREEN 08
+Settings
+==================================================
+
+Sections
+
+Appearance
+
+Home
+
+Rooms
+
+Devices
+
+Scenes
+
+Automation
+
+Privacy
+
+Accessibility
+
+Notifications
+
+Developer
+
+About
+
+---
+
+Settings should never exceed three navigation levels.
+
+---
+
+==================================================
+GLOBAL SCREEN RULES
+==================================================
+
+Every screen must include:
+
+Loading State
+
+Empty State
+
+Offline State
+
+Error State
+
+Accessibility Support
+
+Motion Support
+
+Dark Appearance
+
+Haptic Feedback
+
+Analytics Events
+
+---
+
+Every screen must restore:
+
+Scroll Position
+
+Expanded Sections
+
+Selected Filters
+
+Navigation Context
+
+---
+
+Performance Targets
+
+Launch
+
+<1.5 seconds
+
+Screen Transition
+
+<250ms
+
+Animation
+
+60 FPS minimum
+
+120 FPS on supported devices
+
+Memory
+
+Minimal allocations during scrolling
+
+---
+
+Golden Rule
+
+A screen should communicate its purpose within three seconds.
+
+If users hesitate,
+
+the screen should be redesigned.
+
+---
+
+End of Document
