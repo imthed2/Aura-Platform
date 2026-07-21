@@ -1,0 +1,530 @@
+# Aura
+## Brand Guidelines
+Version: 1.0
+Status: Draft
+Owner: Daniel Hagen
+Project: Aura
+Document ID: AURA-02
+
+Dependencies
+
+• AURA-00 Product Vision
+• AURA-01 Product Requirements
+
+---
+
+# Brand Overview
+
+Aura is not simply an application.
+
+Aura is a premium digital product designed to become the most elegant way to interact with the modern home.
+
+Every visual decision must communicate:
+
+• Simplicity
+• Intelligence
+• Calm
+• Confidence
+• Premium Quality
+
+Aura should never feel technical.
+
+Aura should feel inevitable.
+
+---
+
+# Brand Position
+
+Aura sits between
+
+Apple Home
+
+Philips Hue
+
+Philips TV
+
+Apple TV
+
+without competing against them.
+
+Aura connects them together.
+
+---
+
+# Brand Promise
+
+One Home.
+
+One Interface.
+
+One Experience.
+
+---
+
+# Product Personality
+
+Aura should feel like a person.
+
+Characteristics
+
+Calm
+
+Minimal
+
+Confident
+
+Thoughtful
+
+Elegant
+
+Reliable
+
+Invisible
+
+Timeless
+
+Never
+
+Loud
+
+Playful
+
+Cheap
+
+Overdesigned
+
+Aggressive
+
+Corporate
+
+---
+
+# Emotional Design
+
+When users open Aura they should immediately feel
+
+Comfort
+
+Control
+
+Peace
+
+Luxury
+
+Warmth
+
+The interface should reduce stress.
+
+Never create it.
+
+---
+
+# Brand Values
+
+Design First
+
+Every screen should be beautiful before adding features.
+
+---
+
+Experience Before Technology
+
+Technology exists only to support the experience.
+
+---
+
+Speed Matters
+
+Waiting destroys immersion.
+
+Everything should feel immediate.
+
+---
+
+Privacy Matters
+
+The home belongs to the user.
+
+Not to the cloud.
+
+---
+
+Human First
+
+Every interaction should feel natural.
+
+Never robotic.
+
+---
+
+# Tone of Voice
+
+Aura never shouts.
+
+Never uses excessive punctuation.
+
+Never uses emojis.
+
+Never uses technical language unless requested.
+
+Instead Aura speaks clearly.
+
+Examples
+
+Good
+
+Movie Night is ready.
+
+Good Night activated.
+
+Living Room lights are now dimmed.
+
+Apple TV is available.
+
+Avoid
+
+Success!!
+
+Connecting...
+
+Loading...
+
+Initializing API...
+
+Unknown Error 0x00342
+
+---
+
+# Naming Style
+
+Aura uses simple words.
+
+Movie Night
+
+Gaming
+
+Relax
+
+Good Night
+
+Living Room
+
+Bedroom
+
+Kitchen
+
+Never
+
+Execute Automation
+
+Entertainment Profile
+
+Lighting Preset
+
+---
+
+# Logo Philosophy
+
+The logo should be recognizable at 24 pixels.
+
+Simple.
+
+Timeless.
+
+Minimal.
+
+The logo should feel closer to Apple Health than Philips Hue.
+
+No gradients inside the symbol.
+
+No unnecessary detail.
+
+---
+
+# Icon Philosophy
+
+Every icon should use the same visual language.
+
+Rounded.
+
+Simple.
+
+Thin.
+
+Balanced.
+
+Icons must never dominate the interface.
+
+---
+
+# Photography
+
+Aura avoids photography whenever possible.
+
+Instead use
+
+Soft illustrations
+
+Minimal gradients
+
+Ambient lighting
+
+Simple shapes
+
+Photography is reserved only for
+
+Camera previews
+
+TV artwork
+
+Media artwork
+
+---
+
+# Color Philosophy
+
+Aura is not a black interface.
+
+Aura is built around deep midnight tones.
+
+The interface should resemble
+
+A quiet room at night.
+
+Soft ambient lighting.
+
+Not darkness.
+
+---
+
+# Material Philosophy
+
+Aura uses layered surfaces.
+
+Glass.
+
+Depth.
+
+Light.
+
+Motion.
+
+Cards should appear to float.
+
+Not stack.
+
+---
+
+# Typography Philosophy
+
+Typography is the primary visual element.
+
+Large titles.
+
+Generous spacing.
+
+Minimal text.
+
+Never use long paragraphs inside the interface.
+
+One action.
+
+One sentence.
+
+---
+
+# White Space
+
+Whitespace is a feature.
+
+Never fill space simply because it exists.
+
+Every screen should breathe.
+
+---
+
+# Buttons
+
+Buttons should feel physical.
+
+Rounded.
+
+Large.
+
+Easy to hit.
+
+Never tiny.
+
+Never crowded.
+
+---
+
+# Cards
+
+Cards are Aura's primary building block.
+
+Every card contains
+
+Title
+
+Status
+
+Primary Action
+
+Secondary Information
+
+Optional Context Menu
+
+Cards should never exceed one primary purpose.
+
+---
+
+# Motion Philosophy
+
+Motion should communicate
+
+State
+
+Hierarchy
+
+Direction
+
+Feedback
+
+Never decoration.
+
+---
+
+# Haptic Philosophy
+
+Every important action deserves physical confirmation.
+
+Not every tap.
+
+---
+
+# Sound Philosophy
+
+Aura should be nearly silent.
+
+Only meaningful actions receive subtle sound feedback.
+
+---
+
+# Accessibility Philosophy
+
+Beautiful design must never reduce accessibility.
+
+Accessibility is not optional.
+
+It is part of good design.
+
+---
+
+# Branding Keywords
+
+Premium
+
+Modern
+
+Scandinavian
+
+Warm
+
+Minimal
+
+Elegant
+
+Confident
+
+Calm
+
+Human
+
+Timeless
+
+---
+
+# Inspiration
+
+Apple
+
+Tesla
+
+Bang & Olufsen
+
+Nothing
+
+Linear
+
+Notion
+
+Arc Browser
+
+Sonos
+
+VisionOS
+
+---
+
+# Things Aura Never Copies
+
+Material Design
+
+Gaming dashboards
+
+RGB interfaces
+
+Corporate enterprise software
+
+Old universal remote controls
+
+Skeuomorphic buttons
+
+---
+
+# Brand Test
+
+Every new screen should answer these questions
+
+Does it feel calm?
+
+Does it feel premium?
+
+Does it reduce complexity?
+
+Would Apple ship something with similar attention to detail?
+
+Would the interface still look modern in five years?
+
+If any answer is "No"
+
+The screen should be redesigned.
+
+---
+
+# Internal Design Rule
+
+If something can be removed...
+
+Remove it.
+
+If something can be simplified...
+
+Simplify it.
+
+If something can disappear completely...
+
+That is the preferred solution.
+
+---
+
+# Brand Motto
+
+Technology fades.
+
+Home remains.
+
+---
+
+End of Document
