@@ -1,7 +1,7 @@
 # Aura
 ## Apple TV Integration
-Version: 1.1
-Status: Scope blocked pending ADR-007 product review
+Version: 1.2
+Status: Product-required; implementation blocked pending compliant control route
 Owner: Daniel Hagen
 Project: Aura Platform
 Document ID: AURA-13
@@ -28,17 +28,19 @@ Instead, Aura complements the Apple TV experience.
 
 # Current Public API Gate
 
-`ADR/ADR-007-apple-tv-public-capability-scope.md` is the authority for implementation scope.
+`ADR/ADR-007-apple-tv-public-capability-scope.md` records the public capability assessment and the product decision to retain direct Apple TV control in Version 1.
 
 The remainder of this document records the desired product experience. It is not evidence that Apple provides a public API for those capabilities.
 
 The current assessment found no public iPhone API for a third-party app to pair with and directly control Apple TV system navigation, power, playback, Now Playing state or applications. Aura must not implement those capabilities through private or reverse-engineered protocols.
 
-Until ADR-007 is accepted or superseded:
+The proposal to omit direct Apple TV control was rejected. Apple TV remains a Version 1 requirement, but implementation is blocked until a public, App Store-compatible route is verified or a separate ADR explicitly changes Aura's distribution and protocol-risk constraints.
+
+While blocked:
 
 • No production Apple TV plugin may be implemented
 • No Apple TV pairing credential may be created or stored
-• No direct Apple TV command may appear in an Aura Scene
+• No direct Apple TV command may execute in a production Aura Scene
 • Unsupported controls must remain absent from production UI
 • Mock Apple TV data is preview-only and does not prove capability support
 
@@ -484,7 +486,7 @@ Simulator Testing
 
 # Acceptance Criteria
 
-These criteria are inactive while ADR-007 remains Proposed. Acceptance requires a verified public API and a superseding architecture decision; private or reverse-engineered behavior cannot satisfy them.
+These criteria remain the required product outcome, but they cannot pass until a compliant implementation route is verified and approved. Private or reverse-engineered behavior cannot satisfy them under the current repository rules.
 
 Apple TV is discovered automatically.
 

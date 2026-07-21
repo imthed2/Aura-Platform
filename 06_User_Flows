@@ -289,7 +289,7 @@ Reduce Brightness
 
 Done
 
-Apple TV scope note: `Turn Apple TV On` is aspirational pending ADR-007. When no accepted public capability exists, the Scene must omit this command or present it as an external user action. Aura must not report the Apple TV step as successful without verified execution.
+Apple TV scope note: `Turn Apple TV On` remains required target behavior. ADR-007 records that its implementation is blocked pending a compliant direct-control route. Aura must not ship or report this step as successful without verified execution.
 
 Expected completion
 

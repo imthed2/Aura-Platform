@@ -1,6 +1,6 @@
 # ADR-007: Apple TV public capability scope
 
-- Status: Proposed — product-scope approval required
+- Status: Rejected — product requires direct Apple TV control
 - Date: 2026-07-21
 
 ## Context
@@ -47,26 +47,32 @@ The beta `RunSystemShortcutIntent` announced in 2026 is limited to a person-conf
 
 Handoff transfers an activity between apps signed by the same developer team so the receiving app can continue that activity. A future Aura tvOS companion could continue Aura-owned state, but Handoff cannot control the Apple TV system UI or other tvOS apps.
 
-## Decision
+## Product decision
 
-Aura Version 1 will not implement a direct Apple TV plugin unless Apple publishes a suitable public API and this ADR is superseded.
+On 2026-07-21, the product owner rejected the proposal to omit direct Apple TV control from Aura Version 1. Direct Apple TV control remains a required part of the intended premium experience.
 
-Specifically:
+This decision does not create an API that Apple has not published, and it does not override Aura's prohibition on private Apple APIs. Instead, Apple TV becomes an explicit Version 1 release blocker until the team verifies a public, App Store-compatible implementation route or the product owner separately changes the distribution and protocol-risk constraints through a superseding ADR.
+
+The required product outcome remains direct discovery and pairing, power, navigation, playback control, and trustworthy status reporting. The exact minimum capability set may be reduced only through a separate product decision.
+
+## Implementation boundary while blocked
+
+Until a compliant route is verified:
 
 1. Aura will not implement or ship reverse-engineered Apple TV, MediaRemote, Companion, AirPlay-control, or other undocumented protocols.
-2. Aura will not perform direct Apple TV discovery, pairing, credential storage, remote navigation, wake, sleep, playback control, Now Playing reads, artwork reads, application detection, or status polling.
+2. Aura will not ship direct Apple TV discovery, pairing, credential storage, remote navigation, wake, sleep, playback control, Now Playing reads, artwork reads, application detection, or status polling.
 3. Unsupported Apple TV controls remain absent from production UI. Mock Apple TV data may be used only in clearly identified preview and layout fixtures; it is not capability evidence.
 4. Aura may explain how to use Apple's Control Center remote, but it will not use an undocumented URL scheme or private API to open or embed it.
 5. Aura may present `AVRoutePickerView` only in a feature where Aura owns the media being routed. AirPlay routing is not represented as an Apple TV device capability.
 6. The HomeKit integration may report aggregate home-hub availability and may map public television-related services that actually appear at runtime. It must not infer that a hub is an Apple TV or that Apple TV is controllable.
 7. Future Aura App Intents expose only Aura-owned actions. A user-composed Shortcut may coordinate system Apple TV actions with Aura actions, but execution is external and cannot be reported as a confirmed Apple TV step inside an Aura Scene.
 8. A future Aura tvOS companion and Handoff flow require a separate product and architecture decision. Such an app would control only Aura-owned experiences.
-9. Scene validation rejects direct Apple TV command steps while this decision is active. Existing aspirational flows must omit the step or label it as an external, unverified user action; they must never report synthetic success.
+9. Scene validation rejects executable Apple TV command steps while the integration is blocked. Product flows may retain those steps as required target behavior, but production Scenes must never report synthetic success.
 10. Diagnostics reports the capability route as unavailable or system-managed. It does not fabricate connection, authentication, playback, or command health.
 
 ## Capability matrix
 
-| Product desire | Public surface reviewed | Version 1 decision |
+| Required capability | Public surface reviewed | Current implementation state |
 | --- | --- | --- |
 | Discover and pair Apple TV | Control Center Remote; AirPlay system UI; installed public SDK | Not available to Aura |
 | Directional, Select, Back, Home, TV, Menu | Game Controller receives input inside an app | Not available to Aura |
@@ -91,21 +97,22 @@ Specifically:
 
 ## Consequences
 
-- The Version 1 product scope is smaller than `01_Product_Requirements` and `13_Apple_TV` currently describe.
-- Movie Night cannot guarantee waking or controlling Apple TV. Television HDMI-CEC behavior may occur independently but cannot be attributed to a successful Aura Apple TV action.
+- Version 1 is not Apple TV-complete until a compliant direct-control route is verified and implemented.
+- Movie Night retains direct Apple TV control as target behavior, but cannot guarantee it while the integration is blocked. Television HDMI-CEC behavior may occur independently but cannot be attributed to a successful Aura Apple TV action.
 - Users retain Apple's full Control Center Remote experience and may compose their own Shortcuts with future Aura App Intents.
 - Aura avoids private protocol maintenance, credential risk, App Review risk, and false success reporting.
 - This ADR must be revisited when Apple publishes a relevant public API, when HomeKit hardware enumeration provides new public characteristics, or before adding an Aura tvOS companion.
 
-## Acceptance gates
+## Replacement decision gates
 
-This ADR may become Accepted after product review confirms:
+This rejected ADR may be superseded only after one of these routes is documented and approved:
 
-- Version 1 can omit direct Apple TV control
-- Apple TV controls are removed or clearly gated in production information architecture
-- Scene definitions cannot contain unsupported Apple TV commands
-- Marketing and acceptance criteria do not promise direct Apple TV control
-- User-facing system handoff language does not imply that Aura executed or verified the action
+- Apple publishes a public iPhone API that supports the required direct-control capabilities
+- Apple grants Aura a documented entitlement or partner capability suitable for consumer App Store distribution
+- A public HomeKit or other Apple framework exposes the required Apple TV services at runtime and hardware tests verify them
+- The product owner explicitly changes Aura's distribution model and accepts the legal, App Review, security, reliability, and maintenance consequences of an undocumented protocol in a separate ADR
+
+Any replacement must define pairing, credential protection, stable identity, command acknowledgement, failure semantics, tvOS compatibility testing, App Review evidence, and removal behavior if Apple changes the protocol.
 
 ## First-party references
 

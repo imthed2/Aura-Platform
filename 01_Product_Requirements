@@ -278,7 +278,7 @@ Now Playing
 
 Scope Gate
 
-The requirements below are aspirational pending product approval of `ADR/ADR-007-apple-tv-public-capability-scope.md`. They are not authorized Version 1 implementation requirements while no suitable public Apple TV control API exists.
+Direct Apple TV control remains a Version 1 product requirement. `ADR/ADR-007-apple-tv-public-capability-scope.md` records that the proposal to omit it was rejected. Implementation is blocked until a public, App Store-compatible control route is verified or a separate ADR explicitly changes Aura's distribution and protocol-risk constraints.
 
 Required
 
@@ -810,7 +810,7 @@ Aura Version 1.0 is considered complete when users can:
 
 ✓ Control their Philips TV
 
-✓ Apple TV behavior matches the accepted public capability scope in ADR-007
+✓ Directly control Apple TV through an accepted, verified implementation route
 
 ✓ Control Hue lighting
 
