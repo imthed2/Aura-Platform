@@ -1,0 +1,863 @@
+# Aura
+## Product Requirements Document (PRD)
+Version: 1.0
+Status: Draft
+Owner: Daniel Hagen
+Project: Aura
+Document ID: AURA-01
+Dependencies:
+- AURA-00 Product Vision
+
+---
+
+# Purpose
+
+This document defines exactly what Aura is required to do.
+
+It serves as the functional contract between Product Design, Development, Testing and AI development tools such as Codex.
+
+Every feature implemented in Aura must originate from this document.
+
+---
+
+# Product Summary
+
+Aura is a premium smart home dashboard for iPhone that unifies televisions, streaming devices, lighting, home automation and smart accessories into one seamless experience.
+
+Aura does not replace manufacturer applications.
+
+Aura becomes the primary interface used every day.
+
+---
+
+# Product Goals
+
+Aura must allow users to:
+
+• Control entertainment devices
+• Control lighting
+• Build scenes
+• Build automations
+• Monitor device status
+• Reduce interaction complexity
+• Replace multiple manufacturer apps for daily use
+
+---
+
+# Non Goals
+
+Aura is NOT intended to:
+
+• Replace Apple Home
+• Replace Philips Hue
+• Replace tvOS
+• Replace Home Assistant
+• Become a programming platform
+
+Aura focuses on premium everyday usability.
+
+---
+
+# Supported Platforms
+
+Initial Release
+
+• iPhone (Portrait Only)
+
+Future Releases
+
+• iPad
+• Apple Watch
+• Mac
+• visionOS
+
+---
+
+# Minimum iOS Version
+
+iOS 18+
+
+Preferred Development Target
+
+Latest public iOS SDK
+
+---
+
+# Supported Device Types
+
+Entertainment
+
+• Philips TV
+• Apple TV
+• PlayStation
+• HDMI Sources
+
+Lighting
+
+• Philips Hue
+• HomeKit Lights
+
+Home
+
+• HomePod
+• Cameras
+• Motion Sensors
+• Temperature Sensors
+• Contact Sensors
+• Smart Plugs
+
+Future
+
+• Matter
+• Thread
+• Sonos
+• Smart Locks
+• Thermostats
+
+---
+
+# Core Modules
+
+Aura consists of independent modules.
+
+Every module must function independently.
+
+Modules communicate only through the Core Engine.
+
+Modules include:
+
+Dashboard
+
+Device Engine
+
+TV Module
+
+Apple TV Module
+
+Hue Module
+
+HomeKit Module
+
+Scene Engine
+
+Automation Engine
+
+Settings
+
+Diagnostics
+
+Networking
+
+---
+
+# Functional Requirements
+
+## Dashboard
+
+The dashboard shall display:
+
+Current Room
+
+Current Scene
+
+Current TV Status
+
+Current HDMI Input
+
+Volume
+
+Lighting Summary
+
+Camera Status
+
+Home Status
+
+Connected Devices
+
+Favorites
+
+Suggested Actions
+
+Recent Activity
+
+Quick Controls
+
+---
+
+## Device Management
+
+Aura shall:
+
+Automatically discover supported devices
+
+Store discovered devices securely
+
+Allow manual addition
+
+Allow renaming
+
+Allow assigning icons
+
+Allow grouping
+
+Allow assigning rooms
+
+Allow hiding devices
+
+Allow favorite devices
+
+Allow sorting
+
+---
+
+## Philips TV Module
+
+Required Features
+
+Power
+
+Standby
+
+Volume
+
+Mute
+
+Channel
+
+Navigation
+
+OK
+
+Back
+
+Home
+
+Menu
+
+Source Selection
+
+HDMI Switching
+
+Playback Controls
+
+Sleep Timer
+
+Picture Mode
+
+Audio Mode
+
+Network Status
+
+Device Status
+
+Remote Keyboard (if supported)
+
+Current Source
+
+Current Volume
+
+Wake TV
+
+Power Off
+
+EasyLink Detection
+
+API Version Detection
+
+Future
+
+Ambilight Control
+
+Installed Apps
+
+Now Playing
+
+---
+
+## Apple TV Module
+
+Required
+
+Wake
+
+Sleep
+
+Navigation
+
+Touch Surface
+
+Select
+
+Back
+
+Home
+
+TV Button
+
+Playback
+
+Play
+
+Pause
+
+Fast Forward
+
+Rewind
+
+Current Status
+
+Future
+
+Now Playing
+
+App Detection
+
+Media Artwork
+
+Media Progress
+
+Volume
+
+---
+
+## PlayStation Module
+
+Initial Version
+
+Device Detection
+
+HDMI Switching
+
+Gaming Scene
+
+Game Mode Suggestion
+
+Future
+
+Console Detection
+
+PlayStation Network
+
+Activity Cards
+
+---
+
+## Hue Module
+
+Required
+
+Discover Bridge
+
+Authenticate
+
+Rooms
+
+Zones
+
+Lights
+
+Groups
+
+Brightness
+
+Color
+
+Temperature
+
+Scenes
+
+Transitions
+
+Power
+
+Status
+
+Unavailable Detection
+
+Future
+
+Entertainment Areas
+
+Dynamic Effects
+
+Sync
+
+---
+
+## HomeKit Module
+
+Required
+
+Read Home Structure
+
+Read Rooms
+
+Read Accessories
+
+Read Services
+
+Read Characteristics
+
+Control Supported Accessories
+
+Read Sensor States
+
+Read Camera Status
+
+Home Status
+
+Home Hub Status
+
+Future
+
+Shared Homes
+
+Guest Access
+
+---
+
+## Camera Module
+
+Display
+
+Online Status
+
+Offline Status
+
+Battery
+
+Recording State
+
+Motion
+
+Live Preview (where available)
+
+Privacy Indicator
+
+---
+
+## Scene Engine
+
+Users shall be able to create:
+
+Movie Night
+
+Gaming
+
+Relax
+
+Reading
+
+Away
+
+Good Night
+
+Custom Scenes
+
+Every Scene contains:
+
+Actions
+
+Delay
+
+Conditions
+
+Completion
+
+Errors
+
+Priority
+
+---
+
+## Automation Engine
+
+Supported Triggers
+
+Time
+
+Sunrise
+
+Sunset
+
+Motion
+
+No Motion
+
+Device Online
+
+Device Offline
+
+TV On
+
+TV Off
+
+HDMI Change
+
+Arrival
+
+Departure
+
+Scene Finished
+
+Manual
+
+Supported Actions
+
+Turn On
+
+Turn Off
+
+Brightness
+
+Color
+
+Temperature
+
+TV Commands
+
+Notifications
+
+Run Scene
+
+Wait
+
+Conditional Branch
+
+Future
+
+Variables
+
+Nested Scenes
+
+Templates
+
+---
+
+# Dashboard Cards
+
+Cards available
+
+TV
+
+Apple TV
+
+PS5
+
+Hue
+
+Camera
+
+Home
+
+Weather (Future)
+
+Energy (Future)
+
+Media
+
+Favorites
+
+Every card shall support:
+
+Expand
+
+Collapse
+
+Refresh
+
+Status
+
+Context Menu
+
+Animation
+
+---
+
+# Search
+
+Aura shall include universal search.
+
+Searchable
+
+Devices
+
+Rooms
+
+Scenes
+
+Automations
+
+Settings
+
+Actions
+
+---
+
+# Settings
+
+Appearance
+
+Accent Color
+
+Animations
+
+Haptics
+
+Diagnostics
+
+Privacy
+
+HomeKit
+
+Hue
+
+TV
+
+Apple TV
+
+Developer
+
+Backup
+
+Restore
+
+Logs
+
+About
+
+---
+
+# Diagnostics
+
+Required
+
+Network Test
+
+TV Test
+
+Hue Test
+
+HomeKit Test
+
+Apple TV Test
+
+Latency Test
+
+Device Discovery
+
+API Status
+
+Connection Logs
+
+Export Logs
+
+---
+
+# Notifications
+
+Aura may notify users only when meaningful.
+
+Examples
+
+Movie Ready
+
+Gaming Ready
+
+TV Offline
+
+Bridge Offline
+
+Automation Failed
+
+Low Battery
+
+Never send promotional notifications.
+
+---
+
+# Security Requirements
+
+Store credentials securely
+
+Use Keychain
+
+Never store passwords in plaintext
+
+Never transmit unnecessary data
+
+Local first architecture
+
+TLS where available
+
+---
+
+# Performance Requirements
+
+Cold Launch
+
+< 1.5 seconds
+
+Dashboard Refresh
+
+< 500 ms
+
+Animation FPS
+
+60 FPS minimum
+
+120 FPS on supported devices
+
+Discovery Timeout
+
+5 seconds
+
+Maximum Memory
+
+250 MB target
+
+---
+
+# Accessibility
+
+Dynamic Type
+
+VoiceOver
+
+High Contrast
+
+Reduce Motion
+
+Color Blind Friendly
+
+Large Controls
+
+Left Hand Mode
+
+Right Hand Mode
+
+Haptic Alternatives
+
+---
+
+# Offline Behaviour
+
+Previously discovered devices remain visible.
+
+Unavailable devices are clearly indicated.
+
+Cached scenes remain editable.
+
+Dashboard continues functioning.
+
+---
+
+# Error Handling
+
+Every error shall include:
+
+Title
+
+Description
+
+Suggested Solution
+
+Retry
+
+Diagnostic Information
+
+---
+
+# Future Requirements
+
+Apple Watch
+
+Widgets
+
+Control Center
+
+Dynamic Island
+
+Live Activities
+
+Shortcuts
+
+Matter
+
+Thread
+
+Energy Monitoring
+
+Multiple Homes
+
+Cloud Backup
+
+AI Suggestions
+
+visionOS
+
+---
+
+# Acceptance Criteria
+
+Aura Version 1.0 is considered complete when users can:
+
+✓ Discover their devices automatically
+
+✓ Control their Philips TV
+
+✓ Control Apple TV
+
+✓ Control Hue lighting
+
+✓ Access HomeKit devices
+
+✓ Build custom scenes
+
+✓ Create automations
+
+✓ Monitor diagnostics
+
+✓ Personalize the interface
+
+✓ Use Aura as their primary smart home application
+
+---
+
+# Product Success Metrics
+
+Average launch time under 1.5 seconds.
+
+95% successful device discovery.
+
+95% successful scene execution.
+
+Crash-free sessions above 99.8%.
+
+Average interaction requires no more than two taps.
+
+System Usability Scale (SUS) score above 90.
+
+App Store rating target: 4.8 or higher.
+
+---
+
+# Requirement Priority
+
+P0 — Critical
+Must ship in Version 1.0.
+
+P1 — High
+Ships shortly after launch.
+
+P2 — Medium
+Planned future improvements.
+
+P3 — Low
+Experimental features.
+
+Every new feature proposed for Aura must be assigned one of these priority levels before implementation.
+
+---
+
+End of Document
