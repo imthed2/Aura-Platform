@@ -1,0 +1,1696 @@
+# Aura
+## App Architecture
+
+Version: 1.0  
+Status: Draft  
+Owner: Daniel Hagen  
+Project: Aura Platform  
+Document ID: AURA-20
+
+## Dependencies
+
+- AURA-00 Product Vision
+- AURA-01 Product Requirements
+- AURA-03 Aura Design Language
+- AURA-04 Design Tokens
+- AURA-05 Information Architecture
+- AURA-05.5 Navigation System
+- AURA-06 User Flows
+- AURA-07 Screen Specifications
+- AURA-08 Component Library
+- AURA-09 Interaction Guidelines
+- AURA-10 Motion System
+- AURA-11 Haptics
+- AURA-12 Philips TV Integration
+- AURA-13 Apple TV Integration
+- AURA-14 HomeKit Integration
+- AURA-15 Philips Hue Bridge Integration
+- AURA-16 Device Discovery
+- AURA-17 Scene Engine
+- AURA-18 Automation Engine
+- AURA-19 Diagnostics
+- AURA-21 Codex Rules
+
+---
+
+# 1. Purpose
+
+This document defines the authoritative software architecture for Aura.
+
+It translates Aura's product vision, interaction model, platform integrations and engine specifications into one implementable iOS architecture.
+
+The architecture must allow Aura to remain:
+
+- Local-first
+- Modular
+- Testable
+- Secure
+- Responsive
+- Recoverable
+- Capability-driven
+- Accessible
+- Maintainable by both human developers and AI-assisted development tools
+
+This document is the primary technical contract for the codebase.
+
+When another document describes product intent and this document defines implementation boundaries, both must be satisfied. When two technical documents conflict, the conflict must be resolved explicitly rather than hidden inside implementation code.
+
+---
+
+# 2. Architectural Vision
+
+Aura is one application experience built from independent platform services and device integrations.
+
+The user sees:
+
+```text
+Home
+Rooms
+Scenes
+Devices
+Settings
+```
+
+The codebase sees:
+
+```text
+Presentation
+Application
+Domain
+Infrastructure
+Integrations
+Platform Services
+Persistence
+Diagnostics
+```
+
+No screen should know how a Philips TV, Hue Bridge, HomeKit accessory or Apple TV communicates.
+
+No integration should decide navigation, visual styling or product copy.
+
+No engine should depend on SwiftUI.
+
+No vendor response model should become an Aura domain model.
+
+---
+
+# 3. Architecture Goals
+
+The architecture shall:
+
+- Preserve clear dependency direction.
+- Keep SwiftUI isolated from networking and vendor frameworks.
+- Support independent integration development.
+- Support deterministic unit testing.
+- Use Swift concurrency safely.
+- Avoid shared mutable state outside controlled actors.
+- Support partial failure.
+- Preserve device identity across network changes.
+- Support optimistic UI without corrupting confirmed state.
+- Make diagnostics available across every subsystem.
+- Allow unsupported capabilities to remain absent rather than simulated.
+- Support future iPad, Apple Watch, Mac and visionOS clients without rewriting the core domain.
+- Remain practical for a small development team.
+
+---
+
+# 4. Non-Goals
+
+Version 1 does not aim to:
+
+- Create a distributed cloud backend.
+- Build a generic scripting platform.
+- Reimplement Home Assistant.
+- Support arbitrary third-party plugins downloaded at runtime.
+- Share vendor framework objects between modules.
+- Guarantee background execution beyond current iOS capabilities.
+- Hide all complexity inside one global singleton.
+- Use microservices inside the mobile application.
+- Introduce abstraction layers with no current responsibility.
+
+Architecture must reduce complexity, not manufacture it.
+
+---
+
+# 5. Core Principles
+
+## 5.1 Dependency Direction
+
+Dependencies flow inward.
+
+```text
+Presentation
+    ↓
+Application
+    ↓
+Domain
+    ↑
+Infrastructure and Integrations implement Domain contracts
+```
+
+The Domain layer must not import SwiftUI, UIKit, HomeKit, Network.framework or vendor-specific modules.
+
+## 5.2 One Source of Truth per Concern
+
+Examples:
+
+- Device identity: Unified Device Registry
+- Scene execution: Scene Engine
+- Automation execution: Automation Engine
+- Diagnostics issues: Diagnostics Center
+- Navigation state: Navigation Store
+- User preferences: Settings Repository
+- Credentials: Credential Store
+
+Two modules must not independently own the same state.
+
+## 5.3 Immutable Snapshots
+
+UI and cross-module communication should prefer immutable Sendable snapshots.
+
+Mutable framework or network objects remain inside their owning boundary.
+
+## 5.4 Capability-Driven Behavior
+
+The UI renders available capabilities.
+
+It must not infer capability from manufacturer name alone.
+
+## 5.5 Partial Failure
+
+One failed device, provider or action must not collapse the entire app.
+
+Failures remain scoped whenever possible.
+
+## 5.6 Local First
+
+Normal home operation should not require Aura-operated cloud infrastructure.
+
+## 5.7 Explicit Side Effects
+
+Network commands, persistence writes, notifications and haptics must occur through named services.
+
+Business logic must not hide side effects inside property observers or view bodies.
+
+---
+
+# 6. High-Level System Architecture
+
+```mermaid
+flowchart TD
+    UI[SwiftUI Presentation] --> APP[Application Layer]
+    APP --> DOMAIN[Domain Layer]
+    APP --> REGISTRY[Unified Device Registry]
+    APP --> SCENES[Scene Engine]
+    APP --> AUTOMATIONS[Automation Engine]
+    APP --> DIAGNOSTICS[Diagnostics Center]
+    REGISTRY --> PLUGINS[Integration Plugin Registry]
+    PLUGINS --> TV[Philips TV Plugin]
+    PLUGINS --> ATV[Apple TV Plugin]
+    PLUGINS --> HK[HomeKit Plugin]
+    PLUGINS --> HUE[Hue Plugin]
+    PLUGINS --> FUTURE[Future Plugins]
+    TV --> NETWORK[Networking]
+    ATV --> NETWORK
+    HUE --> NETWORK
+    HK --> APPLE[Apple Frameworks]
+    DOMAIN --> PERSISTENCE[Persistence Contracts]
+    PERSISTENCE --> LOCAL[Local Storage]
+    DIAGNOSTICS --> LOGS[Structured Logging]
+```
+
+---
+
+# 7. Layer Responsibilities
+
+## 7.1 Presentation Layer
+
+Owns:
+
+- SwiftUI screens
+- View composition
+- View-specific state
+- Accessibility presentation
+- Navigation bindings
+- Motion and haptic requests
+- User-facing copy
+
+Does not own:
+
+- Networking
+- Persistence
+- Vendor APIs
+- Scene execution logic
+- Automation evaluation
+- Device identity
+- Retry policy
+
+## 7.2 Application Layer
+
+Owns use cases and orchestration.
+
+Examples:
+
+- Load dashboard
+- Run scene
+- Add device
+- Change device state
+- Create automation
+- Run diagnostics
+- Restore navigation
+
+Application services translate user intent into domain operations.
+
+## 7.3 Domain Layer
+
+Owns:
+
+- Core entities
+- Value objects
+- Capability model
+- Command model
+- Scene definitions
+- Automation definitions
+- Errors
+- Policies
+- Repository protocols
+
+The Domain layer must remain platform-independent Swift where practical.
+
+## 7.4 Infrastructure Layer
+
+Owns technical implementations of domain contracts.
+
+Examples:
+
+- File persistence
+- Keychain
+- Network clients
+- Clock
+- Logger
+- App lifecycle adapter
+- Notification scheduling
+
+## 7.5 Integration Layer
+
+Owns vendor and framework adapters.
+
+Each integration contains:
+
+- Discovery provider
+- Pairing coordinator
+- API or framework adapter
+- Resource mapper
+- Capability resolver
+- Command executor
+- Event synchronizer
+- Diagnostics provider
+
+---
+
+# 8. Recommended Repository Structure
+
+```text
+Aura/
+├── App/
+│   ├── AuraApp.swift
+│   ├── AppBootstrapper.swift
+│   ├── AppEnvironment.swift
+│   ├── AppLifecycleCoordinator.swift
+│   └── RootView.swift
+├── Domain/
+│   ├── Devices/
+│   ├── Capabilities/
+│   ├── Commands/
+│   ├── Rooms/
+│   ├── Scenes/
+│   ├── Automations/
+│   ├── Diagnostics/
+│   ├── Settings/
+│   └── Shared/
+├── Application/
+│   ├── Dashboard/
+│   ├── DeviceControl/
+│   ├── Discovery/
+│   ├── Scenes/
+│   ├── Automations/
+│   ├── Diagnostics/
+│   └── Settings/
+├── Presentation/
+│   ├── Navigation/
+│   ├── Screens/
+│   ├── Components/
+│   ├── DesignSystem/
+│   ├── Motion/
+│   ├── Haptics/
+│   └── Accessibility/
+├── Integrations/
+│   ├── PhilipsTV/
+│   ├── AppleTV/
+│   ├── HomeKit/
+│   ├── Hue/
+│   └── Shared/
+├── Platform/
+│   ├── Networking/
+│   ├── Persistence/
+│   ├── Security/
+│   ├── Logging/
+│   ├── Notifications/
+│   └── SystemServices/
+├── Features/
+│   ├── Home/
+│   ├── Rooms/
+│   ├── Scenes/
+│   ├── Devices/
+│   ├── Automations/
+│   ├── Diagnostics/
+│   └── Settings/
+├── Resources/
+├── PreviewSupport/
+└── Tests/
+```
+
+Feature folders may compose types from the shared layers but must not duplicate domain logic.
+
+---
+
+# 9. Module Boundaries
+
+Initial code may live in one Xcode application target while preserving logical module boundaries.
+
+As the project grows, recommended Swift packages are:
+
+```text
+AuraDomain
+AuraApplication
+AuraDesignSystem
+AuraDiagnostics
+AuraSceneEngine
+AuraAutomationEngine
+AuraDeviceDiscovery
+AuraIntegrations
+AuraTestSupport
+```
+
+Vendor integrations may later become separate packages when their dependencies and build times justify it.
+
+Do not split into packages merely for appearance.
+
+A package boundary is justified when it improves:
+
+- Compilation isolation
+- Test isolation
+- Ownership
+- Reuse
+- Dependency control
+
+---
+
+# 10. App Bootstrap
+
+Application startup must be staged.
+
+```mermaid
+sequenceDiagram
+    participant App
+    participant Bootstrap
+    participant Stores
+    participant Registry
+    participant Engines
+    participant UI
+
+    App->>Bootstrap: Start
+    Bootstrap->>Stores: Load local preferences and metadata
+    Bootstrap->>Registry: Restore known devices
+    Bootstrap->>Engines: Start scene and automation services
+    Bootstrap->>Registry: Start integrations
+    Bootstrap-->>UI: Publish usable cached state
+    Registry-->>UI: Publish live updates progressively
+```
+
+Recommended phases:
+
+1. Construct dependencies
+2. Load critical settings
+3. Restore navigation state
+4. Restore cached devices and rooms
+5. Initialize registries and engines
+6. Present usable UI
+7. Start live synchronization
+8. Run deferred health checks
+
+The app must not block initial rendering while every device reconnects.
+
+---
+
+# 11. App Environment
+
+Use one explicit dependency container created at startup.
+
+```swift
+struct AppEnvironment: Sendable {
+    let deviceRegistry: any DeviceRegistryProviding
+    let sceneEngine: any SceneEngineProviding
+    let automationEngine: any AutomationEngineProviding
+    let discoveryService: any DeviceDiscovering
+    let diagnosticsCenter: any DiagnosticsProviding
+    let settingsRepository: any SettingsRepository
+    let navigationStore: NavigationStore
+    let haptics: any HapticProviding
+    let logger: any AuraLogging
+    let clock: any AuraClock
+}
+```
+
+The environment is composition, not business logic.
+
+Avoid a mutable service locator that any code can query globally.
+
+Dependencies should be injected into feature roots or application services.
+
+---
+
+# 12. Unified Domain Model
+
+## 12.1 Device Identity
+
+```swift
+struct AuraDeviceID: Hashable, Codable, Sendable {
+    let rawValue: UUID
+}
+```
+
+A device's Aura identity must remain stable when:
+
+- IP address changes
+- Device name changes
+- Room changes
+- App restarts
+- Integration reconnects
+
+## 12.2 Device Snapshot
+
+```swift
+struct AuraDeviceSnapshot: Identifiable, Sendable, Equatable {
+    let id: AuraDeviceID
+    let sourceRoutes: [DeviceRouteDescriptor]
+    let displayName: String
+    let category: DeviceCategory
+    let roomID: AuraRoomID?
+    let availability: AuraAvailability
+    let capabilities: Set<AuraCapabilityDescriptor>
+    let state: AuraDeviceState
+    let metadata: AuraDeviceMetadata
+    let updatedAt: Date
+}
+```
+
+## 12.3 Capability Descriptor
+
+```swift
+struct AuraCapabilityDescriptor: Hashable, Sendable, Codable {
+    let id: AuraCapabilityID
+    let kind: AuraCapabilityKind
+    let access: CapabilityAccess
+    let constraints: CapabilityConstraints?
+    let routePreference: DeviceRoutePreference?
+}
+```
+
+Capabilities define what the application may offer.
+
+---
+
+# 13. Unified Device Registry
+
+The Unified Device Registry is the authoritative source for logical devices.
+
+It owns:
+
+- Device identity
+- Source routes
+- Deduplication results
+- Current snapshots
+- Room assignments
+- Preferred control route
+- Capability aggregation
+- Availability aggregation
+
+```swift
+actor UnifiedDeviceRegistry {
+    private var devices: [AuraDeviceID: AuraDeviceSnapshot] = [:]
+    private var routes: [AuraDeviceID: [DeviceRoute]] = [:]
+
+    func apply(_ update: PluginDeviceUpdate) async
+    func snapshot() -> DeviceRegistrySnapshot
+    func device(id: AuraDeviceID) -> AuraDeviceSnapshot?
+    func execute(_ command: AuraDeviceCommand) async throws -> AuraCommandResult
+}
+```
+
+The registry must not contain vendor API models.
+
+---
+
+# 14. Multiple Routes for One Device
+
+The same physical device may be available through several sources.
+
+Example:
+
+```text
+Hue Light
+├── Direct Hue route
+└── HomeKit route
+```
+
+Route selection should consider:
+
+- Capability completeness
+- Reliability
+- Latency
+- Current availability
+- Security
+- User preference
+- Command type
+
+A route decision must be observable in diagnostics.
+
+The UI normally shows one logical device.
+
+---
+
+# 15. Plugin Architecture
+
+Each integration conforms to a shared contract.
+
+```swift
+protocol AuraDevicePlugin: Sendable {
+    var identifier: PluginIdentifier { get }
+
+    func start() async throws
+    func stop() async
+    func snapshot() async -> PluginSnapshot
+    func execute(_ command: RoutedDeviceCommand) async throws -> AuraCommandResult
+    func refresh(_ request: PluginRefreshRequest) async throws
+    func diagnostics() async -> PluginDiagnosticsSnapshot
+}
+```
+
+Optional capabilities may be represented by additional protocols:
+
+```swift
+protocol AuraDiscoveryPlugin: AuraDevicePlugin
+protocol AuraPairingPlugin: AuraDevicePlugin
+protocol AuraEventStreamingPlugin: AuraDevicePlugin
+protocol AuraSceneActionPlugin: AuraDevicePlugin
+protocol AuraAutomationEventPlugin: AuraDevicePlugin
+```
+
+Avoid one enormous protocol with methods irrelevant to most integrations.
+
+---
+
+# 16. Plugin Lifecycle
+
+```mermaid
+stateDiagram-v2
+    [*] --> Registered
+    Registered --> Starting
+    Starting --> Ready
+    Starting --> Degraded
+    Starting --> Failed
+    Ready --> Synchronizing
+    Synchronizing --> Ready
+    Ready --> Degraded
+    Degraded --> Ready
+    Ready --> Stopping
+    Degraded --> Stopping
+    Stopping --> Stopped
+```
+
+Plugin failure must not terminate the application.
+
+A failed plugin should publish an honest health state and remain retryable.
+
+---
+
+# 17. Command Architecture
+
+All device actions become normalized commands.
+
+```swift
+struct AuraDeviceCommand: Sendable, Identifiable {
+    let id: UUID
+    let deviceID: AuraDeviceID
+    let capabilityID: AuraCapabilityID
+    let operation: AuraCommandOperation
+    let origin: CommandOrigin
+    let correlationID: CorrelationID
+    let requestedAt: Date
+}
+```
+
+Command origins include:
+
+- User interface
+- Scene
+- Automation
+- Shortcut
+- Recovery action
+- Diagnostic test
+
+The command path is:
+
+```text
+User Intent
+↓
+Application Use Case
+↓
+Unified Device Registry
+↓
+Route Selection
+↓
+Integration Plugin
+↓
+Device
+↓
+Normalized Result
+```
+
+---
+
+# 18. Command Results
+
+```swift
+enum AuraCommandResult: Sendable, Equatable {
+    case confirmed(AuraDeviceStateDelta)
+    case acceptedPending(PendingCommandReference)
+    case partialSuccess([AuraCommandSubresult])
+    case rejected(AuraCommandError)
+}
+```
+
+A network request returning success does not always mean the device state is confirmed.
+
+The architecture must distinguish:
+
+- Dispatched
+- Accepted
+- Confirmed
+- Failed
+- Timed out
+- Unknown outcome
+
+---
+
+# 19. Optimistic State
+
+Optimistic UI is allowed for reversible, low-risk actions.
+
+The registry or command coordinator owns optimistic state.
+
+SwiftUI views must not invent confirmed device state.
+
+```text
+Confirmed State
++
+Pending Command Overlay
+=
+Display State
+```
+
+Security-sensitive operations must wait for confirmation.
+
+---
+
+# 20. Event Architecture
+
+Integrations publish normalized events.
+
+```swift
+struct AuraEvent: Sendable, Identifiable {
+    let id: UUID
+    let source: AuraEventSource
+    let kind: AuraEventKind
+    let payload: AuraEventPayload
+    let occurredAt: Date
+    let receivedAt: Date
+    let correlationID: CorrelationID?
+}
+```
+
+The event pipeline supports:
+
+- Device state synchronization
+- Automation triggers
+- Scene progress
+- Diagnostics
+- Recent activity
+
+Events must be deduplicated where providers may repeat them.
+
+---
+
+# 21. Event Bus Rules
+
+Aura may use an internal typed event hub.
+
+It must not become an unstructured global notification center.
+
+Rules:
+
+- Events are typed.
+- Producers are identifiable.
+- Consumers subscribe explicitly.
+- Delivery supports cancellation.
+- Ordering expectations are documented.
+- Slow consumers do not block producers.
+- Retention is bounded.
+
+Use `AsyncStream` or another structured Swift concurrency mechanism where appropriate.
+
+---
+
+# 22. Scene Engine Integration
+
+The Scene Engine receives domain actions, not vendor requests.
+
+It depends on:
+
+- Device Registry
+- Clock
+- Diagnostics
+- Scene Repository
+- Haptic and notification application services where needed
+
+The Scene Engine must remain independent from SwiftUI.
+
+Scene progress is published as immutable snapshots.
+
+---
+
+# 23. Automation Engine Integration
+
+The Automation Engine subscribes to normalized events and time sources.
+
+It depends on:
+
+- Event hub
+- Scene Engine
+- Device Registry
+- Automation Repository
+- Clock and scheduler abstractions
+- Diagnostics
+
+It must enforce:
+
+- Deduplication
+- Cooldowns
+- Loop protection
+- Correlation IDs
+- Execution limits
+
+It must not assume unrestricted iOS background execution.
+
+---
+
+# 24. Diagnostics Architecture
+
+Every major subsystem provides diagnostics through a common interface.
+
+```swift
+protocol DiagnosticsProvider: Sendable {
+    var subsystemID: DiagnosticsSubsystemID { get }
+    func snapshot() async -> DiagnosticsSnapshot
+    func run(_ test: DiagnosticsTestRequest) async -> DiagnosticsTestResult
+}
+```
+
+The Diagnostics Center aggregates:
+
+- Health
+- Issues
+- Recovery suggestions
+- Recent failures
+- Latency
+- State freshness
+- Configuration warnings
+
+Diagnostics must never become a backdoor around module boundaries.
+
+---
+
+# 25. Persistence Strategy
+
+Aura uses local persistence for:
+
+- User settings
+- Device identity mappings
+- Room assignments
+- Scene definitions
+- Automation definitions
+- Cached snapshots
+- Navigation restoration
+- Diagnostic history
+
+Credentials and secrets belong in Keychain.
+
+The architecture should support a repository abstraction:
+
+```swift
+protocol SceneRepository: Sendable {
+    func loadAll() async throws -> [AuraScene]
+    func save(_ scene: AuraScene) async throws
+    func delete(id: AuraSceneID) async throws
+}
+```
+
+---
+
+# 26. Persistence Technology
+
+The final implementation may use SwiftData, Core Data or a lightweight file-backed store depending on model complexity and deployment target validation.
+
+The domain must not depend directly on the selected persistence framework.
+
+Persistence entities and domain entities may differ.
+
+Mapping must be explicit.
+
+Do not expose managed objects to views or engines.
+
+---
+
+# 27. Cache Policy
+
+Caches improve startup but are not always authoritative.
+
+Each cached value should define:
+
+- Source
+- Timestamp
+- Freshness policy
+- Sensitivity
+- Whether it may be shown while stale
+
+Examples:
+
+May be shown stale:
+
+- Device name
+- Room assignment
+- Last selected input
+- Last brightness
+
+Must not appear confirmed when stale:
+
+- Lock state
+- Alarm state
+- Garage door state
+- Security sensor state
+
+---
+
+# 28. Security Architecture
+
+Security requirements:
+
+- Store secrets in Keychain.
+- Never log credentials.
+- Validate untrusted network responses.
+- Use TLS where required.
+- Pin or verify local-device identity where the integration requires it.
+- Redact exported diagnostics.
+- Avoid raw private metadata in analytics.
+- Separate user-facing errors from technical errors.
+- Limit payload sizes and timeouts.
+- Cancel stale network work.
+
+Security decisions must be implemented in shared services where possible, not repeated inconsistently in each screen.
+
+---
+
+# 29. Privacy Architecture
+
+Aura is local-first.
+
+By default, Aura must not upload:
+
+- Device names
+- Room names
+- Scene names
+- Local IP addresses
+- Viewing history
+- Motion history
+- HomeKit structure
+- Bridge credentials
+- Automation activity
+
+Future cloud features require separate documentation, explicit consent and a data-flow review.
+
+---
+
+# 30. Networking Architecture
+
+Shared networking provides:
+
+- Request construction
+- Timeouts
+- Cancellation
+- Retry classification
+- TLS handling
+- Response-size limits
+- Structured logging
+- Metrics
+
+Vendor semantics remain inside each integration.
+
+```swift
+protocol AuraHTTPClient: Sendable {
+    func send<Response: Decodable & Sendable>(
+        _ request: AuraHTTPRequest,
+        response: Response.Type
+    ) async throws -> Response
+}
+```
+
+Retry policy must distinguish idempotent from non-idempotent operations.
+
+---
+
+# 31. Concurrency Model
+
+Aura uses Swift structured concurrency.
+
+Rules:
+
+- Mutable shared state is actor-isolated.
+- Long-running work supports cancellation.
+- MainActor is reserved for presentation state and framework requirements.
+- Networking never blocks MainActor.
+- Detached tasks are rare and justified.
+- Task ownership is explicit.
+- App lifecycle transitions cancel or suspend appropriate work.
+- Async streams terminate cleanly.
+
+---
+
+# 32. Actor Boundaries
+
+Recommended actors:
+
+- UnifiedDeviceRegistry
+- SceneEngine
+- AutomationEngine
+- DiscoveryCoordinator
+- DiagnosticsCenter
+- Per-integration repositories
+- Persistence coordinators where required
+
+Do not place every service in one global actor.
+
+Actor boundaries should follow state ownership.
+
+---
+
+# 33. MainActor Rules
+
+`@MainActor` may be used for:
+
+- View models
+- Navigation state
+- Presentation coordinators
+- UIKit and SwiftUI adapters
+- Haptic generators where required
+
+Do not mark networking, repositories or engines `@MainActor` merely to silence concurrency warnings.
+
+---
+
+# 34. Presentation State
+
+Feature views consume feature-specific presentation models.
+
+Example:
+
+```swift
+@MainActor
+@Observable
+final class RoomDetailViewModel {
+    private let loadRoom: LoadRoomUseCase
+    private let controlDevice: ControlDeviceUseCase
+
+    private(set) var state: RoomDetailViewState = .loading
+
+    func appear() async
+    func perform(_ intent: RoomDetailIntent) async
+}
+```
+
+A view model should translate domain state into presentation state.
+
+It should not become a general-purpose service container.
+
+---
+
+# 35. State Management
+
+Use the smallest appropriate state owner.
+
+- Local animation state: View
+- Screen state: View model
+- Navigation state: Navigation store
+- Device state: Device Registry
+- Scene execution state: Scene Engine
+- App preferences: Settings Repository
+
+Avoid duplicating the same mutable state across several observable objects.
+
+---
+
+# 36. Navigation Architecture
+
+Use a typed navigation model.
+
+```swift
+enum AuraRoute: Hashable, Codable, Sendable {
+    case home
+    case room(AuraRoomID)
+    case device(AuraDeviceID)
+    case scene(AuraSceneID)
+    case automation(AuraAutomationID)
+    case diagnostics(DiagnosticsRoute)
+    case settings(SettingsRoute)
+}
+```
+
+Navigation state belongs to a dedicated `NavigationStore`.
+
+Deep links resolve into typed routes after validation.
+
+No feature should push arbitrary strings into navigation.
+
+---
+
+# 37. Design System Architecture
+
+The design system contains:
+
+- Colors
+- Typography
+- Spacing
+- Radius
+- Shadows
+- Materials
+- Motion tokens
+- Reusable components
+- Accessibility helpers
+
+No feature may hardcode duplicate visual constants already defined by design tokens.
+
+The design system must not import device or business modules.
+
+---
+
+# 38. Haptics Architecture
+
+Features request semantic haptics.
+
+```swift
+enum AuraHapticEvent: Sendable {
+    case selection
+    case primaryAction
+    case success
+    case warning
+    case failure
+}
+```
+
+A platform haptic service maps semantic events to generators.
+
+Business logic should not construct UIKit feedback generators.
+
+---
+
+# 39. Error Architecture
+
+Errors exist at three levels.
+
+## Technical Errors
+
+Vendor, framework, socket and decoding failures.
+
+## Domain Errors
+
+Normalized errors such as:
+
+- Device unavailable
+- Capability unsupported
+- Authorization denied
+- Command timed out
+- Scene partially failed
+
+## Presentation Errors
+
+User-friendly title, explanation and recovery action.
+
+Raw errors must not leak directly to UI.
+
+---
+
+# 40. Recovery Architecture
+
+Recovery actions are explicit use cases.
+
+Examples:
+
+- Retry command
+- Rediscover device
+- Reconnect event stream
+- Refresh HomeKit
+- Re-pair bridge
+- Open Settings
+- Run diagnostics
+
+Recovery should be safe, bounded and observable.
+
+Do not place complex retry loops inside button actions.
+
+---
+
+# 41. Logging Architecture
+
+Use structured logs with categories.
+
+Recommended fields:
+
+- Timestamp
+- Severity
+- Subsystem
+- Event name
+- Correlation ID
+- Duration
+- Result
+- Redacted metadata
+
+Release logs must avoid user-created names and secrets.
+
+Logging is not analytics.
+
+---
+
+# 42. Correlation IDs
+
+Every multi-step operation should carry a correlation ID.
+
+Examples:
+
+- Scene execution
+- Automation execution
+- Device pairing
+- Discovery session
+- Diagnostic test
+- Command retry
+
+Correlation IDs make cross-module diagnostics possible without exposing private content.
+
+---
+
+# 43. Performance Architecture
+
+Primary targets:
+
+- Cold launch under 1.5 seconds where practical
+- Cached dashboard visible under 500 ms
+- 60 FPS minimum
+- 120 FPS on supported devices
+- No main-thread network operations
+- Bounded memory growth
+- No unbounded logs or event history
+
+Performance-critical paths must be measured on real hardware.
+
+---
+
+# 44. Memory Management
+
+Rules:
+
+- Long-lived streams must terminate.
+- Tasks must not retain screens after dismissal.
+- Delegates and closures require ownership review.
+- Image caches are bounded.
+- Media artwork uses downsampling.
+- Diagnostic history uses retention limits.
+- Integration repositories release network resources when stopped.
+
+Memory leaks are release-blocking defects.
+
+---
+
+# 45. App Lifecycle
+
+The lifecycle coordinator handles:
+
+- Foreground activation
+- Inactive transition
+- Background transition
+- Memory pressure
+- Network path changes
+- Protected data availability
+
+Subsystems receive semantic lifecycle events rather than directly observing every system notification.
+
+---
+
+# 46. Background Execution
+
+Aura must not assume permanent background execution.
+
+Background behavior may include only platform-supported, bounded tasks.
+
+Automations requiring guaranteed always-on operation may depend on external home platforms, HomeKit infrastructure or future companion services.
+
+The UI must communicate reliability honestly.
+
+---
+
+# 47. Notifications
+
+Notifications are requested through an application service.
+
+The service owns:
+
+- Authorization state
+- Category registration
+- Scheduling
+- Deduplication
+- Privacy-safe content
+- Deep-link routing
+
+Engines request notification intent, not system notification objects.
+
+---
+
+# 48. Accessibility Architecture
+
+Accessibility belongs in the architecture, not only in views.
+
+Domain and presentation models should provide enough semantic information for:
+
+- Labels
+- Values
+- Hints
+- State announcements
+- Non-color descriptions
+- Pending and confirmed states
+
+Async updates must preserve VoiceOver focus where possible.
+
+---
+
+# 49. Testing Architecture
+
+## 49.1 Unit Tests
+
+Required for:
+
+- Domain policies
+- Capability mapping
+- Route selection
+- Scene planning
+- Automation evaluation
+- Error translation
+- State reducers
+- Persistence mapping
+
+## 49.2 Integration Tests
+
+Required for:
+
+- Plugin and registry interaction
+- Discovery and pairing
+- Event propagation
+- Scene execution
+- Automation triggers
+- Diagnostics aggregation
+
+## 49.3 UI Tests
+
+Required for critical journeys:
+
+- First launch
+- Add device
+- Run scene
+- Create automation
+- Recover offline device
+- Export diagnostics
+
+## 49.4 Hardware Tests
+
+Initial matrix:
+
+- iPhone 16
+- Philips TV 65PUS7800/12
+- Apple TV 4K first generation
+- Philips Hue Bridge v2
+- HomePod mini
+- HomeKit home
+- PS5 through HDMI workflow
+
+---
+
+# 50. Mocking Strategy
+
+Every external boundary must have a test double.
+
+Examples:
+
+- MockDevicePlugin
+- MockHTTPClient
+- MockHomeKitAdapter
+- MockClock
+- MockScheduler
+- MockCredentialStore
+- MockDiagnosticsProvider
+- MockNotificationService
+
+Mocks should reproduce success, failure, delay, cancellation and malformed input.
+
+---
+
+# 51. Preview Architecture
+
+SwiftUI previews must use deterministic preview environments.
+
+Previews must not:
+
+- Access the local network
+- Request HomeKit permission
+- Read production credentials
+- Depend on real devices
+
+Preview fixtures should cover:
+
+- Loading
+- Ready
+- Offline
+- Partial failure
+- Empty
+- Large Dynamic Type
+- Reduce Motion
+
+---
+
+# 52. Configuration
+
+Build configurations should separate:
+
+- Development
+- Testing
+- Release
+
+Development may enable:
+
+- Debug overlay
+- Mock device injection
+- Extended local logs
+- Latency simulation
+
+Release must disable unsafe developer controls.
+
+---
+
+# 53. Feature Flags
+
+Feature flags may gate incomplete or experimental capabilities.
+
+Flags must be:
+
+- Typed
+- Documented
+- Testable
+- Removable
+
+Do not use scattered string keys.
+
+A feature flag is not a substitute for versioned migration logic.
+
+---
+
+# 54. Data Migration
+
+Persistent models require explicit schema versions.
+
+Migrations must preserve:
+
+- Device identity
+- Room assignments
+- Scenes
+- Automations
+- User preferences
+
+A migration failure must not silently destroy user configuration.
+
+Provide recovery and diagnostics.
+
+---
+
+# 55. Coding Standards
+
+- Prefer value types for domain models.
+- Use actors for owned mutable state.
+- Use protocols at meaningful boundaries.
+- Avoid premature generic frameworks.
+- Keep files focused.
+- Keep functions small enough to reason about.
+- Use explicit names.
+- Avoid abbreviations except established platform terms.
+- Document non-obvious concurrency and recovery decisions.
+
+Detailed AI and coding rules belong in AURA-21.
+
+---
+
+# 56. Dependency Rules
+
+Allowed direction:
+
+```text
+Presentation -> Application -> Domain
+Infrastructure -> Domain
+Integrations -> Domain + approved Platform services
+App Composition -> all modules
+```
+
+Forbidden examples:
+
+- Domain importing SwiftUI
+- Hue importing Philips TV
+- Scene Engine importing a vendor API model
+- UI calling Keychain directly
+- View model owning URLSession
+- Integration pushing navigation routes
+
+---
+
+# 57. Architecture Decision Records
+
+Significant decisions should be recorded as ADRs.
+
+Examples:
+
+- Persistence framework choice
+- Minimum deployment target
+- Package boundaries
+- Apple TV integration approach
+- Philips TV protocol support
+- Background automation strategy
+- Cloud sync introduction
+
+Each ADR should include:
+
+- Context
+- Decision
+- Alternatives
+- Consequences
+- Status
+
+---
+
+# 58. Implementation Sequence
+
+Recommended order:
+
+1. Domain identifiers and models
+2. Design tokens and core components
+3. App environment and bootstrap
+4. Persistence contracts
+5. Unified Device Registry
+6. Discovery coordinator
+7. Mock integration plugin
+8. Dashboard and room presentation
+9. Hue integration
+10. HomeKit integration
+11. Philips TV integration
+12. Scene Engine
+13. Automation Engine
+14. Diagnostics Center
+15. Apple TV features that are verified against public capabilities
+
+Build vertical slices rather than implementing every layer in isolation first.
+
+---
+
+# 59. First Vertical Slice
+
+Recommended first complete slice:
+
+```text
+Launch Aura
+↓
+Show cached Home screen
+↓
+Discover Hue Bridge
+↓
+Pair
+↓
+Show one light
+↓
+Toggle power
+↓
+Reflect confirmed state
+↓
+Run diagnostics on failure
+```
+
+This validates the architecture from UI to real hardware.
+
+---
+
+# 60. Release Readiness Gates
+
+Before Version 1 release:
+
+- No secrets appear in logs.
+- Core engines have automated tests.
+- Plugin failures remain isolated.
+- Navigation restores safely.
+- Device identity survives reconnect and IP changes.
+- Background limitations are represented honestly.
+- Unsupported capabilities remain hidden.
+- Real-hardware tests pass.
+- Accessibility checks pass.
+- Memory and performance targets are measured.
+- Diagnostics exports are sanitized.
+
+---
+
+# 61. Failure Scenarios
+
+## Scenario A: One plugin fails at startup
+
+Expected:
+
+- App opens normally
+- Other integrations continue
+- Failed plugin reports degraded health
+- User receives contextual recovery
+
+## Scenario B: Persistence is unavailable
+
+Expected:
+
+- App avoids destructive overwrite
+- Critical error is diagnosed
+- In-memory fallback may permit limited use
+- Recovery guidance is shown
+
+## Scenario C: Network changes during a command
+
+Expected:
+
+- Outcome becomes confirmed, failed or unknown
+- Unsafe duplicate retry is avoided
+- Targeted rediscovery begins where appropriate
+
+## Scenario D: Scene partially fails
+
+Expected:
+
+- Successful actions remain recorded
+- Failed actions are identified
+- Scene result is partial success
+- Retry may target failed safe actions only
+
+## Scenario E: UI disappears during async work
+
+Expected:
+
+- View-owned tasks cancel
+- Engine-owned operations continue only when appropriate
+- No released view model receives updates
+
+---
+
+# 62. Acceptance Criteria
+
+The App Architecture is accepted when:
+
+1. The codebase has explicit Presentation, Application, Domain, Infrastructure and Integration boundaries.
+2. SwiftUI does not call vendor APIs directly.
+3. Domain models do not import vendor frameworks.
+4. The Unified Device Registry is the source of truth for logical devices.
+5. Device identity remains stable across network address changes.
+6. Integrations conform to shared, minimal contracts.
+7. Scene and Automation Engines operate independently of SwiftUI.
+8. Mutable shared state is actor-isolated.
+9. Every external boundary is mockable.
+10. Credentials are stored only through the approved credential service.
+11. Diagnostics are available across all major subsystems.
+12. Errors are translated before presentation.
+13. Optimistic state never masquerades as confirmed security state.
+14. Navigation uses typed routes.
+15. Cached state allows fast startup without pretending stale state is live.
+16. Plugin failures remain isolated.
+17. App lifecycle and cancellation are handled explicitly.
+18. Core user journeys are covered by automated tests.
+19. Real hardware is used for integration validation.
+20. The architecture supports future clients without requiring vendor logic inside UI layers.
+
+---
+
+# 63. Future Architecture Extensions
+
+Potential future work:
+
+- Shared Swift packages for iPhone, iPad, Watch and Mac
+- Matter commissioning module
+- Thread-aware diagnostics
+- Secure opt-in cloud sync
+- Household collaboration
+- App Intents and Shortcuts package
+- Widgets and Live Activities
+- Apple Watch companion
+- Local hub companion service
+- Energy data pipeline
+- Machine-assisted suggestions with local inference
+
+Every extension must preserve privacy, dependency direction and capability-driven design.
+
+---
+
+# 64. Golden Rule
+
+Aura's architecture should make complex smart-home systems feel simple without making the codebase dishonest about that complexity.
+
+Complexity belongs behind clear boundaries.
+
+The user should experience one calm home.
+
+The codebase should remain a collection of understandable, testable and replaceable systems.
+
+---
+
+End of Document
