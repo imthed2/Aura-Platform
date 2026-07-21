@@ -28,6 +28,9 @@
 		B00000000000000000000013 /* Aura/PreviewSupport/AuraMockData.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000013 /* Aura/PreviewSupport/AuraMockData.swift */; };
 		B00000000000000000000014 /* AuraTests/AuraDomainTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000014 /* AuraTests/AuraDomainTests.swift */; };
 		B00000000000000000000015 /* AuraUITests/AuraUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000015 /* AuraUITests/AuraUITests.swift */; };
+		B00000000000000000000016 /* Aura/Integrations/AppleTV/AppleTVDiscoveryModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000016 /* Aura/Integrations/AppleTV/AppleTVDiscoveryModels.swift */; };
+		B00000000000000000000017 /* Aura/Integrations/AppleTV/AppleTVDiscoveryClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000017 /* Aura/Integrations/AppleTV/AppleTVDiscoveryClient.swift */; };
+		B00000000000000000000018 /* AuraTests/AppleTVDiscoveryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000018 /* AuraTests/AppleTVDiscoveryTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -69,6 +72,10 @@
 		F00000000000000000000013 /* Aura/PreviewSupport/AuraMockData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Aura/PreviewSupport/AuraMockData.swift; sourceTree = SOURCE_ROOT; };
 		F00000000000000000000014 /* AuraTests/AuraDomainTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuraTests/AuraDomainTests.swift; sourceTree = SOURCE_ROOT; };
 		F00000000000000000000015 /* AuraUITests/AuraUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuraUITests/AuraUITests.swift; sourceTree = SOURCE_ROOT; };
+		F00000000000000000000016 /* Aura/Integrations/AppleTV/AppleTVDiscoveryModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Aura/Integrations/AppleTV/AppleTVDiscoveryModels.swift; sourceTree = SOURCE_ROOT; };
+		F00000000000000000000017 /* Aura/Integrations/AppleTV/AppleTVDiscoveryClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Aura/Integrations/AppleTV/AppleTVDiscoveryClient.swift; sourceTree = SOURCE_ROOT; };
+		F00000000000000000000018 /* AuraTests/AppleTVDiscoveryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuraTests/AppleTVDiscoveryTests.swift; sourceTree = SOURCE_ROOT; };
+		F00000000000000000000019 /* Aura/Resources/Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Aura/Resources/Info.plist; sourceTree = SOURCE_ROOT; };
 		F00000000000000000000101 /* Aura.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Aura.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F00000000000000000000102 /* AuraTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AuraTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F00000000000000000000103 /* AuraUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AuraUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -130,6 +137,9 @@
 				F00000000000000000000011 /* Aura/Features/Home/HomeDashboardView.swift */,
 				F00000000000000000000012 /* Aura/Features/Shared/FoundationTabView.swift */,
 				F00000000000000000000013 /* Aura/PreviewSupport/AuraMockData.swift */,
+				F00000000000000000000016 /* Aura/Integrations/AppleTV/AppleTVDiscoveryModels.swift */,
+				F00000000000000000000017 /* Aura/Integrations/AppleTV/AppleTVDiscoveryClient.swift */,
+				F00000000000000000000019 /* Aura/Resources/Info.plist */,
 			);
 			name = Aura;
 			sourceTree = "<group>";
@@ -139,6 +149,7 @@
 			children = (
 				F00000000000000000000014 /* AuraTests/AuraDomainTests.swift */,
 				F00000000000000000000015 /* AuraUITests/AuraUITests.swift */,
+				F00000000000000000000018 /* AuraTests/AppleTVDiscoveryTests.swift */,
 			);
 			name = Tests;
 			sourceTree = "<group>";
@@ -300,6 +311,8 @@
 				B00000000000000000000011 /* Aura/Features/Home/HomeDashboardView.swift in Sources */,
 				B00000000000000000000012 /* Aura/Features/Shared/FoundationTabView.swift in Sources */,
 				B00000000000000000000013 /* Aura/PreviewSupport/AuraMockData.swift in Sources */,
+				B00000000000000000000016 /* Aura/Integrations/AppleTV/AppleTVDiscoveryModels.swift in Sources */,
+				B00000000000000000000017 /* Aura/Integrations/AppleTV/AppleTVDiscoveryClient.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -308,6 +321,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				B00000000000000000000014 /* AuraTests/AuraDomainTests.swift in Sources */,
+				B00000000000000000000018 /* AuraTests/AppleTVDiscoveryTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -342,12 +356,8 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 8Z423BQQT8;
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = Aura;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UIRequiresFullScreen = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Aura/Resources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				MARKETING_VERSION = 0.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.danielhagen.aura;
@@ -365,12 +375,8 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 8Z423BQQT8;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = Aura;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UIRequiresFullScreen = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Aura/Resources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				MARKETING_VERSION = 0.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.danielhagen.aura;
