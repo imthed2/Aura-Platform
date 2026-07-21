@@ -16,6 +16,7 @@ build/
 .swiftpm/
 Packages/
 Package.resolved
+!Aura.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
 
 # Playgrounds
 timeline.xctimeline
@@ -29,4 +30,3 @@ playground.xcworkspace
 .env.*
 !.env.example
 *.xcconfig.local
-

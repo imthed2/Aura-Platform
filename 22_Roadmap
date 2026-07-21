@@ -700,6 +700,8 @@ Every desired feature must be placed into one category:
 
 Category 4 features must not become a production dependency without an explicit product, legal, reliability and App Store decision.
 
+`ADR/ADR-009-personal-apple-tv-protocol-experiment.md` supplies that decision only for the owner's personal TestFlight or direct-Xcode build. It does not authorize public App Store distribution and does not permit Apple private framework calls.
+
 ## Potential P0 Scope
 
 The final P0 scope depends on the feasibility spike.

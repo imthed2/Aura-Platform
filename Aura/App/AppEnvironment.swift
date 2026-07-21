@@ -6,5 +6,5 @@ struct AppEnvironment {
     let haptics: any HapticProviding
     let logger: any AuraLogging
     let clock: any AuraClock
+    let appleTVPairingModel: AppleTVPairingModel
 }
-

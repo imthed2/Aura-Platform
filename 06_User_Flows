@@ -289,6 +289,8 @@ Reduce Brightness
 
 Done
 
+Apple TV scope note: `Turn Apple TV On` remains required target behavior. ADR-007 records that its implementation is blocked pending a compliant direct-control route. Aura must not ship or report this step as successful without verified execution.
+
 Expected completion
 
 Less than five seconds.

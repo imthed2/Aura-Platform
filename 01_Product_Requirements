@@ -276,6 +276,10 @@ Now Playing
 
 ## Apple TV Module
 
+Scope Gate
+
+Direct Apple TV control remains a Version 1 product requirement. `ADR/ADR-007-apple-tv-public-capability-scope.md` records that the proposal to omit it was rejected. `ADR/ADR-009-personal-apple-tv-protocol-experiment.md` authorizes an experimental undocumented LAN implementation for the owner's private TestFlight or direct-Xcode build.
+
 Required
 
 Wake
@@ -806,7 +810,7 @@ Aura Version 1.0 is considered complete when users can:
 
 ✓ Control their Philips TV
 
-✓ Control Apple TV
+✓ Directly control Apple TV through an accepted, verified implementation route
 
 ✓ Control Hue lighting
 
