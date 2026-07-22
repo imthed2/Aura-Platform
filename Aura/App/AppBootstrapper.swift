@@ -23,7 +23,8 @@ enum AppBootstrapper {
             appleTVControlModel: AppleTVControlModel(
                 discovery: discovery,
                 credentialStore: credentialStore,
-                controller: AppleTVCompanionClient(logger: logger)
+                controller: AppleTVCompanionClient(logger: logger),
+                logger: logger
             )
         )
     }

@@ -44,7 +44,7 @@ final class AppleTVPairingModel {
                 phase = .selecting(candidates)
             }
         } catch is CancellationError {
-            return
+            phase = .idle
         } catch {
             phase = .failed(message: "Aura could not scan the local network. Check Local Network access and try again.")
         }
@@ -93,6 +93,29 @@ final class AppleTVPairingModel {
         selectedCandidate = nil
         pin = ""
         phase = .idle
+    }
+
+    @discardableResult
+    func forgetPairing() async -> Bool {
+        await pairing.cancel()
+        do {
+            let credentials = try await credentialStore.loadAll()
+            for credential in credentials {
+                try await credentialStore.remove(credential)
+            }
+            selectedCandidate = nil
+            pin = ""
+            phase = .idle
+            return true
+        } catch is CancellationError {
+            phase = .idle
+            return false
+        } catch {
+            phase = .failed(
+                message: "Aura could not remove the saved Apple TV credential from Keychain. Try again."
+            )
+            return false
+        }
     }
 
     var canSubmitPIN: Bool {

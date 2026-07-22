@@ -207,10 +207,23 @@ struct DevicesView: View {
                     )
                     remoteControls(isEnabled: true)
 
-                case .failed(let message):
-                    AuraBanner(kind: .error, title: "Remote unavailable", message: message)
-                    AuraButton(title: "Reconnect", systemImage: "arrow.clockwise") {
-                        Task { await controlModel.connect() }
+                case .failed(let failure):
+                    AuraBanner(kind: .error, title: failure.title, message: failure.message)
+                    switch failure.recoveryAction {
+                    case .reconnect:
+                        AuraButton(title: "Reconnect", systemImage: "arrow.clockwise") {
+                            Task { await controlModel.recover() }
+                        }
+                        .accessibilityIdentifier("appleTVRecovery.reconnect")
+                    case .pairAgain:
+                        AuraButton(title: "Pair again", systemImage: "link.badge.plus") {
+                            Task {
+                                await controlModel.disconnect()
+                                guard await pairingModel.forgetPairing() else { return }
+                                await pairingModel.discover()
+                            }
+                        }
+                        .accessibilityIdentifier("appleTVRecovery.pairAgain")
                     }
                 }
             }
