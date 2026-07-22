@@ -44,6 +44,10 @@
 		B00000000000000000000023 /* Aura/Integrations/AppleTV/AppleTVCompanionClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000028 /* Aura/Integrations/AppleTV/AppleTVCompanionClient.swift */; };
 		B00000000000000000000024 /* Aura/Features/Devices/AppleTVControlModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000029 /* Aura/Features/Devices/AppleTVControlModel.swift */; };
 		B00000000000000000000025 /* Aura/Features/Devices/AppleTVRemoteControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000030 /* Aura/Features/Devices/AppleTVRemoteControl.swift */; };
+		B00000000000000000000026 /* Aura/Integrations/PhilipsTV/PhilipsTVDiscoveryModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000031 /* Aura/Integrations/PhilipsTV/PhilipsTVDiscoveryModels.swift */; };
+		B00000000000000000000027 /* Aura/Integrations/PhilipsTV/PhilipsTVCompatibilityProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000032 /* Aura/Integrations/PhilipsTV/PhilipsTVCompatibilityProfile.swift */; };
+		B00000000000000000000028 /* Aura/Integrations/PhilipsTV/PhilipsTVDiscoveryClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000033 /* Aura/Integrations/PhilipsTV/PhilipsTVDiscoveryClient.swift */; };
+		B00000000000000000000029 /* AuraTests/PhilipsTVDiscoveryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000034 /* AuraTests/PhilipsTVDiscoveryTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -100,6 +104,10 @@
 		F00000000000000000000028 /* Aura/Integrations/AppleTV/AppleTVCompanionClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Aura/Integrations/AppleTV/AppleTVCompanionClient.swift; sourceTree = SOURCE_ROOT; };
 		F00000000000000000000029 /* Aura/Features/Devices/AppleTVControlModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Aura/Features/Devices/AppleTVControlModel.swift; sourceTree = SOURCE_ROOT; };
 		F00000000000000000000030 /* Aura/Features/Devices/AppleTVRemoteControl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Aura/Features/Devices/AppleTVRemoteControl.swift; sourceTree = SOURCE_ROOT; };
+		F00000000000000000000031 /* Aura/Integrations/PhilipsTV/PhilipsTVDiscoveryModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Aura/Integrations/PhilipsTV/PhilipsTVDiscoveryModels.swift; sourceTree = SOURCE_ROOT; };
+		F00000000000000000000032 /* Aura/Integrations/PhilipsTV/PhilipsTVCompatibilityProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Aura/Integrations/PhilipsTV/PhilipsTVCompatibilityProfile.swift; sourceTree = SOURCE_ROOT; };
+		F00000000000000000000033 /* Aura/Integrations/PhilipsTV/PhilipsTVDiscoveryClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Aura/Integrations/PhilipsTV/PhilipsTVDiscoveryClient.swift; sourceTree = SOURCE_ROOT; };
+		F00000000000000000000034 /* AuraTests/PhilipsTVDiscoveryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuraTests/PhilipsTVDiscoveryTests.swift; sourceTree = SOURCE_ROOT; };
 		F00000000000000000000101 /* Aura.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Aura.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F00000000000000000000102 /* AuraTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AuraTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F00000000000000000000103 /* AuraUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AuraUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -175,6 +183,9 @@
 				F00000000000000000000028 /* Aura/Integrations/AppleTV/AppleTVCompanionClient.swift */,
 				F00000000000000000000029 /* Aura/Features/Devices/AppleTVControlModel.swift */,
 				F00000000000000000000030 /* Aura/Features/Devices/AppleTVRemoteControl.swift */,
+				F00000000000000000000031 /* Aura/Integrations/PhilipsTV/PhilipsTVDiscoveryModels.swift */,
+				F00000000000000000000032 /* Aura/Integrations/PhilipsTV/PhilipsTVCompatibilityProfile.swift */,
+				F00000000000000000000033 /* Aura/Integrations/PhilipsTV/PhilipsTVDiscoveryClient.swift */,
 				F00000000000000000000019 /* Aura/Resources/Info.plist */,
 			);
 			name = Aura;
@@ -187,6 +198,7 @@
 				F00000000000000000000015 /* AuraUITests/AuraUITests.swift */,
 				F00000000000000000000018 /* AuraTests/AppleTVDiscoveryTests.swift */,
 				F00000000000000000000026 /* AuraTests/AppleTVPairingTests.swift */,
+				F00000000000000000000034 /* AuraTests/PhilipsTVDiscoveryTests.swift */,
 			);
 			name = Tests;
 			sourceTree = "<group>";
@@ -368,6 +380,9 @@
 				B00000000000000000000023 /* Aura/Integrations/AppleTV/AppleTVCompanionClient.swift in Sources */,
 				B00000000000000000000024 /* Aura/Features/Devices/AppleTVControlModel.swift in Sources */,
 				B00000000000000000000025 /* Aura/Features/Devices/AppleTVRemoteControl.swift in Sources */,
+				B00000000000000000000026 /* Aura/Integrations/PhilipsTV/PhilipsTVDiscoveryModels.swift in Sources */,
+				B00000000000000000000027 /* Aura/Integrations/PhilipsTV/PhilipsTVCompatibilityProfile.swift in Sources */,
+				B00000000000000000000028 /* Aura/Integrations/PhilipsTV/PhilipsTVDiscoveryClient.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -378,6 +393,7 @@
 				B00000000000000000000014 /* AuraTests/AuraDomainTests.swift in Sources */,
 				B00000000000000000000018 /* AuraTests/AppleTVDiscoveryTests.swift in Sources */,
 				B0000000000000000000001F /* AuraTests/AppleTVPairingTests.swift in Sources */,
+				B00000000000000000000029 /* AuraTests/PhilipsTVDiscoveryTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
